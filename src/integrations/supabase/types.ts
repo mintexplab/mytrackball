@@ -46,18 +46,21 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string | null
           email: string
           full_name: string | null
           id: string
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string | null
           email: string
           full_name?: string | null
           id: string
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string | null
           email?: string
           full_name?: string | null
@@ -69,47 +72,77 @@ export type Database = {
         Row: {
           artist_name: string
           artwork_url: string | null
+          audio_file_url: string | null
+          copyright_line: string | null
+          courtesy_line: string | null
           created_at: string | null
+          disc_number: number | null
+          featured_artists: string[] | null
           genre: string | null
           id: string
+          is_multi_disc: boolean | null
           isrc: string | null
           notes: string | null
+          phonographic_line: string | null
           release_date: string | null
           status: string | null
           title: string
+          total_discs: number | null
+          total_volumes: number | null
           upc: string | null
           updated_at: string | null
           user_id: string
+          volume_number: number | null
         }
         Insert: {
           artist_name: string
           artwork_url?: string | null
+          audio_file_url?: string | null
+          copyright_line?: string | null
+          courtesy_line?: string | null
           created_at?: string | null
+          disc_number?: number | null
+          featured_artists?: string[] | null
           genre?: string | null
           id?: string
+          is_multi_disc?: boolean | null
           isrc?: string | null
           notes?: string | null
+          phonographic_line?: string | null
           release_date?: string | null
           status?: string | null
           title: string
+          total_discs?: number | null
+          total_volumes?: number | null
           upc?: string | null
           updated_at?: string | null
           user_id: string
+          volume_number?: number | null
         }
         Update: {
           artist_name?: string
           artwork_url?: string | null
+          audio_file_url?: string | null
+          copyright_line?: string | null
+          courtesy_line?: string | null
           created_at?: string | null
+          disc_number?: number | null
+          featured_artists?: string[] | null
           genre?: string | null
           id?: string
+          is_multi_disc?: boolean | null
           isrc?: string | null
           notes?: string | null
+          phonographic_line?: string | null
           release_date?: string | null
           status?: string | null
           title?: string
+          total_discs?: number | null
+          total_volumes?: number | null
           upc?: string | null
           updated_at?: string | null
           user_id?: string
+          volume_number?: number | null
         }
         Relationships: [
           {
@@ -117,6 +150,50 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracks: {
+        Row: {
+          audio_file_url: string | null
+          created_at: string | null
+          duration: number | null
+          featured_artists: string[] | null
+          id: string
+          isrc: string | null
+          release_id: string
+          title: string
+          track_number: number
+        }
+        Insert: {
+          audio_file_url?: string | null
+          created_at?: string | null
+          duration?: number | null
+          featured_artists?: string[] | null
+          id?: string
+          isrc?: string | null
+          release_id: string
+          title: string
+          track_number: number
+        }
+        Update: {
+          audio_file_url?: string | null
+          created_at?: string | null
+          duration?: number | null
+          featured_artists?: string[] | null
+          id?: string
+          isrc?: string | null
+          release_id?: string
+          title?: string
+          track_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracks_release_id_fkey"
+            columns: ["release_id"]
+            isOneToOne: false
+            referencedRelation: "releases"
             referencedColumns: ["id"]
           },
         ]

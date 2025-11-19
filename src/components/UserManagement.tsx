@@ -86,7 +86,7 @@ const UserManagement = () => {
   return (
     <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
       <CardHeader>
-        <CardTitle className="text-2xl">User Management</CardTitle>
+        <CardTitle className="text-2xl font-title">USER MANAGEMENT</CardTitle>
         <CardDescription>Manage user accounts and assign distribution plans</CardDescription>
       </CardHeader>
       <CardContent>

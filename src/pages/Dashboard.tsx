@@ -5,11 +5,12 @@ import { Session, User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Music2, Plus, Package } from "lucide-react";
+import { LogOut, Music2, Plus, Package, Settings } from "lucide-react";
 import { toast } from "sonner";
 import AdminPortal from "@/components/AdminPortal";
 import ReleasesList from "@/components/ReleasesList";
-import CreateReleaseDialog from "@/components/CreateReleaseDialog";
+import EnhancedCreateRelease from "@/components/EnhancedCreateRelease";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -101,25 +102,37 @@ const Dashboard = () => {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow">
-              <Music2 className="w-6 h-6 text-white" />
+              <Music2 className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                Trackball Distribution
+              <h1 className="text-xl font-title font-bold bg-gradient-primary bg-clip-text text-transparent">
+                MY TRACKBALL
               </h1>
               <p className="text-xs text-muted-foreground">Artist Dashboard</p>
             </div>
           </div>
           
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSignOut}
-            className="border-border hover:bg-muted transition-colors"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/settings")}
+              className="border-border hover:bg-muted transition-colors"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              className="border-border hover:bg-muted transition-colors"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -129,7 +142,7 @@ const Dashboard = () => {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-2xl">Your Plan</CardTitle>
+                  <CardTitle className="text-2xl font-title">YOUR PLAN</CardTitle>
                   <CardDescription>Current distribution plan</CardDescription>
                 </div>
                 <Package className="w-8 h-8 text-primary" />
@@ -169,7 +182,7 @@ const Dashboard = () => {
 
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
             <CardHeader>
-              <CardTitle className="text-2xl">Quick Stats</CardTitle>
+              <CardTitle className="text-2xl font-title">QUICK STATS</CardTitle>
               <CardDescription>Your distribution overview</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -191,15 +204,15 @@ const Dashboard = () => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle className="text-2xl">Your Releases</CardTitle>
+                <CardTitle className="text-2xl font-title">YOUR RELEASES</CardTitle>
                 <CardDescription>Manage your music distribution</CardDescription>
               </div>
-              <CreateReleaseDialog>
+              <EnhancedCreateRelease>
                 <Button className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow">
                   <Plus className="w-4 h-4 mr-2" />
                   New Release
                 </Button>
-              </CreateReleaseDialog>
+              </EnhancedCreateRelease>
             </div>
           </CardHeader>
           <CardContent>
