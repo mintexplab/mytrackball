@@ -56,11 +56,11 @@ const Auth = () => {
       <Card className="w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20">
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-glow">
-            <Music2 className="w-8 h-8 text-white" />
+            <Music2 className="w-8 h-8 text-primary-foreground" />
           </div>
           <div>
-            <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Trackball Distribution
+            <CardTitle className="text-3xl font-title font-bold bg-gradient-primary bg-clip-text text-transparent">
+              MY TRACKBALL
             </CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
               {isLogin ? "Sign in to your account" : "Create your artist account"}
