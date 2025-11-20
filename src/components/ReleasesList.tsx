@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
+import ExportDDEX from "./ExportDDEX";
 
 interface ReleasesListProps {
   userId?: string;
@@ -125,6 +126,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
               {isAdmin && (
                 <TableCell>
                   <div className="flex gap-2">
+                    <ExportDDEX releaseId={release.id} />
                     <Button
                       size="sm"
                       variant="outline"

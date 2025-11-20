@@ -76,12 +76,16 @@ export type Database = {
           copyright_line: string | null
           courtesy_line: string | null
           created_at: string | null
+          ddex_delivery_destination: string | null
+          ddex_party_id: string | null
+          ddex_party_name: string | null
           disc_number: number | null
           featured_artists: string[] | null
           genre: string | null
           id: string
           is_multi_disc: boolean | null
           isrc: string | null
+          label_name: string | null
           notes: string | null
           phonographic_line: string | null
           release_date: string | null
@@ -101,12 +105,16 @@ export type Database = {
           copyright_line?: string | null
           courtesy_line?: string | null
           created_at?: string | null
+          ddex_delivery_destination?: string | null
+          ddex_party_id?: string | null
+          ddex_party_name?: string | null
           disc_number?: number | null
           featured_artists?: string[] | null
           genre?: string | null
           id?: string
           is_multi_disc?: boolean | null
           isrc?: string | null
+          label_name?: string | null
           notes?: string | null
           phonographic_line?: string | null
           release_date?: string | null
@@ -126,12 +134,16 @@ export type Database = {
           copyright_line?: string | null
           courtesy_line?: string | null
           created_at?: string | null
+          ddex_delivery_destination?: string | null
+          ddex_party_id?: string | null
+          ddex_party_name?: string | null
           disc_number?: number | null
           featured_artists?: string[] | null
           genre?: string | null
           id?: string
           is_multi_disc?: boolean | null
           isrc?: string | null
+          label_name?: string | null
           notes?: string | null
           phonographic_line?: string | null
           release_date?: string | null
@@ -203,6 +215,7 @@ export type Database = {
           expires_at: string | null
           id: string
           plan_id: string
+          plan_name: string | null
           started_at: string | null
           status: string | null
           user_id: string
@@ -211,6 +224,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           plan_id: string
+          plan_name?: string | null
           started_at?: string | null
           status?: string | null
           user_id: string
@@ -219,6 +233,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           plan_id?: string
+          plan_name?: string | null
           started_at?: string | null
           status?: string | null
           user_id?: string
