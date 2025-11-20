@@ -19,9 +19,7 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
       <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow">
-              <Music2 className="w-6 h-6 text-primary-foreground" />
-            </div>
+            <img src="/src/assets/trackball-logo.png" alt="Trackball Logo" className="w-10 h-10" />
             <div>
               <h1 className="text-xl font-title font-bold bg-gradient-primary bg-clip-text text-transparent">
                 MY TRACKBALL

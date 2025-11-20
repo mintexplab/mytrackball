@@ -48,6 +48,9 @@ const UserManagement = () => {
   };
 
   const assignPlan = async (userId: string, planId: string) => {
+    // Get the plan name
+    const selectedPlan = plans.find(p => p.id === planId);
+    
     const { error: deleteError } = await supabase
       .from("user_plans")
       .delete()
@@ -63,6 +66,7 @@ const UserManagement = () => {
       .insert({
         user_id: userId,
         plan_id: planId,
+        plan_name: selectedPlan?.name || 'Free',
         status: "active",
       });
 
