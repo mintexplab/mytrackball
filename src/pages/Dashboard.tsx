@@ -9,7 +9,6 @@ import { LogOut, Music2, Plus, Package, Settings } from "lucide-react";
 import { toast } from "sonner";
 import AdminPortal from "@/components/AdminPortal";
 import ReleasesList from "@/components/ReleasesList";
-import EnhancedCreateRelease from "@/components/EnhancedCreateRelease";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Dashboard = () => {
@@ -221,12 +220,13 @@ const Dashboard = () => {
                 <CardTitle className="text-2xl font-title">YOUR RELEASES</CardTitle>
                 <CardDescription>Manage your music distribution</CardDescription>
               </div>
-              <EnhancedCreateRelease>
-                <Button className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow">
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Release
-                </Button>
-              </EnhancedCreateRelease>
+              <Button 
+                onClick={() => navigate("/create-release")}
+                className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Release
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
