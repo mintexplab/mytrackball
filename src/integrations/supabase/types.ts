@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      isrc_counter: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_number: number
+          prefix: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_number?: number
+          prefix?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_number?: number
+          prefix?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           created_at: string | null
@@ -80,6 +104,7 @@ export type Database = {
           ddex_party_id: string | null
           ddex_party_name: string | null
           disc_number: number | null
+          distributor: string | null
           featured_artists: string[] | null
           genre: string | null
           id: string
@@ -109,6 +134,7 @@ export type Database = {
           ddex_party_id?: string | null
           ddex_party_name?: string | null
           disc_number?: number | null
+          distributor?: string | null
           featured_artists?: string[] | null
           genre?: string | null
           id?: string
@@ -138,6 +164,7 @@ export type Database = {
           ddex_party_id?: string | null
           ddex_party_name?: string | null
           disc_number?: number | null
+          distributor?: string | null
           featured_artists?: string[] | null
           genre?: string | null
           id?: string
@@ -169,6 +196,7 @@ export type Database = {
       tracks: {
         Row: {
           audio_file_url: string | null
+          audio_path: string | null
           created_at: string | null
           duration: number | null
           featured_artists: string[] | null
@@ -180,6 +208,7 @@ export type Database = {
         }
         Insert: {
           audio_file_url?: string | null
+          audio_path?: string | null
           created_at?: string | null
           duration?: number | null
           featured_artists?: string[] | null
@@ -191,6 +220,7 @@ export type Database = {
         }
         Update: {
           audio_file_url?: string | null
+          audio_path?: string | null
           created_at?: string | null
           duration?: number | null
           featured_artists?: string[] | null

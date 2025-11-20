@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import ExportDDEX from "./ExportDDEX";
+import ReleaseInfoDialog from "./ReleaseInfoDialog";
 
 interface ReleasesListProps {
   userId?: string;
@@ -105,7 +106,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
             <TableHead>Release Date</TableHead>
             <TableHead>Genre</TableHead>
             <TableHead>Status</TableHead>
-            {isAdmin && <TableHead>Actions</TableHead>}
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -123,31 +124,34 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
               </TableCell>
               <TableCell className="text-muted-foreground">{release.genre || "—"}</TableCell>
               <TableCell>{getStatusBadge(release.status)}</TableCell>
-              {isAdmin && (
-                <TableCell>
-                  <div className="flex gap-2">
-                    <ExportDDEX releaseId={release.id} />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => updateReleaseStatus(release.id, "approved")}
-                      disabled={release.status === "approved"}
-                      className="border-green-500/30 hover:bg-green-500/20 text-green-300"
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => updateReleaseStatus(release.id, "rejected")}
-                      disabled={release.status === "rejected"}
-                      className="border-red-500/30 hover:bg-red-500/20 text-red-300"
-                    >
-                      Reject
-                    </Button>
-                  </div>
-                </TableCell>
-              )}
+              <TableCell>
+                <div className="flex gap-2">
+                  <ReleaseInfoDialog releaseId={release.id} />
+                  {isAdmin && (
+                    <>
+                      <ExportDDEX releaseId={release.id} />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateReleaseStatus(release.id, "approved")}
+                        disabled={release.status === "approved"}
+                        className="border-green-500/30 hover:bg-green-500/20 text-green-300"
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateReleaseStatus(release.id, "rejected")}
+                        disabled={release.status === "rejected"}
+                        className="border-red-500/30 hover:bg-red-500/20 text-red-300"
+                      >
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
