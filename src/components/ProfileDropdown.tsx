@@ -58,7 +58,7 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, onSignOut }: ProfileDrop
           <ThemeToggle />
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => window.open("https://billing.stripe.com/p/login/aFa3cw74O4B9bK22tTa7C00", "_blank")}
+          onClick={() => navigate("/subscription")}
           className="cursor-pointer"
         >
           <CreditCard className="mr-2 h-4 w-4" />

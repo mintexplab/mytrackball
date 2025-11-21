@@ -121,34 +121,48 @@ const UserManagement = () => {
   };
 
   const assignPlan = async (userId: string, planId: string) => {
-    const selectedPlan = plans.find(p => p.id === planId);
-    
-    const { error: deleteError } = await supabase
-      .from("user_plans")
-      .delete()
-      .eq("user_id", userId);
+    try {
+      const selectedPlan = plans.find(p => p.id === planId);
+      
+      // First, try to update existing plan
+      const { data: existingPlan } = await supabase
+        .from("user_plans")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
 
-    if (deleteError) {
-      toast.error("Failed to update plan");
-      return;
+      if (existingPlan) {
+        // Update existing plan
+        const { error } = await supabase
+          .from("user_plans")
+          .update({
+            plan_id: planId,
+            plan_name: selectedPlan?.name || 'Trackball Free',
+            status: "active",
+          })
+          .eq("user_id", userId);
+
+        if (error) throw error;
+      } else {
+        // Insert new plan
+        const { error } = await supabase
+          .from("user_plans")
+          .insert({
+            user_id: userId,
+            plan_id: planId,
+            plan_name: selectedPlan?.name || 'Trackball Free',
+            status: "active",
+          });
+
+        if (error) throw error;
+      }
+
+      toast.success("Plan assigned successfully");
+      fetchUsers();
+    } catch (error: any) {
+      console.error("Plan assignment error:", error);
+      toast.error("Failed to assign plan: " + error.message);
     }
-
-    const { error: insertError } = await supabase
-      .from("user_plans")
-      .insert({
-        user_id: userId,
-        plan_id: planId,
-        plan_name: selectedPlan?.name || 'Trackball Free',
-        status: "active",
-      });
-
-    if (insertError) {
-      toast.error("Failed to assign plan");
-      return;
-    }
-
-    toast.success("Plan assigned successfully");
-    fetchUsers();
   };
 
   if (loading) {
@@ -237,7 +251,7 @@ const UserManagement = () => {
               {users.map((user) => (
                 <TableRow key={user.id} className="hover:bg-muted/30 transition-colors">
                   <TableCell className="font-medium">
-                    {user.full_name || "No name"}
+                    {user.full_name || "No name set"}
                   </TableCell>
                   <TableCell className="text-muted-foreground">{user.email}</TableCell>
                   <TableCell>

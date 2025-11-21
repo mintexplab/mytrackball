@@ -21,6 +21,11 @@ interface Track {
   audio_file: File | null;
   audio_path: string;
   featured_artists: string;
+  composer: string;
+  writer: string;
+  contributor: string;
+  publisher: string;
+  publisher_ipi: string;
 }
 
 const CreateRelease = () => {
@@ -29,6 +34,7 @@ const CreateRelease = () => {
   const [userPlan, setUserPlan] = useState<any>(null);
   const [artworkFile, setArtworkFile] = useState<File | null>(null);
   const [artworkPreview, setArtworkPreview] = useState<string>("");
+  const [hasUPC, setHasUPC] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([{
     id: "1",
     track_number: 1,
@@ -38,6 +44,11 @@ const CreateRelease = () => {
     audio_file: null,
     audio_path: "",
     featured_artists: "",
+    composer: "",
+    writer: "",
+    contributor: "",
+    publisher: "",
+    publisher_ipi: "",
   }]);
   const [formData, setFormData] = useState({
     title: "",
@@ -147,6 +158,11 @@ const CreateRelease = () => {
       audio_file: null,
       audio_path: "",
       featured_artists: "",
+      composer: "",
+      writer: "",
+      contributor: "",
+      publisher: "",
+      publisher_ipi: "",
     }]);
   };
 
@@ -230,6 +246,11 @@ const CreateRelease = () => {
             isrc: track.isrc,
             audio_path: audioPath,
             featured_artists: track.featured_artists ? track.featured_artists.split(",").map(a => a.trim()) : [],
+            composer: track.composer || null,
+            writer: track.writer || null,
+            contributor: track.contributor || null,
+            publisher: track.publisher || null,
+            publisher_ipi: track.publisher_ipi || null,
           });
 
         if (trackError) throw trackError;
@@ -308,11 +329,20 @@ const CreateRelease = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="upc">UPC/EAN</Label>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Checkbox
+                      id="has_upc"
+                      checked={hasUPC}
+                      onCheckedChange={(checked) => setHasUPC(checked as boolean)}
+                    />
+                    <Label htmlFor="has_upc">I have a UPC</Label>
+                  </div>
                   <Input
                     id="upc"
                     value={formData.upc}
                     onChange={(e) => setFormData({ ...formData, upc: e.target.value })}
+                    disabled={!hasUPC}
+                    placeholder={hasUPC ? "Enter UPC/EAN" : "Check box if you have a UPC"}
                   />
                 </div>
                 <div>
@@ -552,6 +582,48 @@ const CreateRelease = () => {
                           placeholder="Artist 1, Artist 2"
                         />
                       </div>
+                      <div className="md:col-span-2">
+                        <Label>Composer</Label>
+                        <Input
+                          value={track.composer}
+                          onChange={(e) => updateTrack(track.id, "composer", e.target.value)}
+                          placeholder="Composer name"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>Writer</Label>
+                        <Input
+                          value={track.writer}
+                          onChange={(e) => updateTrack(track.id, "writer", e.target.value)}
+                          placeholder="Writer name"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>Contributor</Label>
+                        <Input
+                          value={track.contributor}
+                          onChange={(e) => updateTrack(track.id, "contributor", e.target.value)}
+                          placeholder="Contributor name"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>Publisher</Label>
+                        <Input
+                          value={track.publisher}
+                          onChange={(e) => updateTrack(track.id, "publisher", e.target.value)}
+                          placeholder="Publisher name"
+                        />
+                      </div>
+                      {track.publisher && (
+                        <div className="md:col-span-2">
+                          <Label>Publisher IPI</Label>
+                          <Input
+                            value={track.publisher_ipi}
+                            onChange={(e) => updateTrack(track.id, "publisher_ipi", e.target.value)}
+                            placeholder="IPI number"
+                          />
+                        </div>
+                      )}
                       <div className="md:col-span-2">
                         <Label>Audio File or Google Drive Link</Label>
                         <div className="space-y-2">
