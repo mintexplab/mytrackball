@@ -5,9 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, User, Mail, Lock, Upload, X } from "lucide-react";
+import { ArrowLeft, User, Mail, Lock, Upload, X, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const TIMEZONES = [
+  { value: "America/New_York", label: "Eastern Time (ET)" },
+  { value: "America/Chicago", label: "Central Time (CT)" },
+  { value: "America/Denver", label: "Mountain Time (MT)" },
+  { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
+  { value: "America/Toronto", label: "Toronto" },
+  { value: "America/Vancouver", label: "Vancouver" },
+  { value: "Europe/London", label: "London" },
+  { value: "Europe/Paris", label: "Paris" },
+  { value: "Asia/Tokyo", label: "Tokyo" },
+  { value: "Australia/Sydney", label: "Sydney" },
+];
 
 const AccountSettings = () => {
   const navigate = useNavigate();
@@ -21,6 +35,7 @@ const AccountSettings = () => {
     avatar_url: "",
     display_name: "",
     label_name: "",
+    user_timezone: "America/New_York",
     current_password: "",
     new_password: "",
   });
@@ -60,6 +75,7 @@ const AccountSettings = () => {
         avatar_url: profileData.avatar_url || "",
         display_name: profileData.display_name || "",
         label_name: profileData.label_name || "",
+        user_timezone: profileData.user_timezone || "America/New_York",
         current_password: "",
         new_password: "",
       });
@@ -81,6 +97,7 @@ const AccountSettings = () => {
         full_name: formData.full_name,
         avatar_url: formData.avatar_url,
         display_name: formData.display_name,
+        user_timezone: formData.user_timezone,
       };
 
       if (canEditLabel) {
@@ -347,6 +364,28 @@ const AccountSettings = () => {
                 {(userPlan?.plan?.name === "Trackball Signature" || userPlan?.plan?.name === "Trackball Prestige") 
                   ? "Available for Signature and Prestige members"
                   : "Only available for Signature and Prestige members"}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="user_timezone" className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-primary" />
+                Your Timezone
+              </Label>
+              <Select value={formData.user_timezone} onValueChange={(value) => setFormData({ ...formData, user_timezone: value })}>
+                <SelectTrigger id="user_timezone" className="bg-background/50 border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIMEZONES.map((tz) => (
+                    <SelectItem key={tz.value} value={tz.value}>
+                      {tz.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Used to show your account manager's local time
               </p>
             </div>
 

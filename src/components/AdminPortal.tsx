@@ -9,6 +9,7 @@ import { AnnouncementManagement } from "./AnnouncementManagement";
 import RoyaltiesManagement from "./RoyaltiesManagement";
 import SubaccountManagement from "./SubaccountManagement";
 import ClientInvitations from "./ClientInvitations";
+import AccountManagerManagement from "./AccountManagerManagement";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -49,7 +50,7 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
 
       <main className="container mx-auto px-4 py-8 relative">
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full max-w-4xl grid-cols-6 bg-muted/50">
+          <TabsList className="grid w-full max-w-5xl grid-cols-7 bg-muted/50">
             <TabsTrigger value="users" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
               <Users className="w-4 h-4 mr-2" />
               Users
@@ -57,6 +58,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
             <TabsTrigger value="invitations" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
               <Mail className="w-4 h-4 mr-2" />
               Invitations
+            </TabsTrigger>
+            <TabsTrigger value="managers" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+              <Users className="w-4 h-4 mr-2" />
+              Managers
             </TabsTrigger>
             <TabsTrigger value="releases" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
               <FileMusic className="w-4 h-4 mr-2" />
@@ -82,6 +87,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
 
           <TabsContent value="invitations">
             <ClientInvitations />
+          </TabsContent>
+
+          <TabsContent value="managers">
+            <AccountManagerManagement />
           </TabsContent>
 
           <TabsContent value="releases">

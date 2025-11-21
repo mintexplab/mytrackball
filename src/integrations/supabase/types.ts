@@ -127,6 +127,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_manager_email: string | null
+          account_manager_name: string | null
+          account_manager_phone: string | null
+          account_manager_timezone: string | null
           avatar_url: string | null
           created_at: string | null
           display_name: string | null
@@ -137,8 +141,13 @@ export type Database = {
           label_name: string | null
           parent_account_id: string | null
           user_id: string
+          user_timezone: string | null
         }
         Insert: {
+          account_manager_email?: string | null
+          account_manager_name?: string | null
+          account_manager_phone?: string | null
+          account_manager_timezone?: string | null
           avatar_url?: string | null
           created_at?: string | null
           display_name?: string | null
@@ -149,8 +158,13 @@ export type Database = {
           label_name?: string | null
           parent_account_id?: string | null
           user_id: string
+          user_timezone?: string | null
         }
         Update: {
+          account_manager_email?: string | null
+          account_manager_name?: string | null
+          account_manager_phone?: string | null
+          account_manager_timezone?: string | null
           avatar_url?: string | null
           created_at?: string | null
           display_name?: string | null
@@ -161,6 +175,7 @@ export type Database = {
           label_name?: string | null
           parent_account_id?: string | null
           user_id?: string
+          user_timezone?: string | null
         }
         Relationships: [
           {
