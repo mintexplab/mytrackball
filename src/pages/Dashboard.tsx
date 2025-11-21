@@ -22,6 +22,7 @@ const Dashboard = () => {
   const [userPlan, setUserPlan] = useState<any>(null);
   const [releaseCount, setReleaseCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showLoader, setShowLoader] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,6 +45,20 @@ const Dashboard = () => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        // Check if loader has been shown this session
+        const loaderShown = sessionStorage.getItem('loginLoaderShown');
+        
+        if (!loaderShown) {
+          setShowLoader(true);
+          // Random delay between 5-10 seconds
+          const randomDelay = Math.floor(Math.random() * 5000) + 5000;
+          
+          setTimeout(() => {
+            setShowLoader(false);
+            sessionStorage.setItem('loginLoaderShown', 'true');
+          }, randomDelay);
+        }
+        
         checkAdminStatus(session.user.id);
         fetchUserPlan(session.user.id);
         fetchReleaseCount(session.user.id);
@@ -96,10 +111,13 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
-  if (loading) {
+  if (loading || showLoader) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          {showLoader && <p className="text-muted-foreground animate-pulse">Loading your dashboard...</p>}
+        </div>
       </div>
     );
   }
@@ -157,7 +175,7 @@ const Dashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
+          <TabsContent value="overview" className="space-y-6 animate-fade-in">
             <div className="grid gap-6 md:grid-cols-2">
               <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
                 <CardHeader>
@@ -238,11 +256,11 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="notifications">
+          <TabsContent value="notifications" className="animate-fade-in">
             {user && <NotificationsTab userId={user.id} />}
           </TabsContent>
 
-          <TabsContent value="royalties">
+          <TabsContent value="royalties" className="animate-fade-in">
             {user && <RoyaltiesTab userId={user.id} />}
           </TabsContent>
         </Tabs>
