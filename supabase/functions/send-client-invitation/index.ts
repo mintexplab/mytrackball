@@ -26,7 +26,8 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { inviterName, inviterEmail, inviteeEmail, labelName, invitationId, invitationType = "client", permissions = [] }: InvitationRequest = await req.json();
 
-    const acceptUrl = `${Deno.env.get("VITE_SUPABASE_URL")}/auth/v1/verify?token=${invitationId}&type=invite`;
+    const appUrl = Deno.env.get("VITE_SUPABASE_URL")?.replace("/supabase", "") || "http://localhost:5173";
+    const acceptUrl = `${appUrl}/accept-invitation?token=${invitationId}`;
 
     // Build permissions list
     const permissionsHtml = permissions.length > 0 
