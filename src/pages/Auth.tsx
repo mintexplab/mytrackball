@@ -18,6 +18,7 @@ const Auth = () => {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Auth submit", { isLogin, email });
     setLoading(true);
 
     try {
@@ -26,6 +27,7 @@ const Auth = () => {
           email,
           password,
         });
+        console.log("signInWithPassword result", { data, error });
         if (error) throw error;
 
         // Check if user is banned or locked
@@ -35,6 +37,8 @@ const Auth = () => {
             .select("is_banned, is_locked, full_name, user_id")
             .eq("id", data.user.id)
             .single();
+
+          console.log("Profile after login", profile);
 
           if (profile?.is_banned) {
             await supabase.auth.signOut();
@@ -97,11 +101,13 @@ const Auth = () => {
             emailRedirectTo: `${window.location.origin}/dashboard`,
           },
         });
+        console.log("signUp result", { error });
         if (error) throw error;
         toast.success("Account created! Redirecting...");
         navigate("/dashboard");
       }
     } catch (error: any) {
+      console.error("Auth error", error);
       toast.error(error.message);
     } finally {
       setLoading(false);
