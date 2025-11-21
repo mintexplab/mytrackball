@@ -23,6 +23,7 @@ const Dashboard = () => {
   const [releaseCount, setReleaseCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showLoader, setShowLoader] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -106,8 +107,14 @@ const Dashboard = () => {
   };
 
   const handleSignOut = async () => {
+    setIsLoggingOut(true);
+    
+    // Random delay between 3-10 seconds
+    const randomDelay = Math.floor(Math.random() * 7000) + 3000;
+    
+    await new Promise(resolve => setTimeout(resolve, randomDelay));
+    
     await supabase.auth.signOut();
-    toast.success("Signed out successfully");
     navigate("/auth");
   };
 
@@ -127,7 +134,14 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-50 bg-background animate-fade-in flex flex-col items-center justify-center gap-4">
+          <p className="text-lg text-foreground animate-pulse">Signing you out of My Trackball</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      )}
+      
       <div className="absolute inset-0 bg-gradient-primary opacity-5 blur-3xl" />
       
       <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
