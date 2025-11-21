@@ -55,6 +55,8 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({
       if (subdistError) return null;
       return subdist;
     },
+    enabled: false, // Disable auto-fetching to prevent blocking
+    retry: false,
   });
 
   useEffect(() => {

@@ -473,6 +473,53 @@ export type Database = {
           },
         ]
       }
+      subdistributor_invitations: {
+        Row: {
+          accepted_at: string | null
+          background_color: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          invitation_token: string
+          invitee_email: string
+          primary_color: string
+          status: string
+          subdistributor_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          background_color: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          invitation_token: string
+          invitee_email: string
+          primary_color: string
+          status?: string
+          subdistributor_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          background_color?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          invitation_token?: string
+          invitee_email?: string
+          primary_color?: string
+          status?: string
+          subdistributor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subdistributor_invitations_subdistributor_id_fkey"
+            columns: ["subdistributor_id"]
+            isOneToOne: false
+            referencedRelation: "subdistributors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subdistributors: {
         Row: {
           background_color: string
