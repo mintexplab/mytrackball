@@ -141,7 +141,7 @@ const ClientInvitations = () => {
       if (inviteError) throw inviteError;
 
       // Send email via edge function
-      const { error: emailError } = await supabase.functions.invoke("send-sublabel-invitation", {
+      const { error: emailError } = await supabase.functions.invoke("send-client-invitation", {
         body: {
           inviterName: userProfile?.display_name || userProfile?.full_name || "Trackball User",
           inviterEmail: userProfile?.email,

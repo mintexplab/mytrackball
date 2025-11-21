@@ -61,14 +61,31 @@ export const AnnouncementManagement = () => {
         is_active: true,
       });
 
-    setLoading(false);
-
     if (error) {
       toast.error("Failed to create announcement");
+      setLoading(false);
       return;
     }
 
-    toast.success("Announcement created successfully");
+    // Send email to all users
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("email");
+
+    if (profiles) {
+      for (const profile of profiles) {
+        await supabase.functions.invoke("send-announcement-email", {
+          body: {
+            userEmail: profile.email,
+            title: title.trim(),
+            message: message.trim(),
+          },
+        });
+      }
+    }
+
+    setLoading(false);
+    toast.success("Announcement created and emails sent");
     setTitle("");
     setMessage("");
     fetchAnnouncements();

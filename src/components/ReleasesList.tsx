@@ -47,6 +47,20 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
   };
 
   const updateReleaseStatus = async (releaseId: string, status: string) => {
+    const { data: release, error: fetchError } = await supabase
+      .from("releases")
+      .select(`
+        *,
+        profiles!releases_user_id_fkey(email)
+      `)
+      .eq("id", releaseId)
+      .single();
+
+    if (fetchError || !release) {
+      toast.error("Failed to fetch release");
+      return;
+    }
+
     const { error } = await supabase
       .from("releases")
       .update({ status })
@@ -55,6 +69,19 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
     if (error) {
       toast.error("Failed to update release status");
       return;
+    }
+
+    // Send email notification
+    if (release.profiles?.email) {
+      await supabase.functions.invoke("send-release-status-email", {
+        body: {
+          userEmail: release.profiles.email,
+          releaseTitle: release.title,
+          artistName: release.artist_name,
+          status: status,
+          rejectionReason: release.rejection_reason,
+        },
+      });
     }
 
     toast.success(`Release ${status}`);

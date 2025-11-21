@@ -15,8 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NotificationsTab from "@/components/NotificationsTab";
 import RoyaltiesTab from "@/components/RoyaltiesTab";
 import ArtistLabelOnboarding from "@/components/ArtistLabelOnboarding";
-import SublabelManagement from "@/components/SublabelManagement";
-import SublabelInvitationAcceptance from "@/components/SublabelInvitationAcceptance";
+import ClientInvitations from "@/components/ClientInvitations";
+import ClientInvitationAcceptance from "@/components/ClientInvitationAcceptance";
 import AccountManagerCard from "@/components/AccountManagerCard";
 
 const Dashboard = () => {
@@ -215,7 +215,7 @@ const Dashboard = () => {
 
       {user && <AnnouncementDialog userId={user.id} />}
       {user && <ArtistLabelOnboarding userId={user.id} userPlan={userPlan} />}
-      {user && <SublabelInvitationAcceptance userId={user.id} />}
+      {user && <ClientInvitationAcceptance userId={user.id} />}
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
         <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
@@ -224,10 +224,12 @@ const Dashboard = () => {
               <Package className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
-            <TabsTrigger value="sublabels" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
-              <Users className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Sublabels</span>
-            </TabsTrigger>
+            {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && (
+              <TabsTrigger value="clients" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
+                <Users className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Clients</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="notifications" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
               <Bell className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Notifications</span>
@@ -333,9 +335,11 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="sublabels" className="animate-fade-in">
-            {user && <SublabelManagement userId={user.id} userPlan={userPlan} profile={profile} />}
-          </TabsContent>
+          {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && (
+            <TabsContent value="clients" className="animate-fade-in">
+              <ClientInvitations />
+            </TabsContent>
+          )}
 
           <TabsContent value="notifications" className="animate-fade-in">
             {user && <NotificationsTab userId={user.id} />}

@@ -36,13 +36,31 @@ const SendNotificationDialog = ({ userId, userName }: SendNotificationDialogProp
         type: "system",
       });
 
-    setSending(false);
-
     if (error) {
       toast.error("Failed to send notification");
+      setSending(false);
       return;
     }
 
+    // Get user email and send email notification
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("email")
+      .eq("id", userId)
+      .single();
+
+    if (profile) {
+      await supabase.functions.invoke("send-notification-email", {
+        body: {
+          userEmail: profile.email,
+          title: title.trim(),
+          message: message.trim(),
+          type: "system",
+        },
+      });
+    }
+
+    setSending(false);
     toast.success("Notification sent successfully");
     setOpen(false);
     setTitle("");
