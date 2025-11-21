@@ -5,14 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, User, Mail, Lock, Tag } from "lucide-react";
+import { ArrowLeft, User, Mail, Lock, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const AccountSettings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [userPlan, setUserPlan] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -137,6 +139,98 @@ const AccountSettings = () => {
     }
   };
 
+  const uploadProfilePicture = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      
+      if (!event.target.files || event.target.files.length === 0) {
+        return;
+      }
+
+      const file = event.target.files[0];
+      
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Please upload a valid image file (JPG, PNG, or WEBP)');
+        return;
+      }
+
+      // Validate file size (5MB)
+      if (file.size > 5242880) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      // Delete old profile picture if exists
+      if (formData.avatar_url) {
+        const oldPath = formData.avatar_url.split('/').slice(-2).join('/');
+        await supabase.storage.from('profile-pictures').remove([oldPath]);
+      }
+
+      // Upload new file
+      const { error: uploadError } = await supabase.storage
+        .from('profile-pictures')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-pictures')
+        .getPublicUrl(fileName);
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setFormData({ ...formData, avatar_url: publicUrl });
+      toast.success('Profile picture updated successfully!');
+    } catch (error: any) {
+      console.error('Error uploading profile picture:', error);
+      toast.error(error.message || 'Failed to upload profile picture');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeProfilePicture = async () => {
+    try {
+      setUploading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      if (formData.avatar_url) {
+        const path = formData.avatar_url.split('/').slice(-2).join('/');
+        await supabase.storage.from('profile-pictures').remove([path]);
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setFormData({ ...formData, avatar_url: "" });
+      toast.success('Profile picture removed');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to remove profile picture');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
@@ -168,20 +262,51 @@ const AccountSettings = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="avatar_url">Profile Picture URL</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="avatar_url"
-                  placeholder="https://example.com/avatar.jpg"
-                  value={formData.avatar_url}
-                  onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
-                  className="bg-background/50 border-border"
-                />
-                {formData.avatar_url && (
-                  <div className="w-12 h-12 rounded-lg overflow-hidden border border-border">
-                    <img src={formData.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+              <Label>Profile Picture</Label>
+              <div className="flex items-center gap-4">
+                <Avatar className="w-24 h-24 border-2 border-border">
+                  <AvatarImage src={formData.avatar_url} />
+                  <AvatarFallback className="bg-gradient-primary text-primary-foreground text-2xl">
+                    {formData.full_name?.substring(0, 2).toUpperCase() || formData.email?.substring(0, 2).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1 space-y-2">
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('avatar-upload')?.click()}
+                      disabled={uploading}
+                      className="border-primary/20"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploading ? "Uploading..." : "Upload Picture"}
+                    </Button>
+                    {formData.avatar_url && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={removeProfilePicture}
+                        disabled={uploading}
+                        className="border-destructive/20 text-destructive hover:text-destructive"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Remove
+                      </Button>
+                    )}
                   </div>
-                )}
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={uploadProfilePicture}
+                    className="hidden"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    JPG, PNG, or WEBP. Max 5MB.
+                  </p>
+                </div>
               </div>
             </div>
 
