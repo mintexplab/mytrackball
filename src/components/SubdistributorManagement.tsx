@@ -8,13 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Trash2, Plus } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -46,7 +39,7 @@ export const SubdistributorManagement = () => {
   const [slug, setSlug] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#dc2626");
   const [backgroundColor, setBackgroundColor] = useState("#000000");
-  const [ownerId, setOwnerId] = useState("none");
+  const [ownerEmail, setOwnerEmail] = useState("");
   const queryClient = useQueryClient();
 
   const { data: subdistributors, isLoading } = useQuery({
@@ -65,18 +58,6 @@ export const SubdistributorManagement = () => {
     },
   });
 
-  const { data: users } = useQuery({
-    queryKey: ["all-users"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, email, full_name")
-        .order("email");
-
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const createSubdistributor = useMutation({
     mutationFn: async () => {
@@ -86,39 +67,52 @@ export const SubdistributorManagement = () => {
         .eq("id", (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      const { error } = await supabase.from("subdistributors").insert({
-        name,
-        slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
-        primary_color: primaryColor,
-        background_color: backgroundColor,
-        owner_id: ownerId === "none" ? null : ownerId,
-        created_by: profile?.id,
-      });
+      const { data: subdist, error } = await supabase
+        .from("subdistributors")
+        .insert({
+          name,
+          slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+          primary_color: primaryColor,
+          background_color: backgroundColor,
+          created_by: profile?.id,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
-      // If owner is set, assign subdistributor_admin role
-      if (ownerId && ownerId !== "none") {
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .insert({
-            user_id: ownerId,
-            role: "subdistributor_admin",
-          });
+      // Send invitation email if owner email provided
+      if (ownerEmail && subdist) {
+        const { error: inviteError } = await supabase.functions.invoke(
+          "send-subdistributor-invitation",
+          {
+            body: {
+              subdistributorId: subdist.id,
+              subdistributorName: name,
+              ownerEmail,
+              primaryColor,
+              backgroundColor,
+            },
+          }
+        );
 
-        if (roleError && !roleError.message.includes("duplicate")) {
-          console.error("Failed to assign role:", roleError);
+        if (inviteError) {
+          console.error("Failed to send invitation:", inviteError);
+          throw new Error("Subdistributor created but invitation email failed to send");
         }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subdistributors"] });
-      toast.success("Sub-distributor created successfully");
+      toast.success(ownerEmail 
+        ? "Sub-distributor created and invitation sent" 
+        : "Sub-distributor created successfully"
+      );
       setName("");
       setSlug("");
       setPrimaryColor("#dc2626");
       setBackgroundColor("#000000");
-      setOwnerId("none");
+      setOwnerEmail("");
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to create sub-distributor");
@@ -216,20 +210,17 @@ export const SubdistributorManagement = () => {
           </div>
 
           <div>
-            <Label htmlFor="owner">Owner (Optional)</Label>
-            <Select value={ownerId} onValueChange={setOwnerId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select owner..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No owner</SelectItem>
-                {users?.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.email} - {user.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="ownerEmail">Owner Email (Optional)</Label>
+            <Input
+              id="ownerEmail"
+              type="email"
+              value={ownerEmail}
+              onChange={(e) => setOwnerEmail(e.target.value)}
+              placeholder="owner@example.com"
+            />
+            <p className="text-sm text-muted-foreground mt-1">
+              An invitation will be sent to this email
+            </p>
           </div>
 
           <Button
