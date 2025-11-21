@@ -122,7 +122,7 @@ const Dashboard = () => {
     
     setUserPlan(data);
 
-    // Fetch profile with account manager fields
+    // Fetch profile with account manager and subdistributor fields
     const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
@@ -130,6 +130,8 @@ const Dashboard = () => {
       .single();
     
     setProfile(profileData);
+    // Treat users linked to a subdistributor as subdistributor admins for routing
+    setIsSubdistAdmin(!!profileData?.subdistributor_id);
   };
 
   // Refresh profile data periodically to catch admin updates
