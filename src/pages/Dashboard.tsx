@@ -105,7 +105,7 @@ const Dashboard = () => {
     
     setUserPlan(data);
 
-    // Fetch profile with new fields
+    // Fetch profile with account manager fields
     const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
@@ -114,6 +114,17 @@ const Dashboard = () => {
     
     setProfile(profileData);
   };
+
+  // Refresh profile data periodically to catch admin updates
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const interval = setInterval(() => {
+      fetchUserPlan(user.id);
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   const fetchReleaseCount = async (userId: string) => {
     const { count } = await supabase

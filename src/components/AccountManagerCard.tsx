@@ -36,6 +36,7 @@ const AccountManagerCard = ({
     return () => clearInterval(interval);
   }, [managerTimezone]);
 
+  // Only show if at least one contact field is filled
   if (!managerName && !managerEmail && !managerPhone) {
     return null;
   }
