@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Package, UserPlus, Ban } from "lucide-react";
 import { z } from "zod";
+import SendNotificationDialog from "./SendNotificationDialog";
 
 const createUserSchema = z.object({
   email: z.string().email("Invalid email address").max(255),
@@ -157,6 +158,19 @@ const UserManagement = () => {
         if (error) throw error;
       }
 
+      // Create welcome notification for the user
+      const planFeatures = selectedPlan?.features || [];
+      const benefitsText = planFeatures.map((f: string) => `• ${f}`).join('\n');
+      
+      await supabase
+        .from("notifications")
+        .insert({
+          user_id: userId,
+          title: `Welcome to ${selectedPlan?.name || 'Trackball Free'}!`,
+          message: `You've been enrolled in ${selectedPlan?.name || 'Trackball Free'}.\n\nYour Plan Benefits:\n${benefitsText}`,
+          type: "plan_upgrade",
+        });
+
       toast.success("Plan assigned successfully");
       fetchUsers();
     } catch (error: any) {
@@ -245,6 +259,7 @@ const UserManagement = () => {
                 <TableHead>Current Plan</TableHead>
                 <TableHead>Assign Plan</TableHead>
                 <TableHead>Actions</TableHead>
+                <TableHead>Notify</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -307,6 +322,12 @@ const UserManagement = () => {
                         onCheckedChange={() => toggleBanUser(user.id, user.is_banned)}
                       />
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <SendNotificationDialog 
+                      userId={user.id} 
+                      userName={user.full_name || user.email} 
+                    />
                   </TableCell>
                 </TableRow>
               ))}

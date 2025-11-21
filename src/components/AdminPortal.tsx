@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, FileMusic, Megaphone } from "lucide-react";
+import { LogOut, Users, FileMusic, Megaphone, DollarSign } from "lucide-react";
 import UserManagement from "./UserManagement";
 import ReleasesList from "./ReleasesList";
 import { AnnouncementManagement } from "./AnnouncementManagement";
+import RoyaltiesManagement from "./RoyaltiesManagement";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -46,7 +47,7 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
 
       <main className="container mx-auto px-4 py-8 relative">
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-3 bg-muted/50">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4 bg-muted/50">
             <TabsTrigger value="users" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
               <Users className="w-4 h-4 mr-2" />
               Users
@@ -58,6 +59,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
             <TabsTrigger value="announcements" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
               <Megaphone className="w-4 h-4 mr-2" />
               Announcements
+            </TabsTrigger>
+            <TabsTrigger value="royalties" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+              <DollarSign className="w-4 h-4 mr-2" />
+              Royalties
             </TabsTrigger>
           </TabsList>
 
@@ -79,6 +84,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
 
           <TabsContent value="announcements">
             <AnnouncementManagement />
+          </TabsContent>
+
+          <TabsContent value="royalties">
+            <RoyaltiesManagement />
           </TabsContent>
         </Tabs>
       </main>

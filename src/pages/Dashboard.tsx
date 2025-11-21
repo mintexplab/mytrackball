@@ -4,13 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Music2 } from "lucide-react";
+import { Plus, Package, Music2, Bell, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import AdminPortal from "@/components/AdminPortal";
 import ReleasesList from "@/components/ReleasesList";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
 import { AnnouncementDialog } from "@/components/AnnouncementDialog";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import NotificationsTab from "@/components/NotificationsTab";
+import RoyaltiesTab from "@/components/RoyaltiesTab";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -138,84 +141,111 @@ const Dashboard = () => {
       {user && <AnnouncementDialog userId={user.id} />}
 
       <main className="container mx-auto px-4 py-8 space-y-6 relative">
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-2xl font-bold">YOUR PLAN</CardTitle>
-                  <CardDescription>Current distribution plan</CardDescription>
-                </div>
-                <Package className="w-8 h-8 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Badge className="bg-gradient-primary text-white px-3 py-1 text-sm">
-                  {userPlan?.plan.name || "Trackball Free"}
-                </Badge>
-              </div>
-              {userPlan ? (
-                <>
-                  <p className="text-muted-foreground">{userPlan.plan.description}</p>
-                  <div className="pt-4 border-t border-border">
-                    <p className="text-sm font-medium mb-2">Plan Features:</p>
-                    <ul className="space-y-1 text-sm text-muted-foreground">
-                      {userPlan.plan.features?.map((feature: string, index: number) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3 bg-muted/50">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+              <Package className="w-4 h-4 mr-2" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+              <Bell className="w-4 h-4 mr-2" />
+              Notifications
+            </TabsTrigger>
+            <TabsTrigger value="royalties" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+              <DollarSign className="w-4 h-4 mr-2" />
+              Royalties
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-2xl font-bold">Your Plan</CardTitle>
+                      <CardDescription>Current distribution plan</CardDescription>
+                    </div>
+                    <Package className="w-8 h-8 text-primary" />
                   </div>
-                </>
-              ) : (
-                <p className="text-muted-foreground">Basic distribution plan with essential features</p>
-              )}
-            </CardContent>
-          </Card>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Badge className="bg-gradient-primary text-white px-3 py-1 text-sm">
+                      {userPlan?.plan.name || "Trackball Free"}
+                    </Badge>
+                  </div>
+                  {userPlan ? (
+                    <>
+                      <p className="text-muted-foreground">{userPlan.plan.description}</p>
+                      <div className="pt-4 border-t border-border">
+                        <p className="text-sm font-medium mb-2">Plan Features:</p>
+                        <ul className="space-y-1 text-sm text-muted-foreground">
+                          {userPlan.plan.features?.map((feature: string, index: number) => (
+                            <li key={index} className="flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-accent" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground">Basic distribution plan with essential features</p>
+                  )}
+                </CardContent>
+              </Card>
 
-          <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">QUICK STATS</CardTitle>
-            <CardDescription>Your distribution overview</CardDescription>
-          </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-muted/50">
-                  <p className="text-sm text-muted-foreground">Total Releases</p>
-                  <p className="text-2xl font-bold text-foreground">{releaseCount}</p>
-                </div>
-                <div className="p-4 rounded-lg bg-muted/50">
-                  <p className="text-sm text-muted-foreground">Active</p>
-                  <p className="text-2xl font-bold text-accent">{releaseCount}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle className="text-2xl font-bold">YOUR RELEASES</CardTitle>
-                <CardDescription>Manage your music distribution</CardDescription>
-              </div>
-              <Button 
-                onClick={() => navigate("/create-release")}
-                className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Release
-              </Button>
+              <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-2xl font-bold">Quick Stats</CardTitle>
+                  <CardDescription>Your distribution overview</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-lg bg-muted/50">
+                      <p className="text-sm text-muted-foreground">Total Releases</p>
+                      <p className="text-2xl font-bold text-foreground">{releaseCount}</p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-muted/50">
+                      <p className="text-sm text-muted-foreground">Active</p>
+                      <p className="text-2xl font-bold text-accent">{releaseCount}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardHeader>
-          <CardContent>
-            <ReleasesList userId={user?.id} isAdmin={false} />
-          </CardContent>
-        </Card>
+
+            <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="text-2xl font-bold">Your Releases</CardTitle>
+                    <CardDescription>Manage your music distribution</CardDescription>
+                  </div>
+                  <Button 
+                    onClick={() => navigate("/create-release")}
+                    className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Release
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ReleasesList userId={user?.id} isAdmin={false} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            {user && <NotificationsTab userId={user.id} />}
+          </TabsContent>
+
+          <TabsContent value="royalties">
+            {user && <RoyaltiesTab userId={user.id} />}
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
