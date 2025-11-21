@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, User, Mail, Lock, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, User, Mail, Lock, Tag } from "lucide-react";
 import { toast } from "sonner";
 
 const AccountSettings = () => {
@@ -17,6 +17,8 @@ const AccountSettings = () => {
     full_name: "",
     email: "",
     avatar_url: "",
+    display_name: "",
+    label_name: "",
     current_password: "",
     new_password: "",
   });
@@ -54,6 +56,8 @@ const AccountSettings = () => {
         full_name: profileData.full_name || "",
         email: profileData.email,
         avatar_url: profileData.avatar_url || "",
+        display_name: profileData.display_name || "",
+        label_name: profileData.label_name || "",
         current_password: "",
         new_password: "",
       });
@@ -68,12 +72,22 @@ const AccountSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Check if label_name update is allowed
+      const canEditLabel = userPlan?.plan?.name === "Trackball Signature" || userPlan?.plan?.name === "Trackball Prestige";
+      
+      const updateData: any = {
+        full_name: formData.full_name,
+        avatar_url: formData.avatar_url,
+        display_name: formData.display_name,
+      };
+
+      if (canEditLabel) {
+        updateData.label_name = formData.label_name;
+      }
+
       const { error } = await supabase
         .from("profiles")
-        .update({
-          full_name: formData.full_name,
-          avatar_url: formData.avatar_url,
-        })
+        .update(updateData)
         .eq("id", user.id);
 
       if (error) throw error;
@@ -180,6 +194,35 @@ const AccountSettings = () => {
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                 className="bg-background/50 border-border"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="display_name">Display Name</Label>
+              <Input
+                id="display_name"
+                placeholder="Artist Name"
+                value={formData.display_name}
+                onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+                className="bg-background/50 border-border"
+              />
+              <p className="text-xs text-muted-foreground">This will be shown in the top bar</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="label_name">Label Name</Label>
+              <Input
+                id="label_name"
+                placeholder="Your Label"
+                value={formData.label_name}
+                onChange={(e) => setFormData({ ...formData, label_name: e.target.value })}
+                className="bg-background/50 border-border"
+                disabled={!(userPlan?.plan?.name === "Trackball Signature" || userPlan?.plan?.name === "Trackball Prestige")}
+              />
+              <p className="text-xs text-muted-foreground">
+                {(userPlan?.plan?.name === "Trackball Signature" || userPlan?.plan?.name === "Trackball Prestige") 
+                  ? "Available for Signature and Prestige members"
+                  : "Only available for Signature and Prestige members"}
+              </p>
             </div>
 
             <Button
