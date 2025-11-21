@@ -60,10 +60,9 @@ serve(async (req: Request) => {
     }
 
     // Send invitation email
-    const invitationUrl = `${Deno.env.get("SUPABASE_URL")?.replace(
-      "supabase.co",
-      "lovableproject.com"
-    )}/accept-subdistributor-invitation?token=${invitationToken}`;
+    // Get the origin from the request headers
+    const origin = req.headers.get("origin") || req.headers.get("referer")?.split("/").slice(0, 3).join("/") || "";
+    const invitationUrl = `${origin}/accept-subdistributor-invitation?token=${invitationToken}`;
 
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
