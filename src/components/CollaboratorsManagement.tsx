@@ -148,6 +148,39 @@ export const CollaboratorsManagement = () => {
         .single();
 
       if (error) throw error;
+
+      // Get collaborator and release details for email
+      const collab = collaborators?.find(c => c.id === selectedCollaborator);
+      const release = releases?.find(r => r.id === selectedRelease);
+      
+      // Get current user info for inviter name
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("display_name, full_name")
+          .eq("id", user.id)
+          .single();
+
+        // Send notification email to collaborator
+        if (collab && release) {
+          try {
+            await supabase.functions.invoke("send-collaborator-notification", {
+              body: {
+                collaboratorName: collab.name,
+                collaboratorEmail: collab.email,
+                inviterName: profile?.display_name || profile?.full_name || "A user",
+                releaseTitle: `${release.title} - ${release.artist_name}`,
+                percentage: percentageNum,
+              },
+            });
+          } catch (emailError) {
+            console.error("Failed to send collaborator email:", emailError);
+            // Don't fail the operation if email fails
+          }
+        }
+      }
+
       return data;
     },
     onSuccess: () => {

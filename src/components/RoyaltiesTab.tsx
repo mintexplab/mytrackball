@@ -55,35 +55,52 @@ const RoyaltiesTab = ({ userId }: RoyaltiesTabProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("display_name, email, user_id")
+        .select("display_name, email, user_id, id")
         .eq("id", user.id)
         .single();
 
-      // Create payout request
-      const { error } = await supabase
+      if (profileError) {
+        console.error("Profile fetch error:", profileError);
+        throw new Error("Failed to fetch profile");
+      }
+
+      // Create payout request using profile.id (same as auth user id)
+      const { data: payoutData, error: payoutError } = await supabase
         .from("payout_requests")
         .insert({
-          user_id: user.id,
+          user_id: profile.id,
           amount: totalEarnings,
           notes: payoutNotes || null,
-        });
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (payoutError) {
+        console.error("Payout request error:", payoutError);
+        throw new Error(payoutError.message || "Failed to create payout request");
+      }
 
       // Send notification email
-      await supabase.functions.invoke("send-system-notification", {
-        body: {
-          type: "payout_request",
-          data: {
-            userName: profile?.display_name,
-            userEmail: profile?.email,
-            userId: profile?.user_id,
-            amount: totalEarnings,
+      try {
+        await supabase.functions.invoke("send-system-notification", {
+          body: {
+            type: "payout_request",
+            data: {
+              userName: profile?.display_name,
+              userEmail: profile?.email,
+              userId: profile?.user_id,
+              amount: totalEarnings,
+            },
           },
-        },
-      });
+        });
+      } catch (emailError) {
+        console.error("Email notification error:", emailError);
+        // Don't fail the payout request if email fails
+      }
+
+      return payoutData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-royalties"] });
