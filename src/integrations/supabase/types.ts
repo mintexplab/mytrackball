@@ -138,6 +138,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_banned: boolean | null
+          is_locked: boolean | null
           label_name: string | null
           parent_account_id: string | null
           user_id: string
@@ -155,6 +156,7 @@ export type Database = {
           full_name?: string | null
           id: string
           is_banned?: boolean | null
+          is_locked?: boolean | null
           label_name?: string | null
           parent_account_id?: string | null
           user_id: string
@@ -172,6 +174,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_banned?: boolean | null
+          is_locked?: boolean | null
           label_name?: string | null
           parent_account_id?: string | null
           user_id?: string

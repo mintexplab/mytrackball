@@ -184,69 +184,87 @@ const SubaccountManagement = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Sublabel User</TableHead>
-                <TableHead>User ID</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Master Account</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sublabelAccounts.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    No sublabel accounts configured
-                  </TableCell>
-                </TableRow>
-              ) : (
-                sublabelAccounts.map((sublabel) => (
-                  <TableRow key={sublabel.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {sublabel.avatar_url && (
-                          <img
-                            src={sublabel.avatar_url}
-                            alt={sublabel.display_name || sublabel.full_name}
-                            className="w-8 h-8 rounded-full"
-                          />
-                        )}
-                        <span className="font-medium">
-                          {sublabel.display_name || sublabel.full_name}
-                        </span>
+          <div className="space-y-8">
+            {masterAccounts.map((master) => {
+              const sublabels = sublabelAccounts.filter(
+                (sub) => sub.parent_account_id === master.id
+              );
+              
+              return (
+                <div key={master.id} className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg border border-primary/20">
+                    {master.avatar_url && (
+                      <img
+                        src={master.avatar_url}
+                        alt={master.display_name || master.full_name}
+                        className="w-12 h-12 rounded-full"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg">
+                        {master.display_name || master.full_name}
+                      </h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Badge variant="outline">{master.user_id}</Badge>
+                        <span>•</span>
+                        <span>{master.email}</span>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{sublabel.user_id}</Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{sublabel.email}</TableCell>
-                    <TableCell>
-                      {sublabel.parent ? (
-                        <div>
-                          <p className="font-medium">{sublabel.parent.display_name}</p>
-                          <p className="text-xs text-muted-foreground">ID: {sublabel.parent.user_id}</p>
+                    </div>
+                    <Badge className="bg-gradient-primary">Master Label</Badge>
+                  </div>
+
+                  {sublabels.length > 0 ? (
+                    <div className="ml-8 space-y-2">
+                      {sublabels.map((sublabel) => (
+                        <div
+                          key={sublabel.id}
+                          className="flex items-center gap-3 p-3 bg-background/50 rounded-lg border border-border"
+                        >
+                          {sublabel.avatar_url && (
+                            <img
+                              src={sublabel.avatar_url}
+                              alt={sublabel.display_name || sublabel.full_name}
+                              className="w-10 h-10 rounded-full"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <p className="font-medium">
+                              {sublabel.display_name || sublabel.full_name}
+                            </p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Badge variant="secondary" className="text-xs">
+                                {sublabel.user_id}
+                              </Badge>
+                              <span>•</span>
+                              <span>{sublabel.email}</span>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeSublabel(sublabel.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeSublabel(sublabel.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="ml-8 p-3 text-sm text-muted-foreground italic">
+                      No sublabels assigned
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {masterAccounts.length === 0 && (
+              <div className="text-center text-muted-foreground py-8">
+                No master labels found
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

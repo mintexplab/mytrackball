@@ -16,11 +16,13 @@ interface AdminPortalProps {
 }
 
 const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
+  const [activeTab, setActiveTab] = useState("users");
+  
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black">
       <div className="absolute inset-0 bg-gradient-accent opacity-5 blur-3xl" />
       
-      <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
+      <div className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
@@ -34,7 +36,40 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
+              <TabsList className="bg-muted/50 h-auto p-1 hidden md:flex">
+                <TabsTrigger value="users" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+                  <Users className="w-4 h-4 mr-2" />
+                  Users
+                </TabsTrigger>
+                <TabsTrigger value="invitations" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+                  <Mail className="w-4 h-4 mr-2" />
+                  Invitations
+                </TabsTrigger>
+                <TabsTrigger value="managers" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+                  <Users className="w-4 h-4 mr-2" />
+                  Managers
+                </TabsTrigger>
+                <TabsTrigger value="releases" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+                  <FileMusic className="w-4 h-4 mr-2" />
+                  Releases
+                </TabsTrigger>
+                <TabsTrigger value="labels" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Labels
+                </TabsTrigger>
+                <TabsTrigger value="announcements" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+                  <Megaphone className="w-4 h-4 mr-2" />
+                  Announcements
+                </TabsTrigger>
+                <TabsTrigger value="royalties" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Royalties
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
             <Button
               variant="outline"
               size="sm"
@@ -46,11 +81,11 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
             </Button>
           </div>
         </div>
-      </header>
+      </div>
 
       <main className="container mx-auto px-4 py-8 relative">
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="flex flex-col md:grid w-full md:max-w-5xl md:grid-cols-7 bg-muted/50 h-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="flex flex-col md:hidden w-full bg-muted/50 h-auto">
             <TabsTrigger value="users" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
               <Users className="w-4 h-4 mr-2" />
               Users

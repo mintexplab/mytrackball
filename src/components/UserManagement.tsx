@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Package, UserPlus, Ban } from "lucide-react";
+import { Package, UserPlus, Ban, Lock, Unlock, Trash2 } from "lucide-react";
 import { z } from "zod";
 import SendNotificationDialog from "./SendNotificationDialog";
 
@@ -141,11 +141,42 @@ const UserManagement = () => {
       .eq("id", userId);
 
     if (error) {
-      toast.error("Failed to update user status");
+      toast.error("Failed to update ban status");
       return;
     }
 
     toast.success(currentBanStatus ? "User unbanned" : "User banned");
+    fetchUsers();
+  };
+
+  const toggleLockUser = async (userId: string, currentLockStatus: boolean) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_locked: !currentLockStatus })
+      .eq("id", userId);
+
+    if (error) {
+      toast.error("Failed to update lock status");
+      return;
+    }
+
+    toast.success(currentLockStatus ? "Account unlocked" : "Account locked");
+    fetchUsers();
+  };
+
+  const deleteUser = async (userId: string, userEmail: string) => {
+    if (!confirm(`Are you sure you want to permanently delete ${userEmail}? This action cannot be undone.`)) {
+      return;
+    }
+
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+
+    if (error) {
+      toast.error("Failed to delete user");
+      return;
+    }
+
+    toast.success("User deleted successfully");
     fetchUsers();
   };
 
@@ -287,7 +318,9 @@ const UserManagement = () => {
                 <TableHead>Account Type</TableHead>
                 <TableHead>Current Plan</TableHead>
                 <TableHead>Assign Plan</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>Ban</TableHead>
+                <TableHead>Lock</TableHead>
+                <TableHead>Delete</TableHead>
                 <TableHead>Notify</TableHead>
               </TableRow>
             </TableHeader>
@@ -303,6 +336,11 @@ const UserManagement = () => {
                       <Badge variant="destructive" className="flex items-center gap-1 w-fit">
                         <Ban className="w-3 h-3" />
                         Banned
+                      </Badge>
+                    ) : user.is_locked ? (
+                      <Badge variant="secondary" className="flex items-center gap-1 w-fit bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                        <Lock className="w-3 h-3" />
+                        Locked
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
@@ -364,6 +402,36 @@ const UserManagement = () => {
                         onCheckedChange={() => toggleBanUser(user.id, user.is_banned)}
                       />
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleLockUser(user.id, user.is_locked)}
+                      className="gap-2"
+                    >
+                      {user.is_locked ? (
+                        <>
+                          <Unlock className="w-4 h-4" />
+                          Unlock
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4" />
+                          Lock
+                        </>
+                      )}
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteUser(user.id, user.email)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </TableCell>
                   <TableCell>
                     <SendNotificationDialog 
