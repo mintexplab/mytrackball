@@ -2,14 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Music2, Plus, Package, Settings } from "lucide-react";
+import { Plus, Package } from "lucide-react";
 import { toast } from "sonner";
 import AdminPortal from "@/components/AdminPortal";
 import ReleasesList from "@/components/ReleasesList";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ProfileDropdown } from "@/components/ProfileDropdown";
+import { AnnouncementDialog } from "@/components/AnnouncementDialog";
+import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -109,45 +110,21 @@ const Dashboard = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open("https://trackball.cc/pricing", "_blank")}
-              className="border-border hover:bg-muted transition-colors"
-            >
-              Upgrade
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open("https://billing.stripe.com/p/login/aFa3cw74O4B9bK22tTa7C00", "_blank")}
-              className="border-border hover:bg-muted transition-colors"
-            >
-              Manage Subscription
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/settings")}
-              className="border-border hover:bg-muted transition-colors"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSignOut}
-              className="border-border hover:bg-muted transition-colors"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
+          <div className="flex items-center gap-4">
+            {userPlan && (
+              <Badge variant="outline" className="border-primary/30 bg-primary/5">
+                Current subscription plan: {userPlan.plan.name}
+              </Badge>
+            )}
+            <ProfileDropdown
+              userEmail={user?.email}
+              onSignOut={handleSignOut}
+            />
           </div>
         </div>
       </header>
+
+      {user && <AnnouncementDialog userId={user.id} />}
 
       <main className="container mx-auto px-4 py-8 space-y-6 relative">
         <div className="grid gap-6 md:grid-cols-2">
