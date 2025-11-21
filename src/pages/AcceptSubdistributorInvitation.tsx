@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 export default function AcceptSubdistributorInvitation() {
   const [searchParams] = useSearchParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [invitation, setInvitation] = useState<any>(null);
@@ -19,14 +20,14 @@ export default function AcceptSubdistributorInvitation() {
 
   useEffect(() => {
     const token = searchParams.get("token");
-    if (!token) {
+    if (!token || !slug) {
       toast.error("Invalid invitation link");
       navigate("/");
       return;
     }
 
     loadInvitation(token);
-  }, [searchParams]);
+  }, [searchParams, slug]);
 
   const loadInvitation = async (token: string) => {
     try {

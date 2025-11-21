@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 
 interface Branding {
   name: string;
@@ -31,6 +32,28 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [branding, setBranding] = useState<Branding>(defaultBranding);
+  const location = useLocation();
+
+  // Check if we're on a subdistributor route
+  const subdistributorSlug = location.pathname.match(/^\/subdistributor\/([^/]+)/)?.[1];
+
+  const { data: subdistributorBySlug } = useQuery({
+    queryKey: ["subdistributor-by-slug", subdistributorSlug],
+    queryFn: async () => {
+      if (!subdistributorSlug) return null;
+
+      const { data, error } = await supabase
+        .from("subdistributors")
+        .select("name, primary_color, background_color, logo_url")
+        .eq("slug", subdistributorSlug)
+        .eq("is_active", true)
+        .single();
+
+      if (error) return null;
+      return data;
+    },
+    enabled: !!subdistributorSlug,
+  });
 
   const { data: profile } = useQuery({
     queryKey: ["user-profile-branding"],
@@ -55,15 +78,18 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({
       if (subdistError) return null;
       return subdist;
     },
+    enabled: !subdistributorSlug,
   });
 
   useEffect(() => {
-    if (profile) {
+    const brandingData = subdistributorBySlug || profile;
+    
+    if (brandingData) {
       const customBranding: Branding = {
-        name: profile.name || defaultBranding.name,
-        primaryColor: profile.primary_color || defaultBranding.primaryColor,
-        backgroundColor: profile.background_color || defaultBranding.backgroundColor,
-        logoUrl: profile.logo_url || undefined,
+        name: brandingData.name || defaultBranding.name,
+        primaryColor: brandingData.primary_color || defaultBranding.primaryColor,
+        backgroundColor: brandingData.background_color || defaultBranding.backgroundColor,
+        logoUrl: brandingData.logo_url || undefined,
       };
       setBranding(customBranding);
 
@@ -79,7 +105,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({
     } else {
       setBranding(defaultBranding);
     }
-  }, [profile]);
+  }, [profile, subdistributorBySlug]);
 
   return (
     <BrandingContext.Provider value={{ branding, isLoading: false }}>

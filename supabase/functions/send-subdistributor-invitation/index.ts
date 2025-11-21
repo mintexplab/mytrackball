@@ -59,10 +59,20 @@ serve(async (req: Request) => {
       throw insertError;
     }
 
-    // Send invitation email
-    // Get the origin from the request headers
+    // Get subdistributor slug
+    const { data: subdist } = await supabase
+      .from('subdistributors')
+      .select('slug')
+      .eq('id', subdistributorId)
+      .single();
+
+    if (!subdist?.slug) {
+      throw new Error("Subdistributor slug not found");
+    }
+
+    // Send invitation email using slug-based URL
     const origin = req.headers.get("origin") || req.headers.get("referer")?.split("/").slice(0, 3).join("/") || "";
-    const invitationUrl = `${origin}/accept-subdistributor-invitation?token=${invitationToken}`;
+    const invitationUrl = `${origin}/subdistributor/${subdist.slug}/accept?token=${invitationToken}`;
 
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
