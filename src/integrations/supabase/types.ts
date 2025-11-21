@@ -65,6 +65,36 @@ export type Database = {
         }
         Relationships: []
       }
+      artist_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          email: string
+          expires_at: string | null
+          id: string
+          invited_by: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email: string
+          expires_at?: string | null
+          id?: string
+          invited_by: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string | null
+          id?: string
+          invited_by?: string
+          status?: string
+        }
+        Relationships: []
+      }
       collaborators: {
         Row: {
           created_at: string | null
@@ -118,6 +148,27 @@ export type Database = {
           last_number?: number
           prefix?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      labels: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -239,6 +290,7 @@ export type Database = {
           id: string
           is_banned: boolean | null
           is_locked: boolean | null
+          label_id: string | null
           label_name: string | null
           parent_account_id: string | null
           stripe_customer_id: string | null
@@ -259,6 +311,7 @@ export type Database = {
           id: string
           is_banned?: boolean | null
           is_locked?: boolean | null
+          label_id?: string | null
           label_name?: string | null
           parent_account_id?: string | null
           stripe_customer_id?: string | null
@@ -279,6 +332,7 @@ export type Database = {
           id?: string
           is_banned?: boolean | null
           is_locked?: boolean | null
+          label_id?: string | null
           label_name?: string | null
           parent_account_id?: string | null
           stripe_customer_id?: string | null
@@ -287,6 +341,13 @@ export type Database = {
           user_timezone?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_label_id_fkey"
+            columns: ["label_id"]
+            isOneToOne: false
+            referencedRelation: "labels"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_parent_account_id_fkey"
             columns: ["parent_account_id"]

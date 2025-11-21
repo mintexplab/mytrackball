@@ -16,18 +16,21 @@ const SubaccountManagement = () => {
   const fetchAccounts = async () => {
     setLoading(true);
     
-    // Fetch all users with Signature or Prestige plans who registered as labels
+    // Fetch all labels with their owner profiles
     const { data: labelsData } = await supabase
-      .from("profiles")
+      .from("labels")
       .select(`
         *,
-        user_plans!inner(
-          plan:plans!inner(name)
+        profiles!labels_user_id_fkey(
+          email,
+          avatar_url,
+          user_id,
+          user_plans(
+            plans(name)
+          )
         )
       `)
-      .or("user_plans.plan.name.eq.Trackball Signature,user_plans.plan.name.eq.Trackball Prestige")
-      .not("label_name", "is", null)
-      .order("label_name");
+      .order("name");
 
     setLabelAccounts(labelsData || []);
     setLoading(false);
@@ -60,27 +63,27 @@ const SubaccountManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {labelAccounts.map((label) => (
+              {labelAccounts.map((label: any) => (
                 <TableRow key={label.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
-                      {label.avatar_url && (
+                      {label.profiles?.avatar_url && (
                         <img
-                          src={label.avatar_url}
-                          alt={label.label_name}
+                          src={label.profiles.avatar_url}
+                          alt={label.name}
                           className="w-8 h-8 rounded-full"
                         />
                       )}
-                      {label.label_name}
+                      {label.name}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{label.user_id}</Badge>
+                    <Badge variant="outline">{label.id.slice(0, 8)}</Badge>
                   </TableCell>
-                  <TableCell>{label.email}</TableCell>
+                  <TableCell>{label.profiles?.email}</TableCell>
                   <TableCell>
                     <Badge className="bg-gradient-primary">
-                      {label.user_plans?.[0]?.plan?.name || "N/A"}
+                      {label.profiles?.user_plans?.[0]?.plans?.name || "N/A"}
                     </Badge>
                   </TableCell>
                 </TableRow>
