@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Plus, Trash2, Music } from "lucide-react";
+import { z } from "zod";
 
 interface EnhancedCreateReleaseProps {
   children: React.ReactNode;
@@ -23,6 +24,32 @@ interface Track {
   audio_file_url: string;
   featured_artists: string;
 }
+
+const releaseSchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
+  artist_name: z.string().trim().min(1, "Artist name is required").max(200, "Artist name must be less than 200 characters"),
+  release_date: z.string().optional(),
+  genre: z.string().trim().max(100, "Genre must be less than 100 characters").optional(),
+  artwork_url: z.string().trim().url("Must be a valid URL").max(500, "URL too long").optional().or(z.literal("")),
+  copyright_line: z.string().trim().max(200, "Copyright line must be less than 200 characters").optional(),
+  phonographic_line: z.string().trim().max(200, "Phonographic line must be less than 200 characters").optional(),
+  featured_artists: z.string().trim().max(500, "Featured artists must be less than 500 characters").optional(),
+  courtesy_line: z.string().trim().max(200, "Courtesy line must be less than 200 characters").optional(),
+  is_multi_disc: z.boolean(),
+  disc_number: z.number().int().min(1).max(99),
+  volume_number: z.number().int().min(1).max(99),
+  total_discs: z.number().int().min(1).max(99),
+  total_volumes: z.number().int().min(1).max(99),
+  notes: z.string().trim().max(2000, "Notes must be less than 2000 characters").optional(),
+});
+
+const trackSchema = z.object({
+  title: z.string().trim().min(1, "Track title is required").max(200, "Track title must be less than 200 characters"),
+  duration: z.string().optional(),
+  isrc: z.string().trim().max(20, "ISRC must be less than 20 characters").optional(),
+  audio_file_url: z.string().trim().url("Must be a valid URL").max(500, "URL too long").optional().or(z.literal("")),
+  featured_artists: z.string().trim().max(500, "Featured artists must be less than 500 characters").optional(),
+});
 
 const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   const [open, setOpen] = useState(false);
@@ -81,6 +108,20 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     setLoading(true);
 
     try {
+      // Validate release data
+      const validatedRelease = releaseSchema.parse(formData);
+
+      // Validate all tracks
+      for (const track of tracks) {
+        trackSchema.parse({
+          title: track.title,
+          duration: track.duration,
+          isrc: track.isrc,
+          audio_file_url: track.audio_file_url,
+          featured_artists: track.featured_artists,
+        });
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -89,8 +130,21 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
         .from("releases")
         .insert({
           user_id: user.id,
-          ...formData,
-          featured_artists: formData.featured_artists ? formData.featured_artists.split(",").map(a => a.trim()) : [],
+          title: validatedRelease.title,
+          artist_name: validatedRelease.artist_name,
+          release_date: validatedRelease.release_date || null,
+          genre: validatedRelease.genre || null,
+          artwork_url: validatedRelease.artwork_url || null,
+          copyright_line: validatedRelease.copyright_line || null,
+          phonographic_line: validatedRelease.phonographic_line || null,
+          courtesy_line: validatedRelease.courtesy_line || null,
+          featured_artists: validatedRelease.featured_artists ? validatedRelease.featured_artists.split(",").map(a => a.trim()) : [],
+          is_multi_disc: validatedRelease.is_multi_disc,
+          disc_number: validatedRelease.disc_number,
+          volume_number: validatedRelease.volume_number,
+          total_discs: validatedRelease.total_discs,
+          total_volumes: validatedRelease.total_volumes,
+          notes: validatedRelease.notes || null,
         })
         .select()
         .single();
@@ -119,7 +173,11 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
       resetForm();
       window.location.reload();
     } catch (error: any) {
-      toast.error(error.message);
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error(error.message);
+      }
     } finally {
       setLoading(false);
     }
