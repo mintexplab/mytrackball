@@ -6,22 +6,22 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 const plans = [
   {
     name: "Trackball Free",
-    price: "Free",
+    price: "$0 CAD/year",
     link: null,
   },
   {
     name: "Trackball Lite",
-    price: "$9.99/mo",
+    price: "$14.99 CAD/year",
     link: "https://buy.stripe.com/dRm5kE3SC7NleWeb0pa7C0g",
   },
   {
     name: "Trackball Signature",
-    price: "$19.99/mo",
+    price: "$29.99 CAD/year",
     link: "https://buy.stripe.com/5kQaEYdtc1oXeWegkJa7C0h",
   },
   {
     name: "Trackball Prestige",
-    price: "$49.99/mo",
+    price: "$51.29 CAD/year",
     link: "https://buy.stripe.com/fZu7sMbl4ffN3dw0lLa7C0l",
   },
 ];
