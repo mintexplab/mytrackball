@@ -46,7 +46,7 @@ export const SubdistributorManagement = () => {
   const [slug, setSlug] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#dc2626");
   const [backgroundColor, setBackgroundColor] = useState("#000000");
-  const [ownerId, setOwnerId] = useState("");
+  const [ownerId, setOwnerId] = useState("none");
   const queryClient = useQueryClient();
 
   const { data: subdistributors, isLoading } = useQuery({
@@ -91,14 +91,14 @@ export const SubdistributorManagement = () => {
         slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
         primary_color: primaryColor,
         background_color: backgroundColor,
-        owner_id: ownerId || null,
+        owner_id: ownerId === "none" ? null : ownerId,
         created_by: profile?.id,
       });
 
       if (error) throw error;
 
       // If owner is set, assign subdistributor_admin role
-      if (ownerId) {
+      if (ownerId && ownerId !== "none") {
         const { error: roleError } = await supabase
           .from("user_roles")
           .insert({
@@ -118,7 +118,7 @@ export const SubdistributorManagement = () => {
       setSlug("");
       setPrimaryColor("#dc2626");
       setBackgroundColor("#000000");
-      setOwnerId("");
+      setOwnerId("none");
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to create sub-distributor");
@@ -222,7 +222,7 @@ export const SubdistributorManagement = () => {
                 <SelectValue placeholder="Select owner..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No owner</SelectItem>
+                <SelectItem value="none">No owner</SelectItem>
                 {users?.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.email} - {user.full_name}
