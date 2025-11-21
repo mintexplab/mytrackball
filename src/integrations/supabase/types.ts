@@ -65,6 +65,36 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           created_at: string | null
@@ -146,6 +176,7 @@ export type Database = {
           rejection_reason: string | null
           release_date: string | null
           status: string | null
+          takedown_requested: boolean | null
           title: string
           total_discs: number | null
           total_volumes: number | null
@@ -177,6 +208,7 @@ export type Database = {
           rejection_reason?: string | null
           release_date?: string | null
           status?: string | null
+          takedown_requested?: boolean | null
           title: string
           total_discs?: number | null
           total_volumes?: number | null
@@ -208,6 +240,7 @@ export type Database = {
           rejection_reason?: string | null
           release_date?: string | null
           status?: string | null
+          takedown_requested?: boolean | null
           title?: string
           total_discs?: number | null
           total_volumes?: number | null
@@ -219,6 +252,51 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "releases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      royalties: {
+        Row: {
+          amount: number
+          created_at: string | null
+          created_by: string | null
+          id: string
+          notes: string | null
+          period: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          period: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          period?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "royalties_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "royalties_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"

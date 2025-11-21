@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Clock } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Trash2, AlertTriangle } from "lucide-react";
 import ExportDDEX from "./ExportDDEX";
 import ReleaseInfoDialog from "./ReleaseInfoDialog";
 import ReleaseRejectionDialog from "./ReleaseRejectionDialog";
@@ -58,6 +58,40 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
     }
 
     toast.success(`Release ${status}`);
+    fetchReleases();
+  };
+
+  const deleteRelease = async (releaseId: string) => {
+    if (!confirm("Are you sure you want to delete this release? This action cannot be undone.")) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("releases")
+      .delete()
+      .eq("id", releaseId);
+
+    if (error) {
+      toast.error("Failed to delete release");
+      return;
+    }
+
+    toast.success("Release deleted successfully");
+    fetchReleases();
+  };
+
+  const requestTakedown = async (releaseId: string) => {
+    const { error } = await supabase
+      .from("releases")
+      .update({ takedown_requested: true })
+      .eq("id", releaseId);
+
+    if (error) {
+      toast.error("Failed to request takedown");
+      return;
+    }
+
+    toast.success("Takedown request submitted");
     fetchReleases();
   };
 
@@ -126,9 +160,9 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
               <TableCell className="text-muted-foreground">{release.genre || "—"}</TableCell>
               <TableCell>{getStatusBadge(release.status)}</TableCell>
               <TableCell>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <ReleaseInfoDialog releaseId={release.id} />
-                  {isAdmin && (
+                  {isAdmin ? (
                     <>
                       <ExportDDEX releaseId={release.id} />
                       <Button
@@ -145,6 +179,31 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
                         currentStatus={release.status}
                         onUpdate={fetchReleases}
                       />
+                    </>
+                  ) : (
+                    <>
+                      {release.status === "approved" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => requestTakedown(release.id)}
+                          disabled={release.takedown_requested}
+                          className="border-yellow-500/30 hover:bg-yellow-500/20 text-yellow-300"
+                        >
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                          {release.takedown_requested ? "Takedown Requested" : "Request Takedown"}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteRelease(release.id)}
+                          className="border-red-500/30 hover:bg-red-500/20 text-red-300"
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          Delete
+                        </Button>
+                      )}
                     </>
                   )}
                 </div>
