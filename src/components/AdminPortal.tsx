@@ -13,7 +13,6 @@ import { PayoutRequestsManagement } from "./PayoutRequestsManagement";
 import { SubdistributorManagement } from "./SubdistributorManagement";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useBranding } from "@/contexts/BrandingContext";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -21,7 +20,6 @@ interface AdminPortalProps {
 
 const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
   const [activeTab, setActiveTab] = useState("users");
-  const { branding } = useBranding();
   
   const { data: userRole } = useQuery({
     queryKey: ["user-admin-role"],
@@ -53,19 +51,15 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
       <div className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            {branding.logoUrl ? (
-              <img src={branding.logoUrl} alt={branding.name} className="w-10 h-10 rounded-lg object-cover" />
-            ) : (
-              <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <Megaphone className="w-6 h-6 text-white" />
-              </div>
-            )}
+            <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+              <Megaphone className="w-6 h-6 text-white" />
+            </div>
             <div>
               <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                {branding.name}
+                MY TRACKBALL
               </h1>
               <p className="text-xs text-muted-foreground">
-                {isSubdistAdmin ? "Admin Portal" : "Master Admin Portal"}
+                {isSubdistAdmin ? "Sub-Distributor Portal" : "Admin Portal"}
               </p>
             </div>
           </div>

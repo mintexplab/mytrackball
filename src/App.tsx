@@ -11,8 +11,6 @@ import CreateRelease from "./pages/CreateRelease";
 import AccountSettings from "./pages/AccountSettings";
 import SubscriptionManagement from "./pages/SubscriptionManagement";
 import AcceptInvitation from "./pages/AcceptInvitation";
-import AcceptSubdistributorInvitation from "./pages/AcceptSubdistributorInvitation";
-import SubdistributorAuth from "./pages/SubdistributorAuth";
 import NotFound from "./pages/NotFound";
 import Footer from "./components/Footer";
 
@@ -21,20 +19,17 @@ const queryClient = new QueryClient();
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <BrandingProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
+      <BrandingProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
             <div className="flex flex-col min-h-screen">
               <div className="flex-1">
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/accept-invitation" element={<AcceptInvitation />} />
-                  <Route path="/accept-subdistributor-invitation" element={<AcceptSubdistributorInvitation />} />
-                  <Route path="/subdistributor/:slug" element={<SubdistributorAuth />} />
-                  <Route path="/subdistributor/:slug/accept" element={<AcceptSubdistributorInvitation />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/create-release" element={<CreateRelease />} />
                   <Route path="/settings" element={<AccountSettings />} />
@@ -46,9 +41,9 @@ const App = () => {
               </div>
               <Footer />
             </div>
-          </TooltipProvider>
-        </BrandingProvider>
-      </BrowserRouter>
+          </BrowserRouter>
+        </TooltipProvider>
+      </BrandingProvider>
     </QueryClientProvider>
   );
 };

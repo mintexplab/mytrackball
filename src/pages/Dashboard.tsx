@@ -23,7 +23,6 @@ const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isSubdistAdmin, setIsSubdistAdmin] = useState(false);
   const [userPlan, setUserPlan] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [releaseCount, setReleaseCount] = useState(0);
@@ -41,7 +40,6 @@ const Dashboard = () => {
         if (session?.user) {
           setTimeout(() => {
             checkAdminStatus(session.user.id);
-            checkSubdistributorAdminStatus(session.user.id);
             fetchUserPlan(session.user.id);
           }, 0);
         }
@@ -68,7 +66,6 @@ const Dashboard = () => {
         }
         
         checkAdminStatus(session.user.id);
-        checkSubdistributorAdminStatus(session.user.id);
         fetchUserPlan(session.user.id);
         fetchReleaseCount(session.user.id);
       } else {
@@ -95,20 +92,6 @@ const Dashboard = () => {
     setIsAdmin(!!data);
   };
 
-  const checkSubdistributorAdminStatus = async (userId: string) => {
-    const { data, error } = await supabase.rpc('has_role', {
-      _user_id: userId,
-      _role: 'subdistributor_admin'
-    });
-
-    if (error) {
-      console.error('Error checking subdistributor admin status:', error);
-      setIsSubdistAdmin(false);
-      return;
-    }
-
-    setIsSubdistAdmin(!!data);
-  };
   const fetchUserPlan = async (userId: string) => {
     const { data } = await supabase
       .from("user_plans")
@@ -122,7 +105,7 @@ const Dashboard = () => {
     
     setUserPlan(data);
 
-    // Fetch profile with account manager and subdistributor fields
+    // Fetch profile with account manager fields
     const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
@@ -130,8 +113,6 @@ const Dashboard = () => {
       .single();
     
     setProfile(profileData);
-    // Treat users linked to a subdistributor as subdistributor admins for routing
-    setIsSubdistAdmin(!!profileData?.subdistributor_id);
   };
 
   // Refresh profile data periodically to catch admin updates
@@ -177,7 +158,7 @@ const Dashboard = () => {
     );
   }
 
-  if (isAdmin || isSubdistAdmin) {
+  if (isAdmin) {
     return <AdminPortal onSignOut={handleSignOut} />;
   }
 

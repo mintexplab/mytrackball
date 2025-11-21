@@ -8,16 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Trash2, Plus } from "lucide-react";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Subdistributor {
   id: string;
@@ -39,7 +35,7 @@ export const SubdistributorManagement = () => {
   const [slug, setSlug] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#dc2626");
   const [backgroundColor, setBackgroundColor] = useState("#000000");
-  const [ownerEmail, setOwnerEmail] = useState("");
+  const [ownerId, setOwnerId] = useState("");
   const queryClient = useQueryClient();
 
   const { data: subdistributors, isLoading } = useQuery({
@@ -58,6 +54,18 @@ export const SubdistributorManagement = () => {
     },
   });
 
+  const { data: users } = useQuery({
+    queryKey: ["all-users"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, email, full_name")
+        .order("email");
+
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const createSubdistributor = useMutation({
     mutationFn: async () => {
@@ -67,52 +75,39 @@ export const SubdistributorManagement = () => {
         .eq("id", (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      const { data: subdist, error } = await supabase
-        .from("subdistributors")
-        .insert({
-          name,
-          slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
-          primary_color: primaryColor,
-          background_color: backgroundColor,
-          created_by: profile?.id,
-        })
-        .select()
-        .single();
+      const { error } = await supabase.from("subdistributors").insert({
+        name,
+        slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+        primary_color: primaryColor,
+        background_color: backgroundColor,
+        owner_id: ownerId || null,
+        created_by: profile?.id,
+      });
 
       if (error) throw error;
 
-      // Send invitation email if owner email provided
-      if (ownerEmail && subdist) {
-        const { error: inviteError } = await supabase.functions.invoke(
-          "send-subdistributor-invitation",
-          {
-            body: {
-              subdistributorId: subdist.id,
-              subdistributorName: name,
-              ownerEmail,
-              primaryColor,
-              backgroundColor,
-            },
-          }
-        );
+      // If owner is set, assign subdistributor_admin role
+      if (ownerId) {
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({
+            user_id: ownerId,
+            role: "subdistributor_admin",
+          });
 
-        if (inviteError) {
-          console.error("Failed to send invitation:", inviteError);
-          throw new Error("Subdistributor created but invitation email failed to send");
+        if (roleError && !roleError.message.includes("duplicate")) {
+          console.error("Failed to assign role:", roleError);
         }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subdistributors"] });
-      toast.success(ownerEmail 
-        ? "Sub-distributor created and invitation sent" 
-        : "Sub-distributor created successfully"
-      );
+      toast.success("Sub-distributor created successfully");
       setName("");
       setSlug("");
       setPrimaryColor("#dc2626");
       setBackgroundColor("#000000");
-      setOwnerEmail("");
+      setOwnerId("");
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to create sub-distributor");
@@ -210,17 +205,20 @@ export const SubdistributorManagement = () => {
           </div>
 
           <div>
-            <Label htmlFor="ownerEmail">Owner Email (Optional)</Label>
-            <Input
-              id="ownerEmail"
-              type="email"
-              value={ownerEmail}
-              onChange={(e) => setOwnerEmail(e.target.value)}
-              placeholder="owner@example.com"
-            />
-            <p className="text-sm text-muted-foreground mt-1">
-              An invitation will be sent to this email
-            </p>
+            <Label htmlFor="owner">Owner (Optional)</Label>
+            <Select value={ownerId} onValueChange={setOwnerId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select owner..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No owner</SelectItem>
+                {users?.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.email} - {user.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <Button
@@ -252,9 +250,6 @@ export const SubdistributorManagement = () => {
                   <div className="space-y-1">
                     <h3 className="font-semibold">{subdist.name}</h3>
                     <p className="text-sm text-muted-foreground">Slug: {subdist.slug}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Login URL: <code className="bg-muted px-1 rounded">/subdistributor/{subdist.slug}</code>
-                    </p>
                     {subdist.owner && (
                       <p className="text-sm text-muted-foreground">
                         Owner: {subdist.owner.email}
@@ -273,30 +268,13 @@ export const SubdistributorManagement = () => {
                       />
                     </div>
                   </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="icon">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Sub-Distributor</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete "{subdist.name}"? This action cannot be undone and will remove all associated branding and configuration.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => deleteSubdistributor.mutate(subdist.id)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => deleteSubdistributor.mutate(subdist.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               ))}
             </div>
