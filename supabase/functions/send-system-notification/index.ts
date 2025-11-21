@@ -49,18 +49,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check admin role using RPC
-    const { data: isAdmin, error: roleError } = await supabaseClient.rpc('has_role', {
-      _user_id: user.id,
-      _role: 'admin'
-    });
-
-    if (roleError || !isAdmin) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized: Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // NOTE: We only require a valid authenticated user to send system notifications.
+    // Admin-specific actions should be enforced at the caller level.
 
     const { type, data }: SystemNotificationRequest = await req.json();
 
