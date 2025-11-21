@@ -143,6 +143,7 @@ export type Database = {
           label_name: string | null
           notes: string | null
           phonographic_line: string | null
+          rejection_reason: string | null
           release_date: string | null
           status: string | null
           title: string
@@ -173,6 +174,7 @@ export type Database = {
           label_name?: string | null
           notes?: string | null
           phonographic_line?: string | null
+          rejection_reason?: string | null
           release_date?: string | null
           status?: string | null
           title: string
@@ -203,6 +205,7 @@ export type Database = {
           label_name?: string | null
           notes?: string | null
           phonographic_line?: string | null
+          rejection_reason?: string | null
           release_date?: string | null
           status?: string | null
           title?: string
@@ -227,38 +230,53 @@ export type Database = {
         Row: {
           audio_file_url: string | null
           audio_path: string | null
+          composer: string | null
+          contributor: string | null
           created_at: string | null
           duration: number | null
           featured_artists: string[] | null
           id: string
           isrc: string | null
+          publisher: string | null
+          publisher_ipi: string | null
           release_id: string
           title: string
           track_number: number
+          writer: string | null
         }
         Insert: {
           audio_file_url?: string | null
           audio_path?: string | null
+          composer?: string | null
+          contributor?: string | null
           created_at?: string | null
           duration?: number | null
           featured_artists?: string[] | null
           id?: string
           isrc?: string | null
+          publisher?: string | null
+          publisher_ipi?: string | null
           release_id: string
           title: string
           track_number: number
+          writer?: string | null
         }
         Update: {
           audio_file_url?: string | null
           audio_path?: string | null
+          composer?: string | null
+          contributor?: string | null
           created_at?: string | null
           duration?: number | null
           featured_artists?: string[] | null
           id?: string
           isrc?: string | null
+          publisher?: string | null
+          publisher_ipi?: string | null
           release_id?: string
           title?: string
           track_number?: number
+          writer?: string | null
         }
         Relationships: [
           {

@@ -17,6 +17,7 @@ const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userPlan, setUserPlan] = useState<any>(null);
+  const [releaseCount, setReleaseCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -42,6 +43,7 @@ const Dashboard = () => {
       if (session?.user) {
         checkAdminStatus(session.user.id);
         fetchUserPlan(session.user.id);
+        fetchReleaseCount(session.user.id);
       } else {
         navigate("/auth");
       }
@@ -74,6 +76,15 @@ const Dashboard = () => {
       .maybeSingle();
     
     setUserPlan(data);
+  };
+
+  const fetchReleaseCount = async (userId: string) => {
+    const { count } = await supabase
+      .from("releases")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId);
+    
+    setReleaseCount(count || 0);
   };
 
   const handleSignOut = async () => {
@@ -179,11 +190,11 @@ const Dashboard = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-muted/50">
                   <p className="text-sm text-muted-foreground">Total Releases</p>
-                  <p className="text-2xl font-bold text-foreground">0</p>
+                  <p className="text-2xl font-bold text-foreground">{releaseCount}</p>
                 </div>
                 <div className="p-4 rounded-lg bg-muted/50">
                   <p className="text-sm text-muted-foreground">Active</p>
-                  <p className="text-2xl font-bold text-accent">0</p>
+                  <p className="text-2xl font-bold text-accent">{releaseCount}</p>
                 </div>
               </div>
             </CardContent>

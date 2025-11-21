@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import ExportDDEX from "./ExportDDEX";
 import ReleaseInfoDialog from "./ReleaseInfoDialog";
+import ReleaseRejectionDialog from "./ReleaseRejectionDialog";
 
 interface ReleasesListProps {
   userId?: string;
@@ -139,15 +140,11 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
                       >
                         Approve
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateReleaseStatus(release.id, "rejected")}
-                        disabled={release.status === "rejected"}
-                        className="border-red-500/30 hover:bg-red-500/20 text-red-300"
-                      >
-                        Reject
-                      </Button>
+                      <ReleaseRejectionDialog
+                        releaseId={release.id}
+                        currentStatus={release.status}
+                        onUpdate={fetchReleases}
+                      />
                     </>
                   )}
                 </div>
