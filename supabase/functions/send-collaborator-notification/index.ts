@@ -81,7 +81,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Trackball Distribution <onboarding@resend.dev>",
+        from: "Trackball Distribution <notifications@trackball.cc>",
         to: [collaboratorEmail],
         subject,
         html,
