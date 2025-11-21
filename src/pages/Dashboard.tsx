@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Music2, Bell, DollarSign, HelpCircle, Mail } from "lucide-react";
+import { Plus, Package, Music2, Bell, DollarSign, HelpCircle, Mail, Users } from "lucide-react";
 import { toast } from "sonner";
 import AdminPortal from "@/components/AdminPortal";
 import ReleasesList from "@/components/ReleasesList";
@@ -15,6 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NotificationsTab from "@/components/NotificationsTab";
 import RoyaltiesTab from "@/components/RoyaltiesTab";
 import ArtistLabelOnboarding from "@/components/ArtistLabelOnboarding";
+import SublabelManagement from "@/components/SublabelManagement";
+import SublabelInvitationAcceptance from "@/components/SublabelInvitationAcceptance";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -201,13 +203,18 @@ const Dashboard = () => {
 
       {user && <AnnouncementDialog userId={user.id} />}
       {user && <ArtistLabelOnboarding userId={user.id} userPlan={userPlan} />}
+      {user && <SublabelInvitationAcceptance userId={user.id} />}
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
         <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-4 bg-muted/50 h-auto p-1">
+          <TabsList className="grid w-full max-w-3xl grid-cols-5 bg-muted/50 h-auto p-1">
             <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
               <Package className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="sublabels" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
+              <Users className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Sublabels</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
               <Bell className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
@@ -302,6 +309,10 @@ const Dashboard = () => {
                 <ReleasesList userId={user?.id} isAdmin={false} />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="sublabels" className="animate-fade-in">
+            {user && <SublabelManagement userId={user.id} userPlan={userPlan} profile={profile} />}
           </TabsContent>
 
           <TabsContent value="notifications" className="animate-fade-in">
