@@ -35,22 +35,33 @@ const UserManagement = () => {
   }, []);
 
   const fetchUsers = async () => {
-    const { data, error } = await supabase
+    // Fetch profiles first
+    const { data: profilesData, error: profilesError } = await supabase
       .from("profiles")
-      .select(`
-        *,
-        user_plans (
-          *,
-          plan:plans(*)
-        )
-      `);
+      .select("*");
 
-    if (error) {
+    if (profilesError) {
       toast.error("Failed to load users");
+      console.error("Profiles error:", profilesError);
+      setLoading(false);
       return;
     }
 
-    setUsers(data || []);
+    // Fetch user plans separately
+    const { data: plansData } = await supabase
+      .from("user_plans")
+      .select(`
+        *,
+        plan:plans(*)
+      `);
+
+    // Merge the data
+    const usersWithPlans = profilesData.map(profile => ({
+      ...profile,
+      user_plans: plansData?.filter(p => p.user_id === profile.id) || []
+    }));
+
+    setUsers(usersWithPlans);
     setLoading(false);
   };
 

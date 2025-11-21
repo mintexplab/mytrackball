@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NotificationsTab from "@/components/NotificationsTab";
 import RoyaltiesTab from "@/components/RoyaltiesTab";
+import ArtistLabelOnboarding from "@/components/ArtistLabelOnboarding";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -199,6 +200,7 @@ const Dashboard = () => {
       </header>
 
       {user && <AnnouncementDialog userId={user.id} />}
+      {user && <ArtistLabelOnboarding userId={user.id} userPlan={userPlan} />}
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
         <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
