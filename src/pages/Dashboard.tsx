@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Music2, Bell, DollarSign } from "lucide-react";
+import { Plus, Package, Music2, Bell, DollarSign, HelpCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
 import AdminPortal from "@/components/AdminPortal";
 import ReleasesList from "@/components/ReleasesList";
@@ -20,6 +20,7 @@ const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userPlan, setUserPlan] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [releaseCount, setReleaseCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showLoader, setShowLoader] = useState(false);
@@ -95,6 +96,15 @@ const Dashboard = () => {
       .maybeSingle();
     
     setUserPlan(data);
+
+    // Fetch profile with new fields
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+    
+    setProfile(profileData);
   };
 
   const fetchReleaseCount = async (userId: string) => {
@@ -153,9 +163,14 @@ const Dashboard = () => {
               </div>
               <div className="min-w-0">
                 <h1 className="text-base sm:text-xl font-bold bg-gradient-primary bg-clip-text text-transparent truncate">
-                  MY TRACKBALL
+                  {profile?.display_name || profile?.full_name || "MY TRACKBALL"}
                 </h1>
-                <p className="text-xs text-muted-foreground hidden sm:block">Artist Dashboard</p>
+                {profile?.label_name && (
+                  <p className="text-xs text-muted-foreground truncate">{profile.label_name}</p>
+                )}
+                {profile?.user_id && (
+                  <p className="text-xs text-muted-foreground/70">ID:{profile.user_id}</p>
+                )}
               </div>
             </div>
             
@@ -183,7 +198,7 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
         <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-3 bg-muted/50 h-auto p-1">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4 bg-muted/50 h-auto p-1">
             <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
               <Package className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Overview</span>
@@ -195,6 +210,10 @@ const Dashboard = () => {
             <TabsTrigger value="royalties" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
               <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Royalties</span>
+            </TabsTrigger>
+            <TabsTrigger value="help" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
+              <HelpCircle className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Help</span>
             </TabsTrigger>
           </TabsList>
 
@@ -285,6 +304,67 @@ const Dashboard = () => {
 
           <TabsContent value="royalties" className="animate-fade-in">
             {user && <RoyaltiesTab userId={user.id} />}
+          </TabsContent>
+
+          <TabsContent value="help" className="animate-fade-in">
+            <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                  <HelpCircle className="w-6 h-6 text-primary" />
+                  Help & Support
+                </CardTitle>
+                <CardDescription>Get assistance with your account</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="p-6 rounded-lg bg-muted/50 border border-border">
+                    <h3 className="font-semibold text-lg mb-2">Contact Us</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Need help with your account, releases, or have questions? Our support team is here to assist you.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button
+                        onClick={() => window.location.href = 'mailto:contact@trackball.cc'}
+                        className="bg-gradient-primary hover:opacity-90"
+                      >
+                        <Mail className="w-4 h-4 mr-2" />
+                        Email Support
+                      </Button>
+                      <span className="text-sm text-muted-foreground self-center">
+                        contact@trackball.cc
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                      <h4 className="font-medium mb-2">Distribution Support</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Questions about release submissions, distribution status, or platform delivery
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                      <h4 className="font-medium mb-2">Account & Billing</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Issues with your plan, payments, or account settings
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                      <h4 className="font-medium mb-2">Technical Issues</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Upload problems, file format questions, or technical difficulties
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                      <h4 className="font-medium mb-2">General Inquiries</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Partnership opportunities, feature requests, or general questions
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </main>

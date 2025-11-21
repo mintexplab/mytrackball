@@ -129,28 +129,48 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          display_name: string | null
           email: string
           full_name: string | null
           id: string
           is_banned: boolean | null
+          label_name: string | null
+          parent_account_id: string | null
+          user_id: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          display_name?: string | null
           email: string
           full_name?: string | null
           id: string
           is_banned?: boolean | null
+          label_name?: string | null
+          parent_account_id?: string | null
+          user_id: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          display_name?: string | null
           email?: string
           full_name?: string | null
           id?: string
           is_banned?: boolean | null
+          label_name?: string | null
+          parent_account_id?: string | null
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_parent_account_id_fkey"
+            columns: ["parent_account_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       releases: {
         Row: {
@@ -474,6 +494,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_user_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
