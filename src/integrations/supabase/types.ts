@@ -330,8 +330,10 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
+          invitation_type: string | null
           invitee_email: string
           inviter_id: string
+          permissions: string[] | null
           status: string
         }
         Insert: {
@@ -339,8 +341,10 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          invitation_type?: string | null
           invitee_email: string
           inviter_id: string
+          permissions?: string[] | null
           status?: string
         }
         Update: {
@@ -348,8 +352,10 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          invitation_type?: string | null
           invitee_email?: string
           inviter_id?: string
+          permissions?: string[] | null
           status?: string
         }
         Relationships: [
@@ -449,6 +455,45 @@ export type Database = {
             columns: ["announcement_id"]
             isOneToOne: false
             referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_permissions: {
+        Row: {
+          created_at: string | null
+          granted_by: string | null
+          id: string
+          permission: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          granted_by?: string | null
+          id?: string
+          permission: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          granted_by?: string | null
+          id?: string
+          permission?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

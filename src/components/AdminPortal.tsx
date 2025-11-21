@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2 } from "lucide-react";
+import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Mail } from "lucide-react";
 import UserManagement from "./UserManagement";
 import ReleasesList from "./ReleasesList";
 import { AnnouncementManagement } from "./AnnouncementManagement";
 import RoyaltiesManagement from "./RoyaltiesManagement";
 import SubaccountManagement from "./SubaccountManagement";
+import ClientInvitations from "./ClientInvitations";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -48,10 +49,14 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
 
       <main className="container mx-auto px-4 py-8 relative">
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full max-w-3xl grid-cols-5 bg-muted/50">
+          <TabsList className="grid w-full max-w-4xl grid-cols-6 bg-muted/50">
             <TabsTrigger value="users" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
               <Users className="w-4 h-4 mr-2" />
               Users
+            </TabsTrigger>
+            <TabsTrigger value="invitations" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+              <Mail className="w-4 h-4 mr-2" />
+              Invitations
             </TabsTrigger>
             <TabsTrigger value="releases" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
               <FileMusic className="w-4 h-4 mr-2" />
@@ -73,6 +78,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
 
           <TabsContent value="users">
             <UserManagement />
+          </TabsContent>
+
+          <TabsContent value="invitations">
+            <ClientInvitations />
           </TabsContent>
 
           <TabsContent value="releases">

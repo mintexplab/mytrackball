@@ -14,6 +14,8 @@ interface InvitationRequest {
   inviteeEmail: string;
   labelName: string;
   invitationId: string;
+  invitationType?: string;
+  permissions?: string[];
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -22,9 +24,30 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { inviterName, inviterEmail, inviteeEmail, labelName, invitationId }: InvitationRequest = await req.json();
+    const { inviterName, inviterEmail, inviteeEmail, labelName, invitationId, invitationType = "sublabel", permissions = [] }: InvitationRequest = await req.json();
 
     const acceptUrl = `${Deno.env.get("VITE_SUPABASE_URL")}/auth/v1/verify?token=${invitationId}&type=invite`;
+
+    // Build permissions list if provided
+    const permissionsHtml = permissions.length > 0 
+      ? `
+        <p>You'll have access to:</p>
+        <ul>
+          ${permissions.map(p => `<li>${p.charAt(0).toUpperCase() + p.slice(1)}</li>`).join('')}
+        </ul>
+      `
+      : `
+        <p>As a sublabel, you'll be able to:</p>
+        <ul>
+          <li>Submit releases under the master label</li>
+          <li>Access label resources and branding</li>
+          <li>Collaborate with the label team</li>
+        </ul>
+      `;
+
+    const invitationTitle = invitationType === "client" 
+      ? `You've been invited to join My Trackball`
+      : `You've been invited to join ${labelName} on My Trackball`;
 
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -35,19 +58,14 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "My Trackball <onboarding@resend.dev>",
         to: [inviteeEmail],
-        subject: `You've been invited to join ${labelName} on My Trackball`,
+        subject: invitationTitle,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #ef4444;">My Trackball Sublabel Invitation</h1>
+            <h1 style="color: #ef4444;">My Trackball Invitation</h1>
             <p>Hi there,</p>
-            <p><strong>${inviterName}</strong> (${inviterEmail}) has invited you to join their label <strong>${labelName}</strong> as a sublabel account on My Trackball.</p>
+            <p><strong>${inviterName}</strong> (${inviterEmail}) has invited you to join ${invitationType === "client" ? "My Trackball" : `their label <strong>${labelName}</strong>`}.</p>
             
-            <p>As a sublabel, you'll be able to:</p>
-            <ul>
-              <li>Submit releases under the master label</li>
-              <li>Access label resources and branding</li>
-              <li>Collaborate with the label team</li>
-            </ul>
+            ${permissionsHtml}
 
             <p style="margin: 30px 0;">
               <a href="${acceptUrl}" style="background-color: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
