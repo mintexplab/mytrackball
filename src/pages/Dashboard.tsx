@@ -131,103 +131,112 @@ const Dashboard = () => {
       <div className="absolute inset-0 bg-gradient-primary opacity-5 blur-3xl" />
       
       <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <Music2 className="w-6 h-6 text-white" />
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                <Music2 className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold bg-gradient-primary bg-clip-text text-transparent truncate">
+                  MY TRACKBALL
+                </h1>
+                <p className="text-xs text-muted-foreground hidden sm:block">Artist Dashboard</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                MY TRACKBALL
-              </h1>
-              <p className="text-xs text-muted-foreground">Artist Dashboard</p>
+            
+            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+              <Badge variant="outline" className="border-primary/30 bg-primary/5 hidden md:flex text-xs whitespace-nowrap">
+                {userPlan?.plan.name || "Trackball Free"}
+              </Badge>
+              <ProfileDropdown
+                userEmail={user?.email}
+                onSignOut={handleSignOut}
+              />
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            <Badge variant="outline" className="border-primary/30 bg-primary/5">
-              Current subscription plan: {userPlan?.plan.name || "Trackball Free"}
+          {/* Mobile plan badge */}
+          <div className="md:hidden mt-2">
+            <Badge variant="outline" className="border-primary/30 bg-primary/5 text-xs">
+              {userPlan?.plan.name || "Trackball Free"}
             </Badge>
-            <ProfileDropdown
-              userEmail={user?.email}
-              onSignOut={handleSignOut}
-            />
           </div>
         </div>
       </header>
 
       {user && <AnnouncementDialog userId={user.id} />}
 
-      <main className="container mx-auto px-4 py-8 space-y-6 relative">
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-3 bg-muted/50">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-              <Package className="w-4 h-4 mr-2" />
-              Overview
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
+        <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3 bg-muted/50 h-auto p-1">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
+              <Package className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-              <Bell className="w-4 h-4 mr-2" />
-              Notifications
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
+              <Bell className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Notifications</span>
             </TabsTrigger>
-            <TabsTrigger value="royalties" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-              <DollarSign className="w-4 h-4 mr-2" />
-              Royalties
+            <TabsTrigger value="royalties" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
+              <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Royalties</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6 animate-fade-in">
-            <div className="grid gap-6 md:grid-cols-2">
+          <TabsContent value="overview" className="space-y-4 sm:space-y-6 animate-fade-in">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
               <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-2xl font-bold">Your Plan</CardTitle>
-                      <CardDescription>Current distribution plan</CardDescription>
+                <CardHeader className="pb-3 sm:pb-6">
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="min-w-0">
+                      <CardTitle className="text-lg sm:text-2xl font-bold">Your Plan</CardTitle>
+                      <CardDescription className="text-xs sm:text-sm">Current distribution plan</CardDescription>
                     </div>
-                    <Package className="w-8 h-8 text-primary" />
+                    <Package className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4">
                   <div>
-                    <Badge className="bg-gradient-primary text-white px-3 py-1 text-sm">
+                    <Badge className="bg-gradient-primary text-white px-2 sm:px-3 py-1 text-xs sm:text-sm">
                       {userPlan?.plan.name || "Trackball Free"}
                     </Badge>
                   </div>
                   {userPlan ? (
                     <>
-                      <p className="text-muted-foreground">{userPlan.plan.description}</p>
-                      <div className="pt-4 border-t border-border">
-                        <p className="text-sm font-medium mb-2">Plan Features:</p>
-                        <ul className="space-y-1 text-sm text-muted-foreground">
+                      <p className="text-sm sm:text-base text-muted-foreground">{userPlan.plan.description}</p>
+                      <div className="pt-3 sm:pt-4 border-t border-border">
+                        <p className="text-xs sm:text-sm font-medium mb-2">Plan Features:</p>
+                        <ul className="space-y-1 text-xs sm:text-sm text-muted-foreground">
                           {userPlan.plan.features?.map((feature: string, index: number) => (
-                            <li key={index} className="flex items-center gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-                              {feature}
+                            <li key={index} className="flex items-start gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 flex-shrink-0" />
+                              <span className="flex-1">{feature}</span>
                             </li>
                           ))}
                         </ul>
                       </div>
                     </>
                   ) : (
-                    <p className="text-muted-foreground">Basic distribution plan with essential features</p>
+                    <p className="text-sm sm:text-base text-muted-foreground">Basic distribution plan with essential features</p>
                   )}
                 </CardContent>
               </Card>
 
               <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-bold">Quick Stats</CardTitle>
-                  <CardDescription>Your distribution overview</CardDescription>
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-lg sm:text-2xl font-bold">Quick Stats</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Your distribution overview</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 rounded-lg bg-muted/50">
-                      <p className="text-sm text-muted-foreground">Total Releases</p>
-                      <p className="text-2xl font-bold text-foreground">{releaseCount}</p>
+                <CardContent className="space-y-3 sm:space-y-4">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
+                      <p className="text-xs sm:text-sm text-muted-foreground">Total Releases</p>
+                      <p className="text-xl sm:text-2xl font-bold text-foreground">{releaseCount}</p>
                     </div>
-                    <div className="p-4 rounded-lg bg-muted/50">
-                      <p className="text-sm text-muted-foreground">Active</p>
-                      <p className="text-2xl font-bold text-accent">{releaseCount}</p>
+                    <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
+                      <p className="text-xs sm:text-sm text-muted-foreground">Active</p>
+                      <p className="text-xl sm:text-2xl font-bold text-accent">{releaseCount}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -235,15 +244,15 @@ const Dashboard = () => {
             </div>
 
             <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="text-2xl font-bold">Your Releases</CardTitle>
-                    <CardDescription>Manage your music distribution</CardDescription>
+              <CardHeader className="pb-3 sm:pb-6">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                  <div className="min-w-0">
+                    <CardTitle className="text-lg sm:text-2xl font-bold">Your Releases</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">Manage your music distribution</CardDescription>
                   </div>
                   <Button 
                     onClick={() => navigate("/create-release")}
-                    className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow"
+                    className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow w-full sm:w-auto text-sm"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     New Release
