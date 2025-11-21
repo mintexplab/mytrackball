@@ -12,11 +12,11 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Users, CheckCircle } from "lucide-react";
 
-interface SublabelInvitationAcceptanceProps {
+interface ClientInvitationAcceptanceProps {
   userId: string;
 }
 
-const SublabelInvitationAcceptance = ({ userId }: SublabelInvitationAcceptanceProps) => {
+const ClientInvitationAcceptance = ({ userId }: ClientInvitationAcceptanceProps) => {
   const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
   const [showDialog, setShowDialog] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -44,6 +44,7 @@ const SublabelInvitationAcceptance = ({ userId }: SublabelInvitationAcceptancePr
       `)
       .eq("invitee_email", profile.email)
       .eq("status", "pending")
+      .eq("invitation_type", "client")
       .gt("expires_at", new Date().toISOString());
 
     if (invitations && invitations.length > 0) {
@@ -66,17 +67,7 @@ const SublabelInvitationAcceptance = ({ userId }: SublabelInvitationAcceptancePr
 
       if (inviteError) throw inviteError;
 
-      // If it's a sublabel invitation, update parent_account_id
-      if (invitation.invitation_type === "sublabel") {
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({ parent_account_id: invitation.inviter_id })
-          .eq("id", userId);
-
-        if (profileError) throw profileError;
-      }
-
-      // If invitation has permissions, grant them to the user
+      // Grant permissions to the user
       if (invitation.permissions && invitation.permissions.length > 0) {
         const permissionsToInsert = invitation.permissions.map((permission: string) => ({
           user_id: userId,
@@ -91,8 +82,7 @@ const SublabelInvitationAcceptance = ({ userId }: SublabelInvitationAcceptancePr
         if (permError) throw permError;
       }
 
-      const inviteType = invitation.invitation_type === "client" ? "client account" : `sublabel of ${invitation.inviter.label_name || invitation.inviter.display_name}`;
-      toast.success(`You're now a ${inviteType}!`);
+      toast.success(`You're now a client of ${invitation.inviter.label_name || invitation.inviter.display_name}!`);
       
       // Remove accepted invitation from list
       setPendingInvitations(prev => prev.filter(inv => inv.id !== invitation.id));
@@ -102,7 +92,7 @@ const SublabelInvitationAcceptance = ({ userId }: SublabelInvitationAcceptancePr
         setShowDialog(false);
       }
 
-      // Refresh page to show new relationship
+      // Refresh page to show new permissions
       setTimeout(() => window.location.reload(), 1500);
     } catch (error) {
       console.error("Error accepting invitation:", error);
@@ -147,7 +137,7 @@ const SublabelInvitationAcceptance = ({ userId }: SublabelInvitationAcceptancePr
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <Users className="w-6 h-6 text-primary" />
-            {pendingInvitations[0]?.invitation_type === "client" ? "Account Invitation" : "Sublabel Invitation"}
+            Client Invitation
           </DialogTitle>
           <DialogDescription>
             You have {pendingInvitations.length} pending {pendingInvitations.length === 1 ? 'invitation' : 'invitations'}
@@ -158,9 +148,7 @@ const SublabelInvitationAcceptance = ({ userId }: SublabelInvitationAcceptancePr
             <div key={invitation.id} className="p-4 rounded-lg bg-muted/50 border border-border space-y-3">
               <div>
                 <h3 className="font-semibold text-lg">
-                  {invitation.invitation_type === "client" 
-                    ? "My Trackball"
-                    : (invitation.inviter.label_name || invitation.inviter.display_name || invitation.inviter.full_name)}
+                  {invitation.inviter.label_name || invitation.inviter.display_name || invitation.inviter.full_name}
                 </h3>
                 {invitation.inviter?.email && (
                   <p className="text-sm text-muted-foreground">{invitation.inviter.email}</p>
@@ -168,9 +156,7 @@ const SublabelInvitationAcceptance = ({ userId }: SublabelInvitationAcceptancePr
               </div>
               
               <p className="text-sm">
-                {invitation.invitation_type === "client"
-                  ? "You've been invited to join My Trackball with specific permissions."
-                  : "has invited you to join as a sublabel. You'll be able to submit releases under their label and collaborate with their team."}
+                You've been invited to join as a client with specific permissions.
               </p>
 
               {invitation.permissions && invitation.permissions.length > 0 && (
@@ -212,4 +198,4 @@ const SublabelInvitationAcceptance = ({ userId }: SublabelInvitationAcceptancePr
   );
 };
 
-export default SublabelInvitationAcceptance;
+export default ClientInvitationAcceptance;

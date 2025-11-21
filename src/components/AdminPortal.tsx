@@ -8,7 +8,6 @@ import ReleasesList from "./ReleasesList";
 import { AnnouncementManagement } from "./AnnouncementManagement";
 import RoyaltiesManagement from "./RoyaltiesManagement";
 import SubaccountManagement from "./SubaccountManagement";
-import ClientInvitations from "./ClientInvitations";
 import AccountManagerManagement from "./AccountManagerManagement";
 
 interface AdminPortalProps {
@@ -42,10 +41,6 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
                 <TabsTrigger value="users" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
                   <Users className="w-4 h-4 mr-2" />
                   Users
-                </TabsTrigger>
-                <TabsTrigger value="invitations" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-                  <Mail className="w-4 h-4 mr-2" />
-                  Invitations
                 </TabsTrigger>
                 <TabsTrigger value="managers" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
                   <Users className="w-4 h-4 mr-2" />
@@ -90,10 +85,6 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
               <Users className="w-4 h-4 mr-2" />
               Users
             </TabsTrigger>
-            <TabsTrigger value="invitations" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
-              <Mail className="w-4 h-4 mr-2" />
-              Invitations
-            </TabsTrigger>
             <TabsTrigger value="managers" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
               <Users className="w-4 h-4 mr-2" />
               Managers
@@ -118,10 +109,6 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
 
           <TabsContent value="users">
             <UserManagement />
-          </TabsContent>
-
-          <TabsContent value="invitations">
-            <ClientInvitations />
           </TabsContent>
 
           <TabsContent value="managers">
