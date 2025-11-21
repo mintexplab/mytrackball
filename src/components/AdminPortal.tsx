@@ -10,6 +10,7 @@ import RoyaltiesManagement from "./RoyaltiesManagement";
 import SubaccountManagement from "./SubaccountManagement";
 import AccountManagerManagement from "./AccountManagerManagement";
 import { PayoutRequestsManagement } from "./PayoutRequestsManagement";
+import VersionManagement from "./VersionManagement";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -69,6 +70,9 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
                   <Wallet className="w-4 h-4 mr-2" />
                   Payouts
                 </TabsTrigger>
+                <TabsTrigger value="version" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+                  Version
+                </TabsTrigger>
               </TabsList>
             </Tabs>
             
@@ -116,6 +120,9 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
               <Wallet className="w-4 h-4 mr-2" />
               Payouts
             </TabsTrigger>
+            <TabsTrigger value="version" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
+              Version
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -152,6 +159,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
 
           <TabsContent value="payouts">
             <PayoutRequestsManagement />
+          </TabsContent>
+
+          <TabsContent value="version">
+            <VersionManagement />
           </TabsContent>
         </Tabs>
       </main>
