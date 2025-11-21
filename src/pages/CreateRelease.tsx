@@ -10,7 +10,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Trash2, Upload, ArrowLeft, Sparkles } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface Track {
   id: string;
@@ -275,11 +274,10 @@ const CreateRelease = () => {
             <Button variant="ghost" onClick={() => navigate("/dashboard")}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-xl font-title font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               CREATE NEW RELEASE
             </h1>
           </div>
-          <ThemeToggle />
         </div>
       </header>
 
@@ -288,7 +286,7 @@ const CreateRelease = () => {
           {/* Release Information */}
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
             <CardHeader>
-              <CardTitle className="font-title">RELEASE INFORMATION</CardTitle>
+              <CardTitle className="font-bold">RELEASE INFORMATION</CardTitle>
               <CardDescription>Basic details about your release</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -389,7 +387,7 @@ const CreateRelease = () => {
           {/* Artwork Upload */}
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
             <CardHeader>
-              <CardTitle className="font-title">ARTWORK</CardTitle>
+              <CardTitle className="font-bold">ARTWORK</CardTitle>
               <CardDescription>Upload your release artwork (minimum 3000x3000px recommended)</CardDescription>
             </CardHeader>
             <CardContent>
@@ -420,7 +418,7 @@ const CreateRelease = () => {
           {/* Copyright & Credits */}
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
             <CardHeader>
-              <CardTitle className="font-title">COPYRIGHT & CREDITS</CardTitle>
+              <CardTitle className="font-bold">COPYRIGHT & CREDITS</CardTitle>
               <CardDescription>Legal and credit information</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -457,7 +455,7 @@ const CreateRelease = () => {
           {/* Multi-Disc Options */}
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
             <CardHeader>
-              <CardTitle className="font-title">MULTI-DISC/VOLUME OPTIONS</CardTitle>
+              <CardTitle className="font-bold">MULTI-DISC/VOLUME OPTIONS</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-2">
@@ -519,7 +517,7 @@ const CreateRelease = () => {
           {/* Tracks */}
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
             <CardHeader>
-              <CardTitle className="font-title">TRACKS</CardTitle>
+              <CardTitle className="font-bold">TRACKS</CardTitle>
               <CardDescription>Add all tracks for this release</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -661,7 +659,7 @@ const CreateRelease = () => {
           {/* Additional Notes */}
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
             <CardHeader>
-              <CardTitle className="font-title">ADDITIONAL NOTES</CardTitle>
+              <CardTitle className="font-bold">ADDITIONAL NOTES</CardTitle>
             </CardHeader>
             <CardContent>
               <Textarea

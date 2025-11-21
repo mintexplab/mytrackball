@@ -5,7 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, Users, FileMusic, Megaphone } from "lucide-react";
 import UserManagement from "./UserManagement";
 import ReleasesList from "./ReleasesList";
-import { ThemeToggle } from "./ThemeToggle";
 import { AnnouncementManagement } from "./AnnouncementManagement";
 
 interface AdminPortalProps {
@@ -20,9 +19,11 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
       <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <img src="/src/assets/trackball-logo.png" alt="Trackball Logo" className="w-10 h-10" />
+            <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+              <Megaphone className="w-6 h-6 text-white" />
+            </div>
             <div>
-              <h1 className="text-xl font-title font-bold bg-gradient-primary bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 MY TRACKBALL
               </h1>
               <p className="text-xs text-muted-foreground">Admin Portal</p>
@@ -30,7 +31,6 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
           </div>
           
           <div className="flex items-center gap-2">
-            <ThemeToggle />
             <Button
               variant="outline"
               size="sm"
@@ -68,7 +68,7 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
           <TabsContent value="releases">
             <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
               <CardHeader>
-                <CardTitle className="text-2xl font-title">RELEASE MODERATION</CardTitle>
+                <CardTitle className="text-2xl font-bold">RELEASE MODERATION</CardTitle>
                 <CardDescription>Review and manage all user releases</CardDescription>
               </CardHeader>
               <CardContent>

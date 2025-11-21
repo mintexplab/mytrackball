@@ -14,8 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        'body': ['Rubik', 'sans-serif'],
-        'title': ['Bebas Neue', 'sans-serif'],
+        sans: ["Rubik", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -65,11 +64,9 @@ export default {
       backgroundImage: {
         'gradient-primary': 'var(--gradient-primary)',
         'gradient-accent': 'var(--gradient-accent)',
-        'gradient-card': 'var(--gradient-card)',
       },
       boxShadow: {
         'glow': 'var(--shadow-glow)',
-        'accent-glow': 'var(--shadow-accent-glow)',
       },
       borderRadius: {
         lg: "var(--radius)",

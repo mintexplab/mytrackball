@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ExternalLink } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 const plans = [
   {
@@ -40,11 +39,10 @@ const SubscriptionManagement = () => {
             <Button variant="ghost" onClick={() => navigate("/dashboard")}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-xl font-title font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               MANAGE SUBSCRIPTION
             </h1>
           </div>
-          <ThemeToggle />
         </div>
       </header>
 
@@ -53,7 +51,7 @@ const SubscriptionManagement = () => {
           {plans.map((plan) => (
             <Card key={plan.name} className="backdrop-blur-sm bg-card/80 border-primary/20">
               <CardHeader>
-                <CardTitle className="text-2xl font-title">{plan.name}</CardTitle>
+                <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
                 <CardDescription className="text-3xl font-bold text-foreground mt-2">
                   {plan.price}
                 </CardDescription>

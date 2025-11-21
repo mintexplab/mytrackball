@@ -74,7 +74,7 @@ export const AnnouncementDialog = ({ userId }: AnnouncementDialogProps) => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-2xl bg-card border-border">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-title">
+          <DialogTitle className="text-2xl font-bold">
             {announcement?.title}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">

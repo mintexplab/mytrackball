@@ -178,7 +178,7 @@ const UserManagement = () => {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-2xl font-title">USER MANAGEMENT</CardTitle>
+            <CardTitle className="text-2xl font-bold">USER MANAGEMENT</CardTitle>
             <CardDescription>Manage user accounts and assign distribution plans</CardDescription>
           </div>
           <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
@@ -190,7 +190,7 @@ const UserManagement = () => {
             </DialogTrigger>
             <DialogContent className="bg-card border-border">
               <DialogHeader>
-                <DialogTitle className="font-title">Create New User</DialogTitle>
+                <DialogTitle className="font-bold">Create New User</DialogTitle>
                 <DialogDescription>Add a new user account to the system</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 mt-4">

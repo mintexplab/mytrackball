@@ -111,7 +111,7 @@ export const AnnouncementManagement = () => {
           <div className="flex items-center gap-2">
             <Megaphone className="w-6 h-6 text-primary" />
             <div>
-              <CardTitle className="text-2xl font-title">CREATE ANNOUNCEMENT</CardTitle>
+              <CardTitle className="text-2xl font-bold">CREATE ANNOUNCEMENT</CardTitle>
               <CardDescription>Send notifications to all users</CardDescription>
             </div>
           </div>
@@ -149,7 +149,7 @@ export const AnnouncementManagement = () => {
 
       <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
         <CardHeader>
-          <CardTitle className="text-2xl font-title">EXISTING ANNOUNCEMENTS</CardTitle>
+          <CardTitle className="text-2xl font-bold">EXISTING ANNOUNCEMENTS</CardTitle>
           <CardDescription>Manage your announcements</CardDescription>
         </CardHeader>
         <CardContent>

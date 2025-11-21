@@ -8,7 +8,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LogOut, Settings, CreditCard, ArrowUp } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { useNavigate } from "react-router-dom";
 
 interface ProfileDropdownProps {
@@ -50,12 +49,6 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, onSignOut }: ProfileDrop
         >
           <ArrowUp className="mr-2 h-4 w-4" />
           <span>Upgrade</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer flex items-center justify-between">
-          <div className="flex items-center">
-            <span className="mr-2">Light Theme</span>
-          </div>
-          <ThemeToggle />
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => navigate("/subscription")}

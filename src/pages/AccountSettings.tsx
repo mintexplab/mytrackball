@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, User, Mail, Lock, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 const AccountSettings = () => {
   const navigate = useNavigate();
@@ -127,7 +126,7 @@ const AccountSettings = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="container mx-auto px-4 py-4">
           <Button
             variant="ghost"
             onClick={() => navigate("/dashboard")}
@@ -136,13 +135,12 @@ const AccountSettings = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
           </Button>
-          <ThemeToggle />
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-4xl space-y-6">
         <div>
-          <h1 className="text-4xl font-title font-bold text-foreground mb-2">Account Settings</h1>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Account Settings</h1>
           <p className="text-muted-foreground">Manage your account preferences and security</p>
         </div>
 
