@@ -19,31 +19,29 @@ const queryClient = new QueryClient();
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrandingProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <div className="flex flex-col min-h-screen">
-              <div className="flex-1">
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/accept-invitation" element={<AcceptInvitation />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/create-release" element={<CreateRelease />} />
-                  <Route path="/settings" element={<AccountSettings />} />
-                  <Route path="/subscription" element={<SubscriptionManagement />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </div>
-              <Footer />
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <div className="flex flex-col min-h-screen">
+            <div className="flex-1">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/accept-invitation" element={<AcceptInvitation />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/create-release" element={<CreateRelease />} />
+                <Route path="/settings" element={<AccountSettings />} />
+                <Route path="/subscription" element={<SubscriptionManagement />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
             </div>
-          </BrowserRouter>
-        </TooltipProvider>
-      </BrandingProvider>
+            <Footer />
+          </div>
+        </BrowserRouter>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 };
