@@ -150,6 +150,7 @@ const ClientInvitations = () => {
           invitationId: invitation.id,
           invitationType: "client",
           permissions: validatedData.permissions,
+          appUrl: window.location.origin, // Pass current app URL
         },
       });
 

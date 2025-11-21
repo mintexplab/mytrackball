@@ -24,10 +24,10 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { inviterName, inviterEmail, inviteeEmail, labelName, invitationId, invitationType = "client", permissions = [] }: InvitationRequest = await req.json();
+    const { inviterName, inviterEmail, inviteeEmail, labelName, invitationId, invitationType = "client", permissions = [], appUrl }: InvitationRequest & { appUrl?: string } = await req.json();
 
-    const appUrl = Deno.env.get("VITE_SUPABASE_URL")?.replace("/supabase", "") || "http://localhost:5173";
-    const acceptUrl = `${appUrl}/accept-invitation?token=${invitationId}`;
+    // Use the app URL passed from frontend, which will be the correct published domain
+    const acceptUrl = `${appUrl || "http://localhost:5173"}/accept-invitation?token=${invitationId}`;
 
     // Build permissions list
     const permissionsHtml = permissions.length > 0 
