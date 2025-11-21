@@ -6,10 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { z } from "zod";
 
 interface CreateReleaseDialogProps {
   children: React.ReactNode;
 }
+
+const releaseSchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
+  artist_name: z.string().trim().min(1, "Artist name is required").max(200, "Artist name must be less than 200 characters"),
+  release_date: z.string().optional(),
+  genre: z.string().trim().max(100, "Genre must be less than 100 characters").optional(),
+  notes: z.string().trim().max(2000, "Notes must be less than 2000 characters").optional(),
+});
 
 const CreateReleaseDialog = ({ children }: CreateReleaseDialogProps) => {
   const [open, setOpen] = useState(false);
@@ -27,13 +36,20 @@ const CreateReleaseDialog = ({ children }: CreateReleaseDialogProps) => {
     setLoading(true);
 
     try {
+      // Validate form data
+      const validatedData = releaseSchema.parse(formData);
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) throw new Error("Not authenticated");
 
       const { error } = await supabase.from("releases").insert({
         user_id: user.id,
-        ...formData,
+        title: validatedData.title,
+        artist_name: validatedData.artist_name,
+        release_date: validatedData.release_date || null,
+        genre: validatedData.genre || null,
+        notes: validatedData.notes || null,
       });
 
       if (error) throw error;
@@ -49,7 +65,11 @@ const CreateReleaseDialog = ({ children }: CreateReleaseDialogProps) => {
       });
       window.location.reload();
     } catch (error: any) {
-      toast.error(error.message);
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error(error.message);
+      }
     } finally {
       setLoading(false);
     }

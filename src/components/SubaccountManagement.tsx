@@ -26,6 +26,7 @@ import {
 
 const SubaccountManagement = () => {
   const [masterAccounts, setMasterAccounts] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [sublabelAccounts, setSublabelAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -50,6 +51,12 @@ const SubaccountManagement = () => {
       `)
       .or("user_plans.plan.name.eq.Trackball Signature,user_plans.plan.name.eq.Trackball Prestige");
 
+    // Fetch all users for sublabel assignment
+    const { data: allUsersData } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("display_name");
+
     // Fetch all sublabel accounts
     const { data: sublabelsData } = await supabase
       .from("profiles")
@@ -60,6 +67,7 @@ const SubaccountManagement = () => {
       .not("parent_account_id", "is", null);
 
     setMasterAccounts(mastersData || []);
+    setAllUsers(allUsersData || []);
     setSublabelAccounts(sublabelsData || []);
     setLoading(false);
   };
@@ -158,7 +166,7 @@ const SubaccountManagement = () => {
                         <SelectValue placeholder="Select sublabel account" />
                       </SelectTrigger>
                       <SelectContent>
-                        {masterAccounts.map((user) => (
+                        {allUsers.map((user) => (
                           <SelectItem key={user.id} value={user.id}>
                             {user.display_name || user.full_name} (ID: {user.user_id})
                           </SelectItem>
