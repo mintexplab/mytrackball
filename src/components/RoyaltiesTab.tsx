@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import { CollaboratorsManagement } from "./CollaboratorsManagement";
 
 interface Royalty {
   id: string;
@@ -17,9 +22,11 @@ interface RoyaltiesTabProps {
 }
 
 const RoyaltiesTab = ({ userId }: RoyaltiesTabProps) => {
+  const queryClient = useQueryClient();
   const [royalties, setRoyalties] = useState<Royalty[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalEarnings, setTotalEarnings] = useState(0);
+  const [payoutNotes, setPayoutNotes] = useState("");
 
   useEffect(() => {
     fetchRoyalties();
@@ -42,6 +49,51 @@ const RoyaltiesTab = ({ userId }: RoyaltiesTabProps) => {
     setTotalEarnings(total);
     setLoading(false);
   };
+
+  const requestPayout = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name, email, user_id")
+        .eq("id", user.id)
+        .single();
+
+      // Create payout request
+      const { error } = await supabase
+        .from("payout_requests")
+        .insert({
+          user_id: user.id,
+          amount: totalEarnings,
+          notes: payoutNotes || null,
+        });
+
+      if (error) throw error;
+
+      // Send notification email
+      await supabase.functions.invoke("send-system-notification", {
+        body: {
+          type: "payout_request",
+          data: {
+            userName: profile?.display_name,
+            userEmail: profile?.email,
+            userId: profile?.user_id,
+            amount: totalEarnings,
+          },
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-royalties"] });
+      toast.success("Payout request submitted successfully");
+      setPayoutNotes("");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to submit payout request");
+    },
+  });
 
   if (loading) {
     return (
@@ -117,6 +169,43 @@ const RoyaltiesTab = ({ userId }: RoyaltiesTabProps) => {
           )}
         </CardContent>
       </Card>
+
+      <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Request Payout</CardTitle>
+          <CardDescription>
+            Submit a request to withdraw your earnings
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">Available balance</p>
+              <p className="text-2xl font-bold">${totalEarnings.toFixed(2)}</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (optional)</Label>
+              <Textarea
+                id="notes"
+                value={payoutNotes}
+                onChange={(e) => setPayoutNotes(e.target.value)}
+                placeholder="Add any notes about this payout request..."
+                rows={3}
+              />
+            </div>
+            <Button
+              onClick={() => requestPayout.mutate()}
+              disabled={totalEarnings === 0 || requestPayout.isPending}
+              className="w-full"
+            >
+              <DollarSign className="w-4 h-4 mr-2" />
+              Request Payout
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <CollaboratorsManagement />
     </div>
   );
 };

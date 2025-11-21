@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Mail } from "lucide-react";
+import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet } from "lucide-react";
 import UserManagement from "./UserManagement";
 import ReleasesList from "./ReleasesList";
 import { AnnouncementManagement } from "./AnnouncementManagement";
 import RoyaltiesManagement from "./RoyaltiesManagement";
 import SubaccountManagement from "./SubaccountManagement";
 import AccountManagerManagement from "./AccountManagerManagement";
+import { PayoutRequestsManagement } from "./PayoutRequestsManagement";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -62,6 +63,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
                   <DollarSign className="w-4 h-4 mr-2" />
                   Royalties
                 </TabsTrigger>
+                <TabsTrigger value="payouts" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+                  <Wallet className="w-4 h-4 mr-2" />
+                  Payouts
+                </TabsTrigger>
               </TabsList>
             </Tabs>
             
@@ -105,6 +110,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
               <DollarSign className="w-4 h-4 mr-2" />
               Royalties
             </TabsTrigger>
+            <TabsTrigger value="payouts" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
+              <Wallet className="w-4 h-4 mr-2" />
+              Payouts
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -137,6 +146,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
 
           <TabsContent value="royalties">
             <RoyaltiesManagement />
+          </TabsContent>
+
+          <TabsContent value="payouts">
+            <PayoutRequestsManagement />
           </TabsContent>
         </Tabs>
       </main>

@@ -41,6 +41,38 @@ export type Database = {
         }
         Relationships: []
       }
+      collaborators: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaborators_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       isrc_counter: {
         Row: {
           created_at: string | null
@@ -94,6 +126,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      payout_requests: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          notes: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plans: {
         Row: {
@@ -198,6 +268,45 @@ export type Database = {
             columns: ["parent_account_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      release_collaborators: {
+        Row: {
+          collaborator_id: string
+          created_at: string | null
+          id: string
+          percentage: number
+          release_id: string
+        }
+        Insert: {
+          collaborator_id: string
+          created_at?: string | null
+          id?: string
+          percentage: number
+          release_id: string
+        }
+        Update: {
+          collaborator_id?: string
+          created_at?: string | null
+          id?: string
+          percentage?: number
+          release_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "release_collaborators_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "release_collaborators_release_id_fkey"
+            columns: ["release_id"]
+            isOneToOne: false
+            referencedRelation: "releases"
             referencedColumns: ["id"]
           },
         ]
