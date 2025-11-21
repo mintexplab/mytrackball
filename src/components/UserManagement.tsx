@@ -38,7 +38,8 @@ const UserManagement = () => {
     // Fetch profiles first
     const { data: profilesData, error: profilesError } = await supabase
       .from("profiles")
-      .select("*");
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (profilesError) {
       toast.error("Failed to load users");
@@ -55,10 +56,26 @@ const UserManagement = () => {
         plan:plans(*)
       `);
 
+    // Fetch sublabel counts for each user
+    const { data: sublabelCounts } = await supabase
+      .from("profiles")
+      .select("parent_account_id");
+
+    // Count sublabels per master account
+    const sublabelCountMap: Record<string, number> = {};
+    sublabelCounts?.forEach(profile => {
+      if (profile.parent_account_id) {
+        sublabelCountMap[profile.parent_account_id] = 
+          (sublabelCountMap[profile.parent_account_id] || 0) + 1;
+      }
+    });
+
     // Merge the data
     const usersWithPlans = profilesData.map(profile => ({
       ...profile,
-      user_plans: plansData?.filter(p => p.user_id === profile.id) || []
+      user_plans: plansData?.filter(p => p.user_id === profile.id) || [],
+      sublabel_count: sublabelCountMap[profile.id] || 0,
+      is_master_account: (sublabelCountMap[profile.id] || 0) > 0
     }));
 
     setUsers(usersWithPlans);
@@ -267,6 +284,7 @@ const UserManagement = () => {
                 <TableHead>User</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Account Type</TableHead>
                 <TableHead>Current Plan</TableHead>
                 <TableHead>Assign Plan</TableHead>
                 <TableHead>Actions</TableHead>
@@ -290,6 +308,19 @@ const UserManagement = () => {
                       <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
                         Active
                       </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {user.is_master_account ? (
+                      <Badge className="bg-primary/20 text-primary border-primary/30">
+                        Master ({user.sublabel_count} sublabels)
+                      </Badge>
+                    ) : user.parent_account_id ? (
+                      <Badge variant="outline" className="bg-muted">
+                        Sublabel
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">Regular</Badge>
                     )}
                   </TableCell>
                   <TableCell>

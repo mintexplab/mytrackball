@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Users, CheckCircle } from "lucide-react";
 
@@ -65,15 +66,33 @@ const SublabelInvitationAcceptance = ({ userId }: SublabelInvitationAcceptancePr
 
       if (inviteError) throw inviteError;
 
-      // Update profile to set parent account
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ parent_account_id: invitation.inviter_id })
-        .eq("id", userId);
+      // If it's a sublabel invitation, update parent_account_id
+      if (invitation.invitation_type === "sublabel") {
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({ parent_account_id: invitation.inviter_id })
+          .eq("id", userId);
 
-      if (profileError) throw profileError;
+        if (profileError) throw profileError;
+      }
 
-      toast.success(`You're now a sublabel of ${invitation.inviter.label_name || invitation.inviter.display_name}!`);
+      // If invitation has permissions, grant them to the user
+      if (invitation.permissions && invitation.permissions.length > 0) {
+        const permissionsToInsert = invitation.permissions.map((permission: string) => ({
+          user_id: userId,
+          permission: permission,
+          granted_by: invitation.inviter_id,
+        }));
+
+        const { error: permError } = await supabase
+          .from("user_permissions")
+          .insert(permissionsToInsert);
+
+        if (permError) throw permError;
+      }
+
+      const inviteType = invitation.invitation_type === "client" ? "client account" : `sublabel of ${invitation.inviter.label_name || invitation.inviter.display_name}`;
+      toast.success(`You're now a ${inviteType}!`);
       
       // Remove accepted invitation from list
       setPendingInvitations(prev => prev.filter(inv => inv.id !== invitation.id));
@@ -128,10 +147,10 @@ const SublabelInvitationAcceptance = ({ userId }: SublabelInvitationAcceptancePr
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <Users className="w-6 h-6 text-primary" />
-            Sublabel Invitation
+            {pendingInvitations[0]?.invitation_type === "client" ? "Account Invitation" : "Sublabel Invitation"}
           </DialogTitle>
           <DialogDescription>
-            You have {pendingInvitations.length} pending sublabel {pendingInvitations.length === 1 ? 'invitation' : 'invitations'}
+            You have {pendingInvitations.length} pending {pendingInvitations.length === 1 ? 'invitation' : 'invitations'}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 mt-4">
@@ -139,13 +158,34 @@ const SublabelInvitationAcceptance = ({ userId }: SublabelInvitationAcceptancePr
             <div key={invitation.id} className="p-4 rounded-lg bg-muted/50 border border-border space-y-3">
               <div>
                 <h3 className="font-semibold text-lg">
-                  {invitation.inviter.label_name || invitation.inviter.display_name || invitation.inviter.full_name}
+                  {invitation.invitation_type === "client" 
+                    ? "My Trackball"
+                    : (invitation.inviter.label_name || invitation.inviter.display_name || invitation.inviter.full_name)}
                 </h3>
-                <p className="text-sm text-muted-foreground">{invitation.inviter.email}</p>
+                {invitation.inviter?.email && (
+                  <p className="text-sm text-muted-foreground">{invitation.inviter.email}</p>
+                )}
               </div>
+              
               <p className="text-sm">
-                has invited you to join as a sublabel. You'll be able to submit releases under their label and collaborate with their team.
+                {invitation.invitation_type === "client"
+                  ? "You've been invited to join My Trackball with specific permissions."
+                  : "has invited you to join as a sublabel. You'll be able to submit releases under their label and collaborate with their team."}
               </p>
+
+              {invitation.permissions && invitation.permissions.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2">You'll have access to:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {invitation.permissions.map((perm: string) => (
+                      <Badge key={perm} variant="outline" className="bg-primary/10">
+                        {perm.charAt(0).toUpperCase() + perm.slice(1)}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-2 pt-2">
                 <Button
                   onClick={() => acceptInvitation(invitation)}
