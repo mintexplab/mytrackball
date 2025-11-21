@@ -68,7 +68,7 @@ const ReleaseInfoDialog = ({ releaseId }: ReleaseInfoDialogProps) => {
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle className="font-title">RELEASE INFORMATION</DialogTitle>
+          <DialogTitle className="font-bold">RELEASE INFORMATION</DialogTitle>
           <DialogDescription>Complete details for this release</DialogDescription>
         </DialogHeader>
 
@@ -90,7 +90,7 @@ const ReleaseInfoDialog = ({ releaseId }: ReleaseInfoDialogProps) => {
                 )}
                 <div className="flex-1 space-y-3">
                   <div>
-                    <h3 className="text-2xl font-title">{release.title}</h3>
+                    <h3 className="text-2xl font-bold">{release.title}</h3>
                     <p className="text-lg text-muted-foreground">{release.artist_name}</p>
                   </div>
                   <div className="flex gap-2 flex-wrap">
@@ -116,7 +116,7 @@ const ReleaseInfoDialog = ({ releaseId }: ReleaseInfoDialogProps) => {
 
               {/* Release Details */}
               <div className="space-y-4">
-                <h4 className="font-title text-lg">RELEASE DETAILS</h4>
+                <h4 className="font-bold text-lg">RELEASE DETAILS</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {release.upc && (
                     <div>
@@ -156,7 +156,7 @@ const ReleaseInfoDialog = ({ releaseId }: ReleaseInfoDialogProps) => {
                 <>
                   <Separator />
                   <div className="space-y-3">
-                    <h4 className="font-title text-lg">COPYRIGHT & CREDITS</h4>
+                    <h4 className="font-bold text-lg">COPYRIGHT & CREDITS</h4>
                     {release.copyright_line && (
                       <div>
                         <p className="text-sm text-muted-foreground">Copyright Line</p>
@@ -184,7 +184,7 @@ const ReleaseInfoDialog = ({ releaseId }: ReleaseInfoDialogProps) => {
                 <>
                   <Separator />
                   <div className="space-y-3">
-                    <h4 className="font-title text-lg">MULTI-DISC INFORMATION</h4>
+                    <h4 className="font-bold text-lg">MULTI-DISC INFORMATION</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Disc Number</p>
@@ -210,7 +210,7 @@ const ReleaseInfoDialog = ({ releaseId }: ReleaseInfoDialogProps) => {
               {/* Tracks */}
               <Separator />
               <div className="space-y-3">
-                <h4 className="font-title text-lg">TRACKLIST</h4>
+                <h4 className="font-bold text-lg">TRACKLIST</h4>
                 <div className="space-y-2">
                   {tracks.map((track) => (
                     <div
@@ -248,7 +248,7 @@ const ReleaseInfoDialog = ({ releaseId }: ReleaseInfoDialogProps) => {
                 <>
                   <Separator />
                   <div className="space-y-3">
-                    <h4 className="font-title text-lg flex items-center gap-2">
+                    <h4 className="font-bold text-lg flex items-center gap-2">
                       <FileText className="w-4 h-4" />
                       ADDITIONAL NOTES
                     </h4>

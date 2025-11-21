@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package } from "lucide-react";
+import { Plus, Package, Music2 } from "lucide-react";
 import { toast } from "sonner";
 import AdminPortal from "@/components/AdminPortal";
 import ReleasesList from "@/components/ReleasesList";
@@ -112,9 +112,11 @@ const Dashboard = () => {
       <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <img src="/src/assets/trackball-logo.png" alt="Trackball Logo" className="w-10 h-10" />
+            <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+              <Music2 className="w-6 h-6 text-white" />
+            </div>
             <div>
-              <h1 className="text-xl font-title font-bold bg-gradient-primary bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 MY TRACKBALL
               </h1>
               <p className="text-xs text-muted-foreground">Artist Dashboard</p>
@@ -143,7 +145,7 @@ const Dashboard = () => {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-2xl font-title">YOUR PLAN</CardTitle>
+                  <CardTitle className="text-2xl font-bold">YOUR PLAN</CardTitle>
                   <CardDescription>Current distribution plan</CardDescription>
                 </div>
                 <Package className="w-8 h-8 text-primary" />
@@ -182,10 +184,10 @@ const Dashboard = () => {
           </Card>
 
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-            <CardHeader>
-              <CardTitle className="text-2xl font-title">QUICK STATS</CardTitle>
-              <CardDescription>Your distribution overview</CardDescription>
-            </CardHeader>
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold">QUICK STATS</CardTitle>
+            <CardDescription>Your distribution overview</CardDescription>
+          </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-muted/50">
@@ -205,7 +207,7 @@ const Dashboard = () => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle className="text-2xl font-title">YOUR RELEASES</CardTitle>
+                <CardTitle className="text-2xl font-bold">YOUR RELEASES</CardTitle>
                 <CardDescription>Manage your music distribution</CardDescription>
               </div>
               <Button 

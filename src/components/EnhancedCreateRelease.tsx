@@ -161,7 +161,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto bg-card border-primary/20">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-title">Create New Release</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">Create New Release</DialogTitle>
           <DialogDescription>
             Submit your music for distribution with complete metadata
           </DialogDescription>

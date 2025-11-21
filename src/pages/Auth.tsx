@@ -67,8 +67,12 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="absolute inset-0 bg-gradient-primary opacity-10 blur-3xl" />
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+      <div className="absolute inset-0">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-red-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
+        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-red-400/25 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }} />
+      </div>
       
       <Card className="w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20">
         <CardHeader className="space-y-4 text-center">
@@ -76,7 +80,7 @@ const Auth = () => {
             <Music2 className="w-8 h-8 text-primary-foreground" />
           </div>
           <div>
-            <CardTitle className="text-3xl font-title font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               MY TRACKBALL
             </CardTitle>
             <CardDescription className="text-muted-foreground mt-2">

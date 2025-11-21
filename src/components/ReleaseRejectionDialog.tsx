@@ -59,7 +59,7 @@ const ReleaseRejectionDialog = ({ releaseId, currentStatus, onUpdate }: ReleaseR
       </DialogTrigger>
       <DialogContent className="bg-card border-border">
         <DialogHeader>
-          <DialogTitle className="font-title">Reject Release</DialogTitle>
+          <DialogTitle className="font-bold">Reject Release</DialogTitle>
           <DialogDescription>Provide a reason for rejecting this release</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 mt-4">
