@@ -22,11 +22,28 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+
+        // Check if user is banned
+        if (data.user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("is_banned")
+            .eq("id", data.user.id)
+            .single();
+
+          if (profile?.is_banned) {
+            await supabase.auth.signOut();
+            toast.error("Your account has been suspended. Please contact support.");
+            setLoading(false);
+            return;
+          }
+        }
+
         toast.success("Welcome back!");
         navigate("/dashboard");
       } else {
