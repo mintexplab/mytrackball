@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Trash2, Upload, ArrowLeft, Sparkles } from "lucide-react";
+import { z } from "zod";
 
 interface Track {
   id: string;
@@ -26,6 +27,56 @@ interface Track {
   publisher: string;
   publisher_ipi: string;
 }
+
+// Validation schemas
+const releaseSchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
+  artist_name: z.string().trim().min(1, "Artist name is required").max(200, "Artist name must be less than 200 characters"),
+  release_date: z.string().optional(),
+  genre: z.string().max(100, "Genre must be less than 100 characters").optional(),
+  upc: z.string().regex(/^\d{12,14}$/, "UPC must be 12-14 digits").optional().or(z.literal("")),
+  copyright_line: z.string().max(500, "Copyright line must be less than 500 characters").optional(),
+  phonographic_line: z.string().max(500, "Phonographic line must be less than 500 characters").optional(),
+  label_name: z.string().max(200, "Label name must be less than 200 characters").optional(),
+  featured_artists: z.string().max(1000, "Featured artists must be less than 1000 characters").optional(),
+  courtesy_line: z.string().max(500, "Courtesy line must be less than 500 characters").optional(),
+  distributor: z.enum(["Believe Music", "The Orchard", ""]),
+  notes: z.string().max(2000, "Notes must be less than 2000 characters").optional(),
+});
+
+const trackSchema = z.object({
+  title: z.string().trim().min(1, "Track title is required").max(200, "Track title must be less than 200 characters"),
+  duration: z.string().regex(/^\d*$/, "Duration must be a number").optional().or(z.literal("")),
+  isrc: z.string().regex(/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/, "Invalid ISRC format").optional().or(z.literal("")),
+  audio_path: z.string().max(500, "Audio path too long").optional(),
+  featured_artists: z.string().max(500, "Featured artists must be less than 500 characters").optional(),
+  composer: z.string().max(200, "Composer must be less than 200 characters").optional(),
+  writer: z.string().max(200, "Writer must be less than 200 characters").optional(),
+  contributor: z.string().max(200, "Contributor must be less than 200 characters").optional(),
+  publisher: z.string().max(200, "Publisher must be less than 200 characters").optional(),
+  publisher_ipi: z.string().max(50, "Publisher IPI must be less than 50 characters").optional(),
+});
+
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ALLOWED_AUDIO_TYPES = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/flac", "audio/aac", "audio/ogg"];
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_AUDIO_SIZE = 500 * 1024 * 1024; // 500MB
+
+const sanitizeFilename = (filename: string): string => {
+  return filename
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .substring(0, 200);
+};
+
+const validateGoogleDriveUrl = (url: string): boolean => {
+  if (!url) return true; // Empty is OK
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === "drive.google.com" || parsed.hostname === "docs.google.com";
+  } catch {
+    return false;
+  }
+};
 
 const CreateRelease = () => {
   const navigate = useNavigate();
@@ -131,6 +182,20 @@ const CreateRelease = () => {
   const handleArtworkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file type
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        toast.error("Invalid image format. Please use JPEG, PNG, or WebP.");
+        e.target.value = "";
+        return;
+      }
+      
+      // Validate file size
+      if (file.size > MAX_IMAGE_SIZE) {
+        toast.error("Image is too large. Maximum size is 10MB.");
+        e.target.value = "";
+        return;
+      }
+      
       setArtworkFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -143,6 +208,20 @@ const CreateRelease = () => {
   const handleTrackAudioChange = (trackId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file type
+      if (!ALLOWED_AUDIO_TYPES.includes(file.type)) {
+        toast.error("Invalid audio format. Please use MP3, WAV, FLAC, AAC, or OGG.");
+        e.target.value = "";
+        return;
+      }
+      
+      // Validate file size
+      if (file.size > MAX_AUDIO_SIZE) {
+        toast.error("Audio file is too large. Maximum size is 500MB.");
+        e.target.value = "";
+        return;
+      }
+      
       setTracks(tracks.map(t => t.id === trackId ? { ...t, audio_file: file } : t));
     }
   };
@@ -192,6 +271,52 @@ const CreateRelease = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Validate form data
+      const validationResult = releaseSchema.safeParse(formData);
+      if (!validationResult.success) {
+        const error = validationResult.error.errors[0];
+        toast.error(error.message);
+        setLoading(false);
+        return;
+      }
+
+      // Validate tracks
+      for (const track of tracks) {
+        const trackValidation = trackSchema.safeParse({
+          title: track.title,
+          duration: track.duration,
+          isrc: track.isrc,
+          audio_path: track.audio_path,
+          featured_artists: track.featured_artists,
+          composer: track.composer,
+          writer: track.writer,
+          contributor: track.contributor,
+          publisher: track.publisher,
+          publisher_ipi: track.publisher_ipi,
+        });
+        
+        if (!trackValidation.success) {
+          const error = trackValidation.error.errors[0];
+          toast.error(`Track ${track.track_number}: ${error.message}`);
+          setLoading(false);
+          return;
+        }
+        
+        // Validate Google Drive URLs
+        if (track.audio_path && !validateGoogleDriveUrl(track.audio_path)) {
+          toast.error(`Track ${track.track_number}: Invalid Google Drive URL`);
+          setLoading(false);
+          return;
+        }
+        
+        // Ensure either audio file or audio path is provided
+        if (!track.audio_file && !track.audio_path) {
+          toast.error(`Track ${track.track_number}: Please upload an audio file or provide a Google Drive link`);
+          setLoading(false);
+          return;
+        }
+      }
+
       // Check distributor access
       if (formData.distributor === "The Orchard") {
         if (!userPlan || userPlan.plan?.name !== "Prestige") {
@@ -204,7 +329,8 @@ const CreateRelease = () => {
       // Upload artwork
       let artworkUrl = "";
       if (artworkFile) {
-        const artworkPath = `${user.id}/${Date.now()}_${artworkFile.name}`;
+        const sanitizedFilename = sanitizeFilename(artworkFile.name);
+        const artworkPath = `${user.id}/${Date.now()}_${sanitizedFilename}`;
         await uploadFile(artworkFile, "release-artwork", artworkPath);
         const { data: { publicUrl } } = supabase.storage
           .from("release-artwork")
@@ -231,7 +357,8 @@ const CreateRelease = () => {
         let audioPath = track.audio_path;
         
         if (track.audio_file) {
-          const fileName = `${user.id}/${release.id}/${Date.now()}_${track.audio_file.name}`;
+          const sanitizedFilename = sanitizeFilename(track.audio_file.name);
+          const fileName = `${user.id}/${release.id}/${Date.now()}_${sanitizedFilename}`;
           audioPath = await uploadFile(track.audio_file, "release-audio", fileName);
         }
 
