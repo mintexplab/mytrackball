@@ -40,7 +40,7 @@ const SubaccountManagement = () => {
   const fetchAccounts = async () => {
     setLoading(true);
     
-    // Fetch all users with Signature or Prestige plans (potential masters)
+    // Fetch all users with Signature or Prestige plans who registered as labels
     const { data: mastersData } = await supabase
       .from("profiles")
       .select(`
@@ -49,7 +49,8 @@ const SubaccountManagement = () => {
           plan:plans!inner(name)
         )
       `)
-      .or("user_plans.plan.name.eq.Trackball Signature,user_plans.plan.name.eq.Trackball Prestige");
+      .or("user_plans.plan.name.eq.Trackball Signature,user_plans.plan.name.eq.Trackball Prestige")
+      .not("label_name", "is", null);
 
     // Fetch all users for sublabel assignment
     const { data: allUsersData } = await supabase
@@ -202,7 +203,7 @@ const SubaccountManagement = () => {
                     )}
                     <div className="flex-1">
                       <h3 className="font-bold text-lg">
-                        {master.display_name || master.full_name}
+                        {master.label_name || master.display_name || master.full_name}
                       </h3>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Badge variant="outline">{master.user_id}</Badge>
