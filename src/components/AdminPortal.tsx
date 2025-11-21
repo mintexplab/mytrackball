@@ -50,32 +50,32 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
 
       <main className="container mx-auto px-4 py-8 relative">
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full max-w-5xl grid-cols-7 bg-muted/50">
-            <TabsTrigger value="users" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+          <TabsList className="flex flex-col md:grid w-full md:max-w-5xl md:grid-cols-7 bg-muted/50 h-auto">
+            <TabsTrigger value="users" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
               <Users className="w-4 h-4 mr-2" />
               Users
             </TabsTrigger>
-            <TabsTrigger value="invitations" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="invitations" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
               <Mail className="w-4 h-4 mr-2" />
               Invitations
             </TabsTrigger>
-            <TabsTrigger value="managers" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="managers" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
               <Users className="w-4 h-4 mr-2" />
               Managers
             </TabsTrigger>
-            <TabsTrigger value="releases" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="releases" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
               <FileMusic className="w-4 h-4 mr-2" />
               Releases
             </TabsTrigger>
-            <TabsTrigger value="labels" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="labels" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
               <Building2 className="w-4 h-4 mr-2" />
               Labels
             </TabsTrigger>
-            <TabsTrigger value="announcements" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="announcements" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
               <Megaphone className="w-4 h-4 mr-2" />
               Announcements
             </TabsTrigger>
-            <TabsTrigger value="royalties" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger value="royalties" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
               <DollarSign className="w-4 h-4 mr-2" />
               Royalties
             </TabsTrigger>
