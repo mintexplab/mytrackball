@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet } from "lucide-react";
+import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, Boxes } from "lucide-react";
 import UserManagement from "./UserManagement";
 import ReleasesList from "./ReleasesList";
 import { AnnouncementManagement } from "./AnnouncementManagement";
@@ -10,6 +10,9 @@ import RoyaltiesManagement from "./RoyaltiesManagement";
 import SubaccountManagement from "./SubaccountManagement";
 import AccountManagerManagement from "./AccountManagerManagement";
 import { PayoutRequestsManagement } from "./PayoutRequestsManagement";
+import { SubdistributorManagement } from "./SubdistributorManagement";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -17,6 +20,29 @@ interface AdminPortalProps {
 
 const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
   const [activeTab, setActiveTab] = useState("users");
+  
+  const { data: userRole } = useQuery({
+    queryKey: ["user-admin-role"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: isAdmin } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
+
+      const { data: isSubdistAdmin } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "subdistributor_admin",
+      });
+
+      return { isAdmin, isSubdistAdmin };
+    },
+  });
+
+  const isFullAdmin = userRole?.isAdmin;
+  const isSubdistAdmin = userRole?.isSubdistAdmin && !userRole?.isAdmin;
   
   return (
     <div className="min-h-screen bg-black">
@@ -32,7 +58,9 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
               <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 MY TRACKBALL
               </h1>
-              <p className="text-xs text-muted-foreground">Admin Portal</p>
+              <p className="text-xs text-muted-foreground">
+                {isSubdistAdmin ? "Sub-Distributor Portal" : "Admin Portal"}
+              </p>
             </div>
           </div>
           
@@ -67,6 +95,12 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
                   <Wallet className="w-4 h-4 mr-2" />
                   Payouts
                 </TabsTrigger>
+                {isFullAdmin && (
+                  <TabsTrigger value="subdistributors" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+                    <Boxes className="w-4 h-4 mr-2" />
+                    Sub-Distributors
+                  </TabsTrigger>
+                )}
               </TabsList>
             </Tabs>
             
@@ -114,6 +148,12 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
               <Wallet className="w-4 h-4 mr-2" />
               Payouts
             </TabsTrigger>
+            {isFullAdmin && (
+              <TabsTrigger value="subdistributors" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
+                <Boxes className="w-4 h-4 mr-2" />
+                Sub-Distributors
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="users">
@@ -151,6 +191,12 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
           <TabsContent value="payouts">
             <PayoutRequestsManagement />
           </TabsContent>
+
+          {isFullAdmin && (
+            <TabsContent value="subdistributors">
+              <SubdistributorManagement />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>
