@@ -15,7 +15,9 @@ interface CreateReleaseDialogProps {
 const releaseSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
   artist_name: z.string().trim().min(1, "Artist name is required").max(200, "Artist name must be less than 200 characters"),
-  release_date: z.string().optional(),
+  release_date: z.string().refine((date) => !date || new Date(date) > new Date(), {
+    message: "Release date must be in the future"
+  }).optional(),
   genre: z.string().trim().max(100, "Genre must be less than 100 characters").optional(),
   notes: z.string().trim().max(2000, "Notes must be less than 2000 characters").optional(),
 });

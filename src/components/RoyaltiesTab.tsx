@@ -8,6 +8,14 @@ import { Label } from "@/components/ui/label";
 import { DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { CollaboratorsManagement } from "./CollaboratorsManagement";
+import { z } from "zod";
+
+const payoutSchema = z.object({
+  amount: z.number()
+    .positive('Amount must be positive')
+    .min(10, 'Minimum payout amount is $10.00')
+    .max(1000000, 'Amount exceeds maximum allowed ($1,000,000)')
+});
 
 interface Royalty {
   id: string;
@@ -52,6 +60,16 @@ const RoyaltiesTab = ({ userId }: RoyaltiesTabProps) => {
 
   const requestPayout = useMutation({
     mutationFn: async () => {
+      // Validate payout amount
+      try {
+        payoutSchema.parse({ amount: totalEarnings });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          throw new Error(error.errors[0].message);
+        }
+        throw error;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -64,6 +82,21 @@ const RoyaltiesTab = ({ userId }: RoyaltiesTabProps) => {
       if (profileError) {
         console.error("Profile fetch error:", profileError);
         throw new Error("Failed to fetch profile");
+      }
+
+      // Check for existing pending requests
+      const { data: existingRequests, error: checkError } = await supabase
+        .from('payout_requests')
+        .select('id')
+        .eq('user_id', profile.id)
+        .eq('status', 'pending');
+
+      if (checkError) {
+        throw new Error("Failed to check existing requests");
+      }
+
+      if (existingRequests && existingRequests.length > 0) {
+        throw new Error('You already have a pending payout request');
       }
 
       // Create payout request using profile.id (same as auth user id)
