@@ -22,10 +22,38 @@ interface SubscriptionStatus {
   subscription_end: string | null;
 }
 
+interface UserPlan {
+  plan_id: string;
+  plan_name: string;
+  status: string;
+}
+
 const SubscriptionManagement = () => {
   const navigate = useNavigate();
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+
+  // Fetch user's current plan from database
+  const { data: userPlan } = useQuery({
+    queryKey: ["userPlan"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from("user_plans")
+        .select("plan_id, plan_name, status")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .single();
+      
+      if (error) {
+        console.error("Error fetching user plan:", error);
+        return null;
+      }
+      return data as UserPlan;
+    },
+  });
 
   // Fetch plans from database
   const { data: plans, isLoading: plansLoading } = useQuery({
@@ -128,7 +156,10 @@ const SubscriptionManagement = () => {
   };
 
   const isCurrentPlan = (plan: Plan) => {
-    return subscriptionStatus?.product_id === plan.stripe_product_id;
+    // Check both database plan assignment and Stripe subscription
+    const isDbPlan = userPlan?.plan_id === plan.id;
+    const isStripePlan = subscriptionStatus?.product_id === plan.stripe_product_id;
+    return isDbPlan || isStripePlan;
   };
 
   return (
@@ -190,7 +221,7 @@ const SubscriptionManagement = () => {
                   <CardHeader>
                     <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
                     <CardDescription className="text-3xl font-bold text-foreground mt-2">
-                      ${(plan.price / 100).toFixed(2)} CAD/year
+                      ${plan.price.toFixed(2)} CAD/year
                     </CardDescription>
                     {plan.description && (
                       <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
