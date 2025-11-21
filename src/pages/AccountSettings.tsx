@@ -100,8 +100,34 @@ const AccountSettings = () => {
         user_timezone: formData.user_timezone,
       };
 
-      if (canEditLabel) {
-        updateData.label_name = formData.label_name;
+      // Handle label creation/update if allowed
+      if (canEditLabel && formData.label_name) {
+        // Check if label already exists
+        const { data: existingLabel } = await supabase
+          .from("labels")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (existingLabel) {
+          // Update existing label
+          await supabase
+            .from("labels")
+            .update({ name: formData.label_name })
+            .eq("id", existingLabel.id);
+          
+          updateData.label_id = existingLabel.id;
+        } else {
+          // Create new label
+          const { data: newLabel, error: labelError } = await supabase
+            .from("labels")
+            .insert({ name: formData.label_name, user_id: user.id })
+            .select()
+            .single();
+
+          if (labelError) throw labelError;
+          updateData.label_id = newLabel.id;
+        }
       }
 
       const { error } = await supabase
