@@ -124,11 +124,9 @@ const Dashboard = () => {
           </div>
           
           <div className="flex items-center gap-4">
-            {userPlan && (
-              <Badge variant="outline" className="border-primary/30 bg-primary/5">
-                Current subscription plan: {userPlan.plan.name}
-              </Badge>
-            )}
+            <Badge variant="outline" className="border-primary/30 bg-primary/5">
+              Current subscription plan: {userPlan?.plan.name || "Trackball Free"}
+            </Badge>
             <ProfileDropdown
               userEmail={user?.email}
               onSignOut={handleSignOut}
@@ -152,13 +150,13 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <Badge className="bg-gradient-primary text-white px-3 py-1 text-sm">
+                  {userPlan?.plan.name || "Trackball Free"}
+                </Badge>
+              </div>
               {userPlan ? (
                 <>
-                  <div>
-                    <Badge className="bg-gradient-primary text-white px-3 py-1 text-sm">
-                      {userPlan.plan.name}
-                    </Badge>
-                  </div>
                   <p className="text-muted-foreground">{userPlan.plan.description}</p>
                   <div className="pt-4 border-t border-border">
                     <p className="text-sm font-medium mb-2">Plan Features:</p>
@@ -173,12 +171,7 @@ const Dashboard = () => {
                   </div>
                 </>
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">No active plan</p>
-                  <p className="text-sm text-muted-foreground">
-                    Contact support to get started with a distribution plan
-                  </p>
-                </div>
+                <p className="text-muted-foreground">Basic distribution plan with essential features</p>
               )}
             </CardContent>
           </Card>
