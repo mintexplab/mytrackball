@@ -17,6 +17,7 @@ import RoyaltiesTab from "@/components/RoyaltiesTab";
 import ArtistLabelOnboarding from "@/components/ArtistLabelOnboarding";
 import SublabelManagement from "@/components/SublabelManagement";
 import SublabelInvitationAcceptance from "@/components/SublabelInvitationAcceptance";
+import AccountManagerCard from "@/components/AccountManagerCard";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -231,6 +232,16 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 sm:space-y-6 animate-fade-in">
+            {userPlan?.plan.name === "Trackball Prestige" && (
+              <AccountManagerCard
+                managerName={profile?.account_manager_name}
+                managerEmail={profile?.account_manager_email}
+                managerPhone={profile?.account_manager_phone}
+                managerTimezone={profile?.account_manager_timezone}
+                userTimezone={profile?.user_timezone || "America/New_York"}
+              />
+            )}
+
             <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
               <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
                 <CardHeader className="pb-3 sm:pb-6">
