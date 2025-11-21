@@ -252,6 +252,9 @@ export const SubdistributorManagement = () => {
                   <div className="space-y-1">
                     <h3 className="font-semibold">{subdist.name}</h3>
                     <p className="text-sm text-muted-foreground">Slug: {subdist.slug}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Login URL: <code className="bg-muted px-1 rounded">/subdistributor/{subdist.slug}</code>
+                    </p>
                     {subdist.owner && (
                       <p className="text-sm text-muted-foreground">
                         Owner: {subdist.owner.email}
