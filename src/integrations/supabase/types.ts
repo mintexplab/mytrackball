@@ -219,7 +219,6 @@ export type Database = {
           parent_account_id: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
-          subdistributor_id: string | null
           user_id: string
           user_timezone: string | null
         }
@@ -240,7 +239,6 @@ export type Database = {
           parent_account_id?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
-          subdistributor_id?: string | null
           user_id: string
           user_timezone?: string | null
         }
@@ -261,7 +259,6 @@ export type Database = {
           parent_account_id?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
-          subdistributor_id?: string | null
           user_id?: string
           user_timezone?: string | null
         }
@@ -271,13 +268,6 @@ export type Database = {
             columns: ["parent_account_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_subdistributor_id_fkey"
-            columns: ["subdistributor_id"]
-            isOneToOne: false
-            referencedRelation: "subdistributors"
             referencedColumns: ["id"]
           },
         ]
@@ -467,107 +457,6 @@ export type Database = {
           {
             foreignKeyName: "royalties_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      subdistributor_invitations: {
-        Row: {
-          accepted_at: string | null
-          background_color: string
-          created_at: string | null
-          expires_at: string
-          id: string
-          invitation_token: string
-          invitee_email: string
-          primary_color: string
-          status: string
-          subdistributor_id: string
-        }
-        Insert: {
-          accepted_at?: string | null
-          background_color: string
-          created_at?: string | null
-          expires_at: string
-          id?: string
-          invitation_token: string
-          invitee_email: string
-          primary_color: string
-          status?: string
-          subdistributor_id: string
-        }
-        Update: {
-          accepted_at?: string | null
-          background_color?: string
-          created_at?: string | null
-          expires_at?: string
-          id?: string
-          invitation_token?: string
-          invitee_email?: string
-          primary_color?: string
-          status?: string
-          subdistributor_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subdistributor_invitations_subdistributor_id_fkey"
-            columns: ["subdistributor_id"]
-            isOneToOne: false
-            referencedRelation: "subdistributors"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      subdistributors: {
-        Row: {
-          background_color: string
-          created_at: string | null
-          created_by: string | null
-          id: string
-          is_active: boolean | null
-          logo_url: string | null
-          name: string
-          owner_id: string | null
-          primary_color: string
-          slug: string
-        }
-        Insert: {
-          background_color?: string
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          is_active?: boolean | null
-          logo_url?: string | null
-          name: string
-          owner_id?: string | null
-          primary_color?: string
-          slug: string
-        }
-        Update: {
-          background_color?: string
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          is_active?: boolean | null
-          logo_url?: string | null
-          name?: string
-          owner_id?: string | null
-          primary_color?: string
-          slug?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subdistributors_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subdistributors_owner_id_fkey"
-            columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
