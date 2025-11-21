@@ -28,17 +28,59 @@ const Auth = () => {
         });
         if (error) throw error;
 
-        // Check if user is banned
+        // Check if user is banned or locked
         if (data.user) {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("is_banned")
+            .select("is_banned, is_locked, full_name, user_id")
             .eq("id", data.user.id)
             .single();
 
           if (profile?.is_banned) {
             await supabase.auth.signOut();
             toast.error("Your account has been suspended. Please contact support.");
+            setLoading(false);
+            return;
+          }
+
+          if (profile?.is_locked) {
+            await supabase.auth.signOut();
+            // Show locked account modal
+            const lockedModal = document.createElement('div');
+            lockedModal.innerHTML = `
+              <div class="fixed inset-0 z-50 flex items-center justify-center bg-background p-4">
+                <div class="absolute inset-0">
+                  <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/30 rounded-full blur-3xl animate-pulse" style="animation-duration: 4s;"></div>
+                  <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-red-600/20 rounded-full blur-3xl animate-pulse" style="animation-duration: 5s; animation-delay: 1s;"></div>
+                  <div class="absolute top-1/2 right-1/3 w-64 h-64 bg-red-400/25 rounded-full blur-3xl animate-pulse" style="animation-duration: 6s; animation-delay: 2s;"></div>
+                </div>
+                <div class="relative backdrop-blur-sm bg-card border border-primary/20 rounded-lg p-8 max-w-md w-full shadow-glow">
+                  <div class="text-center space-y-6">
+                    <div class="w-16 h-16 mx-auto bg-yellow-500/20 rounded-full flex items-center justify-center">
+                      <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 class="text-2xl font-bold mb-2">Account Temporarily Locked</h2>
+                      <p class="text-muted-foreground mb-6">Your account has been temporarily locked. Please contact support for assistance.</p>
+                    </div>
+                    <div class="bg-muted/30 rounded-lg p-4 text-left space-y-2">
+                      <p class="text-sm"><span class="font-medium">Name:</span> ${profile.full_name || 'Not set'}</p>
+                      <p class="text-sm"><span class="font-medium">Email:</span> ${email}</p>
+                      <p class="text-sm"><span class="font-medium">User ID:</span> ${profile.user_id}</p>
+                    </div>
+                    <a 
+                      href="mailto:contact@trackball.cc?subject=Account%20Locked%20-%20${profile.user_id}"
+                      class="inline-block w-full px-6 py-3 bg-gradient-primary text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+                    >
+                      Contact Support
+                    </a>
+                  </div>
+                </div>
+              </div>
+            `;
+            document.body.appendChild(lockedModal);
             setLoading(false);
             return;
           }
@@ -67,7 +109,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-red-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
