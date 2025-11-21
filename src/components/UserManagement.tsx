@@ -3,15 +3,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Package } from "lucide-react";
+import { Package, UserPlus, Ban } from "lucide-react";
+import { z } from "zod";
+
+const createUserSchema = z.object({
+  email: z.string().email("Invalid email address").max(255),
+  password: z.string().min(8, "Password must be at least 8 characters").max(100),
+  full_name: z.string().trim().min(1, "Name is required").max(100),
+});
 
 const UserManagement = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [newUserName, setNewUserName] = useState("");
 
   useEffect(() => {
     fetchUsers();
@@ -47,8 +62,65 @@ const UserManagement = () => {
     setPlans(data || []);
   };
 
+  const createUser = async () => {
+    try {
+      // Validate input
+      const validatedData = createUserSchema.parse({
+        email: newUserEmail,
+        password: newUserPassword,
+        full_name: newUserName,
+      });
+
+      // Create user via Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email: validatedData.email,
+        password: validatedData.password,
+        options: {
+          data: {
+            full_name: validatedData.full_name,
+          },
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success("User created successfully");
+      setCreateDialogOpen(false);
+      setNewUserEmail("");
+      setNewUserPassword("");
+      setNewUserName("");
+      
+      // Refresh user list after a short delay to allow database trigger to complete
+      setTimeout(fetchUsers, 1000);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error("Failed to create user");
+      }
+    }
+  };
+
+  const toggleBanUser = async (userId: string, currentBanStatus: boolean) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_banned: !currentBanStatus })
+      .eq("id", userId);
+
+    if (error) {
+      toast.error("Failed to update user status");
+      return;
+    }
+
+    toast.success(currentBanStatus ? "User unbanned" : "User banned");
+    fetchUsers();
+  };
+
   const assignPlan = async (userId: string, planId: string) => {
-    // Get the plan name
     const selectedPlan = plans.find(p => p.id === planId);
     
     const { error: deleteError } = await supabase
@@ -66,7 +138,7 @@ const UserManagement = () => {
       .insert({
         user_id: userId,
         plan_id: planId,
-        plan_name: selectedPlan?.name || 'Free',
+        plan_name: selectedPlan?.name || 'Trackball Free',
         status: "active",
       });
 
@@ -90,8 +162,63 @@ const UserManagement = () => {
   return (
     <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
       <CardHeader>
-        <CardTitle className="text-2xl font-title">USER MANAGEMENT</CardTitle>
-        <CardDescription>Manage user accounts and assign distribution plans</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-2xl font-title">USER MANAGEMENT</CardTitle>
+            <CardDescription>Manage user accounts and assign distribution plans</CardDescription>
+          </div>
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-primary hover:opacity-90">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Create User
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-card border-border">
+              <DialogHeader>
+                <DialogTitle className="font-title">Create New User</DialogTitle>
+                <DialogDescription>Add a new user account to the system</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="John Doe"
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                    className="bg-background border-border"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="user@example.com"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    className="bg-background border-border"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Minimum 8 characters"
+                    value={newUserPassword}
+                    onChange={(e) => setNewUserPassword(e.target.value)}
+                    className="bg-background border-border"
+                  />
+                </div>
+                <Button onClick={createUser} className="w-full bg-gradient-primary hover:opacity-90">
+                  Create User
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="rounded-md border border-border overflow-hidden">
@@ -100,8 +227,10 @@ const UserManagement = () => {
               <TableRow className="bg-muted/50">
                 <TableHead>User</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Current Plan</TableHead>
                 <TableHead>Assign Plan</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -111,6 +240,18 @@ const UserManagement = () => {
                     {user.full_name || "No name"}
                   </TableCell>
                   <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                  <TableCell>
+                    {user.is_banned ? (
+                      <Badge variant="destructive" className="flex items-center gap-1 w-fit">
+                        <Ban className="w-3 h-3" />
+                        Banned
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
+                        Active
+                      </Badge>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {user.user_plans?.[0]?.plan ? (
                       <Badge className="bg-gradient-primary text-white">
@@ -124,11 +265,12 @@ const UserManagement = () => {
                     <Select
                       onValueChange={(planId) => assignPlan(user.id, planId)}
                       defaultValue={user.user_plans?.[0]?.plan_id}
+                      disabled={user.is_banned}
                     >
-                      <SelectTrigger className="w-[180px] bg-background/50 border-border">
+                      <SelectTrigger className="w-[200px] bg-background/50 border-border">
                         <SelectValue placeholder="Select plan" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-card border-border">
                         {plans.map((plan) => (
                           <SelectItem key={plan.id} value={plan.id}>
                             <div className="flex items-center gap-2">
@@ -139,6 +281,18 @@ const UserManagement = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor={`ban-${user.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                        {user.is_banned ? "Unban" : "Ban"}
+                      </Label>
+                      <Switch
+                        id={`ban-${user.id}`}
+                        checked={user.is_banned}
+                        onCheckedChange={() => toggleBanUser(user.id, user.is_banned)}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
