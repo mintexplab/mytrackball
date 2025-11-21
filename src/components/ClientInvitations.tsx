@@ -45,10 +45,13 @@ const ClientInvitations = () => {
   }, []);
 
   const fetchInvitations = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
     const { data, error } = await supabase
       .from("sublabel_invitations")
       .select("*")
       .eq("invitation_type", "client")
+      .eq("inviter_id", user?.id)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -95,9 +98,28 @@ const ClientInvitations = () => {
         return;
       }
 
-      // Get admin info
+      // Get current user info
       const { data: { user } } = await supabase.auth.getUser();
-      const { data: adminProfile } = await supabase
+      
+      // Verify user has Signature or Prestige plan
+      const { data: userPlan } = await supabase
+        .from("user_plans")
+        .select(`
+          *,
+          plan:plans(name)
+        `)
+        .eq("user_id", user?.id)
+        .eq("status", "active")
+        .single();
+
+      const planName = userPlan?.plan?.name;
+      if (planName !== "Trackball Signature" && planName !== "Trackball Prestige") {
+        toast.error("Only Signature and Prestige members can send invitations");
+        setSending(false);
+        return;
+      }
+
+      const { data: userProfile } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user?.id)
@@ -121,10 +143,10 @@ const ClientInvitations = () => {
       // Send email via edge function
       const { error: emailError } = await supabase.functions.invoke("send-sublabel-invitation", {
         body: {
-          inviterName: adminProfile?.display_name || adminProfile?.full_name || "Admin",
-          inviterEmail: adminProfile?.email,
+          inviterName: userProfile?.display_name || userProfile?.full_name || "Trackball User",
+          inviterEmail: userProfile?.email,
           inviteeEmail: validatedData.email,
-          labelName: "My Trackball",
+          labelName: userProfile?.label_name || "My Trackball",
           invitationId: invitation.id,
           invitationType: "client",
           permissions: validatedData.permissions,
