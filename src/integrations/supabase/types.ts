@@ -104,6 +104,8 @@ export type Database = {
           max_releases: number | null
           name: string
           price: number
+          stripe_price_id: string | null
+          stripe_product_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -113,6 +115,8 @@ export type Database = {
           max_releases?: number | null
           name: string
           price: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -122,6 +126,8 @@ export type Database = {
           max_releases?: number | null
           name?: string
           price?: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
         }
         Relationships: []
       }
@@ -141,6 +147,8 @@ export type Database = {
           is_locked: boolean | null
           label_name: string | null
           parent_account_id: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           user_id: string
           user_timezone: string | null
         }
@@ -159,6 +167,8 @@ export type Database = {
           is_locked?: boolean | null
           label_name?: string | null
           parent_account_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           user_id: string
           user_timezone?: string | null
         }
@@ -177,6 +187,8 @@ export type Database = {
           is_locked?: boolean | null
           label_name?: string | null
           parent_account_id?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           user_id?: string
           user_timezone?: string | null
         }
