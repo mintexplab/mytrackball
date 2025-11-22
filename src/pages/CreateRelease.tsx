@@ -42,6 +42,7 @@ const releaseSchema = z.object({
   courtesy_line: z.string().max(500, "Courtesy line must be less than 500 characters").optional(),
   distributor: z.enum(["Believe Music", "The Orchard", ""]),
   notes: z.string().max(2000, "Notes must be less than 2000 characters").optional(),
+  catalog_number: z.string().max(100, "Catalog number must be less than 100 characters").optional(),
 });
 
 const trackSchema = z.object({
@@ -118,6 +119,7 @@ const CreateRelease = () => {
     total_volumes: 1,
     distributor: "",
     notes: "",
+    catalog_number: "",
   });
 
   useEffect(() => {
@@ -476,6 +478,15 @@ const CreateRelease = () => {
                     id="label_name"
                     value={formData.label_name}
                     onChange={(e) => setFormData({ ...formData, label_name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="catalog_number">Catalog Number</Label>
+                  <Input
+                    id="catalog_number"
+                    value={formData.catalog_number}
+                    onChange={(e) => setFormData({ ...formData, catalog_number: e.target.value })}
+                    placeholder="Optional internal catalog ID"
                   />
                 </div>
               </div>

@@ -78,6 +78,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showLoader, setShowLoader] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [selectedCatalogReleaseId, setSelectedCatalogReleaseId] = useState<string | null>(null);
   const navigate = useNavigate();
   useEffect(() => {
     const {
@@ -200,7 +202,7 @@ const Dashboard = () => {
       
       <div className="absolute inset-0 bg-gradient-primary opacity-5 blur-3xl" />
       
-      <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-20">
+      <header className="border-b border-border backdrop-blur-sm bg-card/50 fixed top-0 left-0 right-0 z-30">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex justify-between items-center gap-2">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -227,13 +229,17 @@ const Dashboard = () => {
       {user && <ArtistLabelOnboarding userId={user.id} userPlan={userPlan} />}
       {user && <ClientInvitationAcceptance userId={user.id} />}
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
-        <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
-          <div className="sticky top-[73px] z-10 -mx-3 sm:-mx-4 px-3 sm:px-4 py-2 bg-background/95 backdrop-blur-sm">
+      <main className="container mx-auto px-3 sm:px-4 pt-32 sm:pt-36 pb-4 sm:pb-8 space-y-4 sm:space-y-6 relative">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+          <div className="fixed top-[72px] left-0 right-0 z-20 -mx-3 sm:-mx-4 px-3 sm:px-4 py-2 bg-background/95 backdrop-blur-sm">
             <TabsList className="w-full max-w-5xl mx-auto bg-card/80 backdrop-blur-sm border border-border p-1 rounded-lg">
             <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
               <Package className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="catalog" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
+              <Package className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Catalog</span>
             </TabsTrigger>
             {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && <TabsTrigger value="clients" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
                 <Users className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
@@ -295,7 +301,17 @@ const Dashboard = () => {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <CardContent>
-                    <ReleasesGallery userId={user?.id} />
+                    <ReleasesGallery
+                      userId={user?.id}
+                      onReleaseClick={(id) => {
+                        setSelectedCatalogReleaseId(id);
+                        setActiveTab("catalog");
+                        const el = document.getElementById("catalog-tab-content");
+                        if (el) {
+                          el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
+                      }}
+                    />
                   </CardContent>
                 </CollapsibleContent>
               </Card>
@@ -355,6 +371,20 @@ const Dashboard = () => {
                 </CollapsibleContent>
               </Card>
             </Collapsible>
+          </TabsContent>
+
+          <TabsContent id="catalog-tab-content" value="catalog" className="animate-fade-in">
+            {user && (
+              <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-lg sm:text-2xl font-bold text-left">Catalog</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm text-left">Full list of your releases</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ReleasesList userId={user.id} isAdmin={false} />
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && <TabsContent value="clients" className="animate-fade-in">

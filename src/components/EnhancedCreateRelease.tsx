@@ -41,6 +41,7 @@ const releaseSchema = z.object({
   total_discs: z.number().int().min(1).max(99),
   total_volumes: z.number().int().min(1).max(99),
   notes: z.string().trim().max(2000, "Notes must be less than 2000 characters").optional(),
+  catalog_number: z.string().trim().max(100, "Catalog number must be less than 100 characters").optional(),
 });
 
 const trackSchema = z.object({
@@ -79,6 +80,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     total_discs: 1,
     total_volumes: 1,
     notes: "",
+    catalog_number: "",
   });
 
   const addTrack = () => {
@@ -145,6 +147,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
           total_discs: validatedRelease.total_discs,
           total_volumes: validatedRelease.total_volumes,
           notes: validatedRelease.notes || null,
+          catalog_number: validatedRelease.catalog_number || null,
         })
         .select()
         .single();
@@ -200,6 +203,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
       total_discs: 1,
       total_volumes: 1,
       notes: "",
+      catalog_number: "",
     });
     setTracks([{
       id: "1",
@@ -228,77 +232,88 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
           {/* Basic Info */}
           <Card className="p-4 border-border">
             <h3 className="font-semibold mb-4 text-primary">Release Information</h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 space-y-2">
-                  <Label htmlFor="title">Album/EP/Single Title *</Label>
-                  <Input
-                    id="title"
-                    placeholder="My Awesome Release"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    required
-                    className="bg-background/50 border-border"
-                  />
-                </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2 space-y-2">
+                    <Label htmlFor="title">Album/EP/Single Title *</Label>
+                    <Input
+                      id="title"
+                      placeholder="My Awesome Release"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      required
+                      className="bg-background/50 border-border"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="artist_name">Primary Artist *</Label>
-                  <Input
-                    id="artist_name"
-                    placeholder="DJ Example"
-                    value={formData.artist_name}
-                    onChange={(e) => setFormData({ ...formData, artist_name: e.target.value })}
-                    required
-                    className="bg-background/50 border-border"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="artist_name">Primary Artist *</Label>
+                    <Input
+                      id="artist_name"
+                      placeholder="DJ Example"
+                      value={formData.artist_name}
+                      onChange={(e) => setFormData({ ...formData, artist_name: e.target.value })}
+                      required
+                      className="bg-background/50 border-border"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="featured_artists">Featured Artists</Label>
-                  <Input
-                    id="featured_artists"
-                    placeholder="Artist 1, Artist 2"
-                    value={formData.featured_artists}
-                    onChange={(e) => setFormData({ ...formData, featured_artists: e.target.value })}
-                    className="bg-background/50 border-border"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="featured_artists">Featured Artists</Label>
+                    <Input
+                      id="featured_artists"
+                      placeholder="Artist 1, Artist 2"
+                      value={formData.featured_artists}
+                      onChange={(e) => setFormData({ ...formData, featured_artists: e.target.value })}
+                      className="bg-background/50 border-border"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="release_date">Release Date</Label>
-                  <Input
-                    id="release_date"
-                    type="date"
-                    value={formData.release_date}
-                    onChange={(e) => setFormData({ ...formData, release_date: e.target.value })}
-                    className="bg-background/50 border-border"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="release_date">Release Date</Label>
+                    <Input
+                      id="release_date"
+                      type="date"
+                      value={formData.release_date}
+                      onChange={(e) => setFormData({ ...formData, release_date: e.target.value })}
+                      className="bg-background/50 border-border"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="genre">Genre</Label>
-                  <Input
-                    id="genre"
-                    placeholder="Electronic, Hip-Hop, etc."
-                    value={formData.genre}
-                    onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-                    className="bg-background/50 border-border"
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="genre">Genre</Label>
+                    <Input
+                      id="genre"
+                      placeholder="Electronic, Hip-Hop, etc."
+                      value={formData.genre}
+                      onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
+                      className="bg-background/50 border-border"
+                    />
+                  </div>
 
-                <div className="col-span-2 space-y-2">
-                  <Label htmlFor="artwork_url">Artwork URL</Label>
-                  <Input
-                    id="artwork_url"
-                    placeholder="https://example.com/artwork.jpg"
-                    value={formData.artwork_url}
-                    onChange={(e) => setFormData({ ...formData, artwork_url: e.target.value })}
-                    className="bg-background/50 border-border"
-                  />
+                  <div className="col-span-2 space-y-2">
+                    <Label htmlFor="artwork_url">Artwork URL</Label>
+                    <Input
+                      id="artwork_url"
+                      placeholder="https://example.com/artwork.jpg"
+                      value={formData.artwork_url}
+                      onChange={(e) => setFormData({ ...formData, artwork_url: e.target.value })}
+                      className="bg-background/50 border-border"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="catalog_number">Catalog Number</Label>
+                    <Input
+                      id="catalog_number"
+                      placeholder="Optional internal catalog ID"
+                      value={formData.catalog_number}
+                      onChange={(e) => setFormData({ ...formData, catalog_number: e.target.value })}
+                      className="bg-background/50 border-border"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
           </Card>
 
           {/* Copyright Info */}
