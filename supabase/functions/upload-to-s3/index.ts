@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "https://esm.sh/@aws-sdk/client-s3@3.490.0";
+import { S3Bucket } from "https://deno.land/x/s3@0.5.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,27 +32,19 @@ Deno.serve(async (req) => {
   try {
     const { file, path, bucket, action, oldPath }: UploadRequest & DeleteRequest & { action?: string } = await req.json();
 
-    // Initialize S3 client
-    const s3Client = new S3Client({
+    // Initialize S3 bucket using Deno-native library
+    const s3Bucket = new S3Bucket({
+      accessKeyID: Deno.env.get('AWS_ACCESS_KEY_ID')!,
+      secretKey: Deno.env.get('AWS_SECRET_ACCESS_KEY')!,
+      bucket: bucket || Deno.env.get('AWS_S3_BUCKET_NAME')!,
       region: Deno.env.get('AWS_REGION') || 'us-east-1',
-      credentials: {
-        accessKeyId: Deno.env.get('AWS_ACCESS_KEY_ID')!,
-        secretAccessKey: Deno.env.get('AWS_SECRET_ACCESS_KEY')!,
-      },
     });
-
-    const bucketName = bucket || Deno.env.get('AWS_S3_BUCKET_NAME')!;
 
     // Handle delete action
     if (action === 'delete' && oldPath) {
       console.log('Deleting file from S3:', oldPath);
       
-      const deleteCommand = new DeleteObjectCommand({
-        Bucket: bucketName,
-        Key: oldPath,
-      });
-
-      await s3Client.send(deleteCommand);
+      await s3Bucket.deleteObject(oldPath);
       
       return new Response(
         JSON.stringify({ success: true, message: 'File deleted successfully' }),
@@ -73,11 +65,7 @@ Deno.serve(async (req) => {
     // Delete old file if oldPath is provided
     if (oldPath) {
       try {
-        const deleteCommand = new DeleteObjectCommand({
-          Bucket: bucketName,
-          Key: oldPath,
-        });
-        await s3Client.send(deleteCommand);
+        await s3Bucket.deleteObject(oldPath);
         console.log('Old file deleted:', oldPath);
       } catch (error) {
         console.error('Error deleting old file:', error);
@@ -85,17 +73,14 @@ Deno.serve(async (req) => {
     }
 
     // Upload new file to S3
-    const uploadCommand = new PutObjectCommand({
-      Bucket: bucketName,
-      Key: path,
-      Body: fileData,
-      ContentType: file.type,
+    await s3Bucket.putObject(path, fileData, {
+      contentType: file.type,
     });
 
-    await s3Client.send(uploadCommand);
-
     // Construct the public URL
-    const publicUrl = `https://${bucketName}.s3.${Deno.env.get('AWS_REGION')}.amazonaws.com/${path}`;
+    const bucketName = bucket || Deno.env.get('AWS_S3_BUCKET_NAME')!;
+    const region = Deno.env.get('AWS_REGION') || 'us-east-1';
+    const publicUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${path}`;
 
     console.log('File uploaded successfully:', publicUrl);
 
