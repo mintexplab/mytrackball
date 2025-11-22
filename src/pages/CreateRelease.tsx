@@ -509,8 +509,8 @@ const CreateRelease = () => {
         release_date: validatedData.digitalReleaseDate,
         artwork_url: artworkUrl,
         audio_file_url: uploadedTracks[0]?.audioUrl || null,
-        copyright_line: validatedData.cLine,
-        phonographic_line: validatedData.pLine,
+        copyright_line: validatedData.cLineYear ? `${validatedData.cLineYear} ${validatedData.cLine}` : validatedData.cLine,
+        phonographic_line: validatedData.pLineYear ? `${validatedData.pLineYear} ${validatedData.pLine}` : validatedData.pLine,
         featured_artists: validatedData.featuringArtists ? validatedData.featuringArtists.split(",").map(a => a.trim()) : [],
         label_name: validatedData.label,
         notes: validatedData.additionalNotes,
@@ -782,13 +782,6 @@ const CreateRelease = () => {
                 <div>
                   <Label htmlFor="cLine">C-Line (©)</Label>
                   <div className="flex gap-2">
-                    <Input
-                      id="cLine"
-                      value={formData.cLine}
-                      onChange={(e) => setFormData({ ...formData, cLine: e.target.value })}
-                      placeholder="C-Line information"
-                      className="flex-1"
-                    />
                     <Select 
                       value={formData.cLineYear} 
                       onValueChange={(value) => setFormData({ ...formData, cLineYear: value })}
@@ -802,18 +795,18 @@ const CreateRelease = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                    <Input
+                      id="cLine"
+                      value={formData.cLine}
+                      onChange={(e) => setFormData({ ...formData, cLine: e.target.value })}
+                      placeholder="C-Line information"
+                      className="flex-1"
+                    />
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="pLine">P-Line (℗)</Label>
                   <div className="flex gap-2">
-                    <Input
-                      id="pLine"
-                      value={formData.pLine}
-                      onChange={(e) => setFormData({ ...formData, pLine: e.target.value })}
-                      placeholder="P-Line information"
-                      className="flex-1"
-                    />
                     <Select 
                       value={formData.pLineYear} 
                       onValueChange={(value) => setFormData({ ...formData, pLineYear: value })}
@@ -827,6 +820,13 @@ const CreateRelease = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                    <Input
+                      id="pLine"
+                      value={formData.pLine}
+                      onChange={(e) => setFormData({ ...formData, pLine: e.target.value })}
+                      placeholder="P-Line information"
+                      className="flex-1"
+                    />
                   </div>
                 </div>
               </div>
