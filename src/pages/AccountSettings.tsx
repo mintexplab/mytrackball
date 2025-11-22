@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TwoFactorAuth } from "@/components/TwoFactorAuth";
+import { useS3Upload } from "@/hooks/useS3Upload";
 const TIMEZONES = [{
   value: "America/New_York",
   label: "Eastern Time (ET)"
@@ -46,7 +47,7 @@ const AccountSettings = () => {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [userPlan, setUserPlan] = useState<any>(null);
-  const [uploading, setUploading] = useState(false);
+  const { uploadFile, deleteFile, uploading } = useS3Upload();
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -192,7 +193,6 @@ const AccountSettings = () => {
   };
   const uploadProfilePicture = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      setUploading(true);
       if (!event.target.files || event.target.files.length === 0) {
         return;
       }
@@ -210,84 +210,72 @@ const AccountSettings = () => {
         toast.error('File size must be less than 5MB');
         return;
       }
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/avatar.${fileExt}`;
 
-      // Delete old profile picture if exists
-      if (formData.avatar_url) {
-        const oldPath = formData.avatar_url.split('/').slice(-2).join('/');
-        await supabase.storage.from('profile-pictures').remove([oldPath]);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const fileExt = file.name.split('.').pop();
+      const s3Path = `profile-pictures/${user.id}/avatar.${fileExt}`;
+      
+      // Extract old path from URL if exists
+      const oldPath = formData.avatar_url ? extractS3PathFromUrl(formData.avatar_url) : undefined;
+
+      // Upload to S3
+      const publicUrl = await uploadFile({ file, path: s3Path, oldPath });
+      
+      if (!publicUrl) {
+        throw new Error('Upload failed');
       }
 
-      // Upload new file
-      const {
-        error: uploadError
-      } = await supabase.storage.from('profile-pictures').upload(fileName, file, {
-        upsert: true
-      });
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const {
-        data: {
-          publicUrl
-        }
-      } = supabase.storage.from('profile-pictures').getPublicUrl(fileName);
-
       // Update profile with new avatar URL
-      const {
-        error: updateError
-      } = await supabase.from('profiles').update({
+      const { error: updateError } = await supabase.from('profiles').update({
         avatar_url: publicUrl
       }).eq('id', user.id);
+      
       if (updateError) throw updateError;
+
       setFormData({
         ...formData,
         avatar_url: publicUrl
       });
+      
       toast.success('Profile picture updated successfully!');
     } catch (error: any) {
       console.error('Error uploading profile picture:', error);
       toast.error(error.message || 'Failed to upload profile picture');
-    } finally {
-      setUploading(false);
     }
   };
   const removeProfilePicture = async () => {
     try {
-      setUploading(true);
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+      
       if (formData.avatar_url) {
-        const path = formData.avatar_url.split('/').slice(-2).join('/');
-        await supabase.storage.from('profile-pictures').remove([path]);
+        const s3Path = extractS3PathFromUrl(formData.avatar_url);
+        await deleteFile(s3Path);
       }
-      const {
-        error
-      } = await supabase.from('profiles').update({
+
+      const { error } = await supabase.from('profiles').update({
         avatar_url: null
       }).eq('id', user.id);
+      
       if (error) throw error;
+
       setFormData({
         ...formData,
         avatar_url: ""
       });
+      
       toast.success('Profile picture removed');
     } catch (error: any) {
       toast.error(error.message || 'Failed to remove profile picture');
-    } finally {
-      setUploading(false);
     }
+  };
+
+  const extractS3PathFromUrl = (url: string): string => {
+    // Extract path from S3 URL: https://bucket.s3.region.amazonaws.com/path/to/file
+    const urlParts = url.split('.amazonaws.com/');
+    return urlParts[1] || url;
   };
   return <div className="min-h-screen bg-background">
       <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">

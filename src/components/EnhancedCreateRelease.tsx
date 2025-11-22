@@ -8,8 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Trash2, Music } from "lucide-react";
+import { Plus, Trash2, Music, Upload } from "lucide-react";
 import { z } from "zod";
+import { useS3Upload } from "@/hooks/useS3Upload";
 
 interface EnhancedCreateReleaseProps {
   children: React.ReactNode;
@@ -55,6 +56,8 @@ const trackSchema = z.object({
 const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { uploadFile, uploading: s3Uploading } = useS3Upload();
+  const [artworkFile, setArtworkFile] = useState<File | null>(null);
   const [tracks, setTracks] = useState<Track[]>([{
     id: "1",
     track_number: 1,
@@ -105,6 +108,28 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     setTracks(tracks.map(t => t.id === id ? { ...t, [field]: value } : t));
   };
 
+  const handleArtworkUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) return;
+    
+    const file = event.target.files[0];
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please upload a valid image file (JPG, PNG, or WEBP)');
+      return;
+    }
+    
+    // Validate file size (10MB)
+    if (file.size > 10485760) {
+      toast.error('Artwork file must be less than 10MB');
+      return;
+    }
+    
+    setArtworkFile(file);
+    toast.success('Artwork ready to upload');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -127,6 +152,21 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Upload artwork to S3 if file is selected
+      let artworkUrl = validatedRelease.artwork_url || null;
+      if (artworkFile) {
+        const timestamp = Date.now();
+        const fileExt = artworkFile.name.split('.').pop();
+        const s3Path = `release-artwork/${user.id}/${timestamp}.${fileExt}`;
+        
+        const uploadedUrl = await uploadFile({ file: artworkFile, path: s3Path });
+        if (uploadedUrl) {
+          artworkUrl = uploadedUrl;
+        } else {
+          throw new Error('Failed to upload artwork');
+        }
+      }
+
       // Create release
       const { data: release, error: releaseError } = await supabase
         .from("releases")
@@ -136,7 +176,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
           artist_name: validatedRelease.artist_name,
           release_date: validatedRelease.release_date || null,
           genre: validatedRelease.genre || null,
-          artwork_url: validatedRelease.artwork_url || null,
+          artwork_url: artworkUrl,
           copyright_line: validatedRelease.copyright_line || null,
           phonographic_line: validatedRelease.phonographic_line || null,
           courtesy_line: validatedRelease.courtesy_line || null,
@@ -214,6 +254,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
       audio_file_url: "",
       featured_artists: "",
     }]);
+    setArtworkFile(null);
   };
 
   return (
@@ -292,10 +333,37 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
                   </div>
 
                   <div className="col-span-2 space-y-2">
-                    <Label htmlFor="artwork_url">Artwork URL</Label>
+                    <Label htmlFor="artwork">Artwork Upload</Label>
+                    <div className="flex items-center gap-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('artwork-upload')?.click()}
+                        disabled={s3Uploading}
+                        className="border-primary/20"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {artworkFile ? artworkFile.name : 'Choose Artwork'}
+                      </Button>
+                      {artworkFile && (
+                        <span className="text-sm text-muted-foreground">
+                          {(artworkFile.size / 1024 / 1024).toFixed(2)} MB
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      id="artwork-upload"
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      onChange={handleArtworkUpload}
+                      className="hidden"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      JPG, PNG, or WEBP. Max 10MB. Or enter URL below.
+                    </p>
                     <Input
                       id="artwork_url"
-                      placeholder="https://example.com/artwork.jpg"
+                      placeholder="Or paste artwork URL"
                       value={formData.artwork_url}
                       onChange={(e) => setFormData({ ...formData, artwork_url: e.target.value })}
                       className="bg-background/50 border-border"
