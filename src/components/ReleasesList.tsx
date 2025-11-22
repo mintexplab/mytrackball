@@ -252,6 +252,14 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
                       >
                         On Hold
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateReleaseStatus(release.id, "awaiting final qc")}
+                        className="border-cyan-500/30 hover:bg-cyan-500/20 text-cyan-300"
+                      >
+                        Awaiting Final QC
+                      </Button>
                     </>
                   ) : (
                     <>
