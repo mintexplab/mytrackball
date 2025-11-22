@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, User, Mail, Lock, Upload, X, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, User, Mail, Lock, Upload, X, Clock, Trash2, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -516,6 +516,41 @@ const AccountSettings = () => {
         )}
 
         <TwoFactorAuth />
+
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle>Tutorial & Onboarding</CardTitle>
+            <CardDescription>Restart the interactive tutorial to learn about dashboard features</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Need a refresher on how to use My Trackball? Restart the guided tutorial to walk through all features step-by-step.
+            </p>
+            <Button 
+              onClick={async () => {
+                try {
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (user) {
+                    await supabase
+                      .from("profiles")
+                      .update({ onboarding_completed: false })
+                      .eq("id", user.id);
+                    
+                    toast.success("Tutorial will restart on next dashboard visit");
+                    setTimeout(() => navigate("/dashboard"), 1000);
+                  }
+                } catch (error) {
+                  console.error("Error restarting tutorial:", error);
+                  toast.error("Failed to restart tutorial");
+                }
+              }}
+              className="w-full sm:w-auto"
+            >
+              <HelpCircle className="w-4 h-4 mr-2" />
+              Restart Tutorial
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card className="border-destructive/50 bg-destructive/5">
           <CardHeader>

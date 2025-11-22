@@ -610,32 +610,6 @@ const Dashboard = () => {
                       </div>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                        <h4 className="font-medium mb-2">Distribution Support</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Questions about release submissions, distribution status, or platform delivery
-                        </p>
-                      </div>
-                      <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                        <h4 className="font-medium mb-2">Account & Billing</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Issues with your plan, payments, or account settings
-                        </p>
-                      </div>
-                      <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                        <h4 className="font-medium mb-2">Technical Issues</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Upload problems, login issues, or platform bugs
-                        </p>
-                      </div>
-                      <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                        <h4 className="font-medium mb-2">Publishing & Royalties</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Publishing submissions, royalty questions, or payout requests
-                        </p>
-                      </div>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
