@@ -25,6 +25,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { MaintenanceDialog } from "@/components/MaintenanceDialog";
 import { TerminatedAccountDialog } from "@/components/TerminatedAccountDialog";
 import BulkUploadTab from "@/components/BulkUploadTab";
+import { DraftManagement } from "@/components/DraftManagement";
+import { AdvancedCatalogManagement } from "@/components/AdvancedCatalogManagement";
+import { FloatingAudioPlayer } from "@/components/FloatingAudioPlayer";
 
 const QuickStatsGrid = ({ userId }: { userId?: string }) => {
   const [releases, setReleases] = useState<any[]>([]);
@@ -88,6 +91,11 @@ const Dashboard = () => {
   const [showMaintenanceDialog, setShowMaintenanceDialog] = useState(false);
   const [isTerminated, setIsTerminated] = useState(false);
   const [showTerminatedDialog, setShowTerminatedDialog] = useState(false);
+  const [floatingPlayer, setFloatingPlayer] = useState<{
+    src: string;
+    title: string;
+    artist: string;
+  } | null>(null);
   const navigate = useNavigate();
   useEffect(() => {
     const {
@@ -464,6 +472,11 @@ const Dashboard = () => {
               </Card>
             </Collapsible>
 
+            {/* Drafts Section */}
+            <Collapsible defaultOpen>
+              <DraftManagement />
+            </Collapsible>
+
             {userPlan?.plan.name === "Trackball Prestige" && profile?.account_manager_name && (
               <Collapsible defaultOpen>
                 <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
@@ -538,15 +551,27 @@ const Dashboard = () => {
 
           <TabsContent id="catalog-tab-content" value="catalog" className="animate-fade-in">
             {user && (
-              <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-                <CardHeader>
-                  <CardTitle className="text-lg sm:text-2xl font-bold text-left">Catalog</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm text-left">Full list of your releases</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ReleasesList userId={user.id} isAdmin={false} />
-                </CardContent>
-              </Card>
+              <>
+                {(userPlan?.plan.name === "Trackball Signature" || 
+                  userPlan?.plan.name === "Trackball Prestige" || 
+                  userPlan?.plan.name === "Trackball Partner") ? (
+                  <AdvancedCatalogManagement 
+                    userId={user.id} 
+                    selectedReleaseId={selectedCatalogReleaseId}
+                    onFloatingPlayer={(src, title, artist) => setFloatingPlayer({ src, title, artist })}
+                  />
+                ) : (
+                  <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+                    <CardHeader>
+                      <CardTitle className="text-lg sm:text-2xl font-bold text-left">Catalog</CardTitle>
+                      <CardDescription className="text-xs sm:text-sm text-left">Full list of your releases</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ReleasesList userId={user.id} isAdmin={false} />
+                    </CardContent>
+                  </Card>
+                )}
+              </>
             )}
           </TabsContent>
 
@@ -631,6 +656,16 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Floating Audio Player */}
+      {floatingPlayer && (
+        <FloatingAudioPlayer
+          src={floatingPlayer.src}
+          title={floatingPlayer.title}
+          artist={floatingPlayer.artist}
+          onClose={() => setFloatingPlayer(null)}
+        />
+      )}
     </div>;
 };
 export default Dashboard;

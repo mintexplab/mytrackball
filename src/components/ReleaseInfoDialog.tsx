@@ -5,15 +5,17 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Info, Music, Calendar, Tag, User, Building2, FileText } from "lucide-react";
+import { Info, Music, Calendar, Tag, User, Building2, FileText, Play } from "lucide-react";
 import { toast } from "sonner";
 import { AudioPlayer } from "./AudioPlayer";
+import { FloatingAudioPlayer } from "./FloatingAudioPlayer";
 
 interface ReleaseInfoDialogProps {
   releaseId: string;
+  onFloatingPlayer?: (src: string, title: string, artist: string) => void;
 }
 
-const ReleaseInfoDialog = ({ releaseId }: ReleaseInfoDialogProps) => {
+const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogProps) => {
   const [open, setOpen] = useState(false);
   const [release, setRelease] = useState<any>(null);
   const [tracks, setTracks] = useState<any[]>([]);
@@ -124,6 +126,20 @@ const ReleaseInfoDialog = ({ releaseId }: ReleaseInfoDialogProps) => {
                       title={release.title}
                       artist={release.artist_name}
                     />
+                    {onFloatingPlayer && (
+                      <Button
+                        onClick={() => {
+                          onFloatingPlayer(release.audio_file_url, release.title, release.artist_name);
+                          setOpen(false);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                      >
+                        <Play className="w-4 h-4 mr-2" />
+                        Open in Floating Player
+                      </Button>
+                    )}
                   </div>
                 </>
               )}
