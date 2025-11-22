@@ -48,10 +48,38 @@ const Auth = () => {
           }
         } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
         if (nextLevel === 'aal2' && currentLevel !== 'aal2') {
-          // User has MFA enabled, show verification screen
-          setShowMfaVerification(true);
-          setLoading(false);
-          return;
+          // Check if device is trusted
+          const trustedDevice = localStorage.getItem('mfa_trusted_device');
+          if (trustedDevice) {
+            try {
+              const { userId, expires } = JSON.parse(trustedDevice);
+              const expirationDate = new Date(expires);
+              const now = new Date();
+              
+              // Check if trusted device is valid and not expired
+              if (userId === data.user.id && expirationDate > now) {
+                // Device is trusted, skip MFA
+                console.log("Trusted device found, skipping MFA");
+              } else {
+                // Expired or wrong user, remove and show MFA
+                localStorage.removeItem('mfa_trusted_device');
+                setShowMfaVerification(true);
+                setLoading(false);
+                return;
+              }
+            } catch {
+              // Invalid data, remove and show MFA
+              localStorage.removeItem('mfa_trusted_device');
+              setShowMfaVerification(true);
+              setLoading(false);
+              return;
+            }
+          } else {
+            // No trusted device, show MFA verification
+            setShowMfaVerification(true);
+            setLoading(false);
+            return;
+          }
         }
 
         // Check if user is locked
