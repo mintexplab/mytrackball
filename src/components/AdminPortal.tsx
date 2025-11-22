@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus } from "lucide-react";
+import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music } from "lucide-react";
 import UserManagement from "./UserManagement";
 import ReleasesList from "./ReleasesList";
 import { AnnouncementManagement } from "./AnnouncementManagement";
@@ -12,6 +12,7 @@ import AccountManagerManagement from "./AccountManagerManagement";
 import { PayoutRequestsManagement } from "./PayoutRequestsManagement";
 import VersionManagement from "./VersionManagement";
 import ArtistInvitationManagement from "./ArtistInvitationManagement";
+import PublishingManagement from "./PublishingManagement";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -75,6 +76,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
                   <Wallet className="w-4 h-4 mr-2" />
                   Payouts
                 </TabsTrigger>
+                <TabsTrigger value="publishing" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
+                  <Music className="w-4 h-4 mr-2" />
+                  Publishing
+                </TabsTrigger>
                 <TabsTrigger value="version" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
                   Version
                 </TabsTrigger>
@@ -129,6 +134,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
               <Wallet className="w-4 h-4 mr-2" />
               Payouts
             </TabsTrigger>
+            <TabsTrigger value="publishing" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
+              <Music className="w-4 h-4 mr-2" />
+              Publishing
+            </TabsTrigger>
             <TabsTrigger value="version" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
               Version
             </TabsTrigger>
@@ -172,6 +181,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
 
           <TabsContent value="payouts">
             <PayoutRequestsManagement />
+          </TabsContent>
+
+          <TabsContent value="publishing">
+            <PublishingManagement />
           </TabsContent>
 
           <TabsContent value="version">
