@@ -20,57 +20,50 @@ import LabelInvitationManagement from "./LabelInvitationManagement";
 import MaintenanceManagement from "./MaintenanceManagement";
 import AccountAppealsManagement from "./AccountAppealsManagement";
 import { ProfileDropdown } from "./ProfileDropdown";
-
 interface AdminPortalProps {
   onSignOut: () => void;
 }
-
-const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
+const AdminPortal = ({
+  onSignOut
+}: AdminPortalProps) => {
   const [activeTab, setActiveTab] = useState("users");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [adminEmail, setAdminEmail] = useState<string>("");
   const [adminAvatar, setAdminAvatar] = useState<string>("");
   const navigate = useNavigate();
-
   useEffect(() => {
     fetchAdminProfile();
   }, []);
-
   const fetchAdminProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: {
+        user
+      }
+    } = await supabase.auth.getUser();
     if (user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("email, avatar_url")
-        .eq("id", user.id)
-        .single();
-      
+      const {
+        data: profile
+      } = await supabase.from("profiles").select("email, avatar_url").eq("id", user.id).single();
       if (profile) {
         setAdminEmail(profile.email);
         setAdminAvatar(profile.avatar_url || "");
       }
     }
   };
-
   const handleSignOut = async () => {
     setIsLoggingOut(true);
-    
+
     // Random delay between 3-10 seconds
     const randomDelay = Math.floor(Math.random() * 7000) + 3000;
     await new Promise(resolve => setTimeout(resolve, randomDelay));
-    
     await supabase.auth.signOut();
     navigate("/auth");
   };
-  
-  return (
-    <div className="min-h-screen bg-black">
-      {isLoggingOut && (
-        <div className="fixed inset-0 z-50 bg-background animate-fade-in flex flex-col items-center justify-center gap-4">
+  return <div className="min-h-screen bg-black">
+      {isLoggingOut && <div className="fixed inset-0 z-50 bg-background animate-fade-in flex flex-col items-center justify-center gap-4">
           <p className="text-lg text-foreground animate-pulse">Signing you out of My Trackball</p>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      )}
+        </div>}
       
       <div className="absolute inset-0 bg-gradient-accent opacity-5 blur-3xl" />
       
@@ -82,7 +75,7 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
             </div>
             <div>
               <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                MY TRACKBALL
+                ​Trackball Admin      
               </h1>
               <p className="text-xs text-muted-foreground">
                 Admin Portal
@@ -93,22 +86,12 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
           <div className="flex items-center gap-4">
             {/* Main Navigation */}
             <div className="hidden md:flex items-center gap-2">
-              <Button 
-                variant={activeTab === "users" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setActiveTab("users")}
-                className={activeTab === "users" ? "bg-gradient-primary text-primary-foreground" : ""}
-              >
+              <Button variant={activeTab === "users" ? "default" : "ghost"} size="sm" onClick={() => setActiveTab("users")} className={activeTab === "users" ? "bg-gradient-primary text-primary-foreground" : ""}>
                 <Users className="w-4 h-4 mr-2" />
                 Users
               </Button>
 
-              <Button 
-                variant={activeTab === "releases" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setActiveTab("releases")}
-                className={activeTab === "releases" ? "bg-gradient-primary text-primary-foreground" : ""}
-              >
+              <Button variant={activeTab === "releases" ? "default" : "ghost"} size="sm" onClick={() => setActiveTab("releases")} className={activeTab === "releases" ? "bg-gradient-primary text-primary-foreground" : ""}>
                 <FileMusic className="w-4 h-4 mr-2" />
                 Releases
               </Button>
@@ -203,11 +186,7 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
               </DropdownMenu>
             </div>
             
-            <ProfileDropdown 
-              userEmail={adminEmail}
-              avatarUrl={adminAvatar}
-              onSignOut={handleSignOut}
-            />
+            <ProfileDropdown userEmail={adminEmail} avatarUrl={adminAvatar} onSignOut={handleSignOut} />
           </div>
         </div>
       </div>
@@ -216,21 +195,11 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* Mobile Navigation - Simplified */}
           <div className="flex md:hidden gap-2 mb-6 flex-wrap">
-            <Button 
-              variant={activeTab === "users" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setActiveTab("users")}
-              className={activeTab === "users" ? "bg-gradient-primary" : ""}
-            >
+            <Button variant={activeTab === "users" ? "default" : "outline"} size="sm" onClick={() => setActiveTab("users")} className={activeTab === "users" ? "bg-gradient-primary" : ""}>
               <Users className="w-4 h-4 mr-2" />
               Users
             </Button>
-            <Button 
-              variant={activeTab === "releases" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setActiveTab("releases")}
-              className={activeTab === "releases" ? "bg-gradient-primary" : ""}
-            >
+            <Button variant={activeTab === "releases" ? "default" : "outline"} size="sm" onClick={() => setActiveTab("releases")} className={activeTab === "releases" ? "bg-gradient-primary" : ""}>
               <FileMusic className="w-4 h-4 mr-2" />
               Releases
             </Button>
@@ -318,8 +287,6 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
           </TabsContent>
         </Tabs>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default AdminPortal;
