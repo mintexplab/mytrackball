@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Upload, Plus, X, Check, Save, Music, Disc3, Album as AlbumIcon, Trash2 } from "lucide-react";
 import { z } from "zod";
 import { useS3Upload } from "@/hooks/useS3Upload";
+import { Confetti } from "@/components/Confetti";
 
 type ReleaseType = "single" | "ep" | "album" | null;
 
@@ -138,6 +139,15 @@ const CreateRelease = () => {
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  
+  // Trigger confetti when reaching final step
+  useEffect(() => {
+    if (currentStep === 6 && !showConfetti) {
+      setShowConfetti(true);
+      toast.success("🎉 Almost there! Review and submit your release.");
+    }
+  }, [currentStep, showConfetti]);
   
   const currentYear = new Date().getFullYear();
   
@@ -635,6 +645,7 @@ const CreateRelease = () => {
 
   return (
     <div className="min-h-screen bg-background animate-fade-in">
+      <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
       <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
