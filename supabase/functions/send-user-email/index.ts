@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { generateEmailHTML } from '../_shared/email-template.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -96,26 +97,18 @@ const handler = async (req: Request): Promise<Response> => {
       
       const emailPromises = batch.map(async (email) => {
         try {
+          const emailHTML = generateEmailHTML({
+            title: subject,
+            previewText: subject,
+            content: message.replace(/\n/g, '<br>'),
+            footerText: 'Need help? Contact us at contact@trackball.cc'
+          });
+
           const result = await resend.emails.send({
-            from: "Trackball Distribution <distribution@xz1recordings.ca>",
+            from: "Trackball Distribution <noreply@trackball.cc>",
             to: [email],
             subject: subject,
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <div style="background: linear-gradient(135deg, #ef4444, #dc2626); padding: 30px; text-align: center;">
-                  <h1 style="color: white; margin: 0;">Trackball Distribution</h1>
-                </div>
-                <div style="padding: 30px; background: #ffffff;">
-                  <div style="white-space: pre-wrap; line-height: 1.6; color: #333;">
-                    ${message}
-                  </div>
-                </div>
-                <div style="padding: 20px; text-align: center; background: #f5f5f5; color: #666; font-size: 12px;">
-                  <p>© 2025 XZ1 Recording Ventures. All rights reserved.</p>
-                  <p>Need help? <a href="mailto:contact@trackball.cc" style="color: #ef4444;">contact@trackball.cc</a></p>
-                </div>
-              </div>
-            `,
+            html: emailHTML,
           });
           console.log(`Email sent to ${email}:`, result);
           return { email, success: true, id: result.data?.id };
