@@ -678,6 +678,20 @@ const CreateRelease = () => {
 
       {/* Step Indicator */}
       <div className="container mx-auto px-4 py-6">
+        {/* Animated Progress Bar */}
+        <div className="mb-6">
+          <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-primary to-green-500 transition-all duration-500 ease-out"
+              style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+            <span>Step {currentStep} of {steps.length}</span>
+            <span>{Math.round(((currentStep - 1) / (steps.length - 1)) * 100)}% Complete</span>
+          </div>
+        </div>
+        
         <div className="flex items-center justify-between mb-8">
           {steps.map((step, index) => (
             <div key={step.number} className="flex items-center flex-1">
