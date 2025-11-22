@@ -355,18 +355,34 @@ const Dashboard = () => {
                         {userPlan?.plan.name || "Trackball Free"}
                       </Badge>
                     </div>
-                    {userPlan ? <>
+                    {userPlan ? (
+                      <>
                         <p className="text-sm sm:text-base text-muted-foreground">{userPlan.plan.description}</p>
-                        <div className="pt-3 sm:pt-4 border-t border-border">
-                          <p className="text-xs sm:text-sm font-medium mb-2">Plan Features:</p>
-                          <ul className="space-y-1 text-xs sm:text-sm text-muted-foreground">
-                            {userPlan.plan.features?.map((feature: string, index: number) => <li key={index} className="flex items-start gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 flex-shrink-0" />
-                                <span className="flex-1">{feature}</span>
-                              </li>)}
-                          </ul>
-                        </div>
-                      </> : <p className="text-sm sm:text-base text-muted-foreground">Basic distribution plan with essential features</p>}
+                        {userPlan.plan.name === "Trackball Partner" ? (
+                          <div className="pt-3 sm:pt-4 border-t border-border">
+                            <div className="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
+                              <p className="text-sm sm:text-base text-foreground">
+                                You have a custom partner deal with Trackball Distribution, please ask your label manager about deal offerings
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="pt-3 sm:pt-4 border-t border-border">
+                            <p className="text-xs sm:text-sm font-medium mb-2">Plan Features:</p>
+                            <ul className="space-y-1 text-xs sm:text-sm text-muted-foreground">
+                              {userPlan.plan.features?.map((feature: string, index: number) => (
+                                <li key={index} className="flex items-start gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 flex-shrink-0" />
+                                  <span className="flex-1">{feature}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm sm:text-base text-muted-foreground">Basic distribution plan with essential features</p>
+                    )}
                   </CardContent>
                 </CollapsibleContent>
               </Card>

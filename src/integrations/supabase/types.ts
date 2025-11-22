@@ -151,6 +151,53 @@ export type Database = {
         }
         Relationships: []
       }
+      label_invitations: {
+        Row: {
+          accepted_at: string | null
+          additional_users: string[] | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          invited_by: string | null
+          label_name: string
+          master_account_email: string
+          status: string
+          subscription_tier: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          additional_users?: string[] | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          invited_by?: string | null
+          label_name: string
+          master_account_email: string
+          status?: string
+          subscription_tier: string
+        }
+        Update: {
+          accepted_at?: string | null
+          additional_users?: string[] | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          invited_by?: string | null
+          label_name?: string
+          master_account_email?: string
+          status?: string
+          subscription_tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "label_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       labels: {
         Row: {
           created_at: string | null

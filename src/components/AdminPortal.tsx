@@ -14,6 +14,7 @@ import { PayoutRequestsManagement } from "./PayoutRequestsManagement";
 import VersionManagement from "./VersionManagement";
 import ArtistInvitationManagement from "./ArtistInvitationManagement";
 import PublishingManagement from "./PublishingManagement";
+import LabelInvitationManagement from "./LabelInvitationManagement";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -135,6 +136,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
                     <UserPlus className="w-4 h-4 mr-2" />
                     Invite Artists
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab("invite-labels")} className="cursor-pointer">
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Invite Labels
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setActiveTab("version")} className="cursor-pointer">
                     Version Manager
@@ -189,6 +194,7 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
                 <DropdownMenuItem onClick={() => setActiveTab("managers")}>Managers</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("labels")}>Labels</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("invite-artists")}>Invite Artists</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("invite-labels")}>Invite Labels</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("announcements")}>Announcements</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("royalties")}>Royalties</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("payouts")}>Payouts</DropdownMenuItem>
@@ -224,6 +230,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
 
           <TabsContent value="invite-artists">
             <ArtistInvitationManagement />
+          </TabsContent>
+
+          <TabsContent value="invite-labels">
+            <LabelInvitationManagement />
           </TabsContent>
 
           <TabsContent value="announcements">
