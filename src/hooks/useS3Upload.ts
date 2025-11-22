@@ -105,6 +105,7 @@ export const useS3Upload = () => {
         // Send request
         xhr.open('POST', `${supabaseUrl}/functions/v1/upload-to-s3`);
         xhr.setRequestHeader('Authorization', `Bearer ${supabaseAnonKey}`);
+        xhr.setRequestHeader('apikey', supabaseAnonKey);
         console.log('Sending upload request...');
         xhr.send(formData);
       });
@@ -129,6 +130,7 @@ export const useS3Upload = () => {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${supabaseAnonKey}`,
+          'apikey': supabaseAnonKey,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
