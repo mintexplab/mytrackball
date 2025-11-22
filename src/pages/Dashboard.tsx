@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users } from "lucide-react";
+import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import trackballLogo from "@/assets/trackball-logo.png";
 import AdminPortal from "@/components/AdminPortal";
@@ -199,7 +199,7 @@ const Dashboard = () => {
       
       <div className="absolute inset-0 bg-gradient-primary opacity-5 blur-3xl" />
       
-      <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
+      <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-20">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex justify-between items-center gap-2">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -228,7 +228,8 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
         <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
-          <TabsList className="w-full max-w-5xl mx-auto bg-card/80 backdrop-blur-sm border border-border p-1 rounded-lg sticky top-[73px] z-10">
+          <div className="sticky top-[73px] z-10 -mx-3 sm:-mx-4 px-3 sm:px-4 py-2 bg-background/95 backdrop-blur-sm">
+            <TabsList className="w-full max-w-5xl mx-auto bg-card/80 backdrop-blur-sm border border-border p-1 rounded-lg">
             <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
               <Package className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Overview</span>
@@ -250,6 +251,7 @@ const Dashboard = () => {
               <span className="hidden sm:inline">Help</span>
             </TabsTrigger>
           </TabsList>
+          </div>
 
           <TabsContent value="overview" className="space-y-4 sm:space-y-6 animate-fade-in">
             <Collapsible defaultOpen>
@@ -292,9 +294,21 @@ const Dashboard = () => {
               </Card>
             </Collapsible>
 
-            {userPlan?.plan.name === "Trackball Prestige" && (
+            {userPlan?.plan.name === "Trackball Prestige" && profile?.account_manager_name && (
               <Collapsible defaultOpen>
-                <AccountManagerCard managerName={profile?.account_manager_name} managerEmail={profile?.account_manager_email} managerPhone={profile?.account_manager_phone} managerTimezone={profile?.account_manager_timezone} userTimezone={profile?.user_timezone || "America/New_York"} />
+                <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+                  <CollapsibleTrigger className="w-full">
+                    <CardHeader className="pb-3 sm:pb-6 cursor-pointer hover:bg-muted/30 transition-colors">
+                      <CardTitle className="text-lg sm:text-2xl font-bold text-left">Account Manager</CardTitle>
+                      <CardDescription className="text-xs sm:text-sm text-left">Your dedicated support contact</CardDescription>
+                    </CardHeader>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <CardContent>
+                      <AccountManagerCard managerName={profile?.account_manager_name} managerEmail={profile?.account_manager_email} managerPhone={profile?.account_manager_phone} managerTimezone={profile?.account_manager_timezone} userTimezone={profile?.user_timezone || "America/New_York"} />
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
               </Collapsible>
             )}
 

@@ -54,10 +54,16 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
         profiles!releases_user_id_fkey(email)
       `)
       .eq("id", releaseId)
-      .single();
+      .maybeSingle();
 
-    if (fetchError || !release) {
+    if (fetchError) {
       toast.error("Failed to fetch release");
+      console.error("Fetch error:", fetchError);
+      return;
+    }
+
+    if (!release) {
+      toast.error("Release not found");
       return;
     }
 
@@ -68,6 +74,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
 
     if (error) {
       toast.error("Failed to update release status");
+      console.error("Update error:", error);
       return;
     }
 
@@ -84,7 +91,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
       });
     }
 
-    toast.success(`Release ${status}`);
+    toast.success(`Release status updated to ${status}`);
     fetchReleases();
   };
 
