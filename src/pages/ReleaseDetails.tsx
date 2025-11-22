@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Trash2, Calendar, Music, User, Hash, Building2 } from "lucide-react";
 import { toast } from "sonner";
+import { DistributionHistory } from "@/components/DistributionHistory";
 
 const ReleaseDetails = () => {
   const { id } = useParams();
@@ -289,6 +290,9 @@ const ReleaseDetails = () => {
                 )}
               </CardContent>
             </Card>
+            
+            {/* Distribution History */}
+            <DistributionHistory releaseId={id!} />
           </div>
         </div>
       </div>
