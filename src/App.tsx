@@ -10,6 +10,7 @@ import CreateRelease from "./pages/CreateRelease";
 import AccountSettings from "./pages/AccountSettings";
 import SubscriptionManagement from "./pages/SubscriptionManagement";
 import AcceptInvitation from "./pages/AcceptInvitation";
+import ReleaseDetails from "./pages/ReleaseDetails";
 import NotFound from "./pages/NotFound";
 import Footer from "./components/Footer";
 
@@ -30,6 +31,7 @@ const App = () => {
                 <Route path="/accept-invitation" element={<AcceptInvitation />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/create-release" element={<CreateRelease />} />
+                <Route path="/release/:id" element={<ReleaseDetails />} />
                 <Route path="/settings" element={<AccountSettings />} />
                 <Route path="/subscription" element={<SubscriptionManagement />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
