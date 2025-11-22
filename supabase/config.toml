@@ -1,1 +1,4 @@
 project_id = "euqgjlnwwviskwnnvsaj"
+
+[functions.upload-to-s3]
+verify_jwt = false

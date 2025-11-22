@@ -29,6 +29,13 @@ export const useS3Upload = () => {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Supabase configuration missing');
+      }
+
+      console.log('Starting upload to:', `${supabaseUrl}/functions/v1/upload-to-s3`);
+      console.log('File:', file.name, 'Size:', file.size, 'Type:', file.type);
+
       // Use XMLHttpRequest for progress tracking
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -41,35 +48,64 @@ export const useS3Upload = () => {
             if (onProgress) {
               onProgress(progress);
             }
+            console.log(`Upload progress: ${progress}%`);
           }
         });
 
         // Handle completion
         xhr.addEventListener('load', () => {
+          console.log('Upload complete. Status:', xhr.status);
+          console.log('Response:', xhr.responseText);
+          
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
               const data = JSON.parse(xhr.responseText);
               if (data?.success) {
+                console.log('Upload successful:', data.url);
                 resolve(data.url);
               } else {
-                reject(new Error('Upload failed'));
+                console.error('Upload failed - no success flag:', data);
+                reject(new Error(data.error || 'Upload failed'));
               }
             } catch (error) {
+              console.error('Failed to parse response:', error, xhr.responseText);
               reject(new Error('Failed to parse response'));
             }
           } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
+            console.error('Upload failed with status:', xhr.status, xhr.responseText);
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              reject(new Error(errorData.error || `Upload failed with status ${xhr.status}`));
+            } catch {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
           }
         });
 
         // Handle errors
-        xhr.addEventListener('error', () => {
-          reject(new Error('Network error during upload'));
+        xhr.addEventListener('error', (e) => {
+          console.error('Network error during upload:', e);
+          console.error('XHR state:', {
+            readyState: xhr.readyState,
+            status: xhr.status,
+            statusText: xhr.statusText
+          });
+          reject(new Error('Network error - check console for details'));
         });
+
+        // Handle timeout
+        xhr.addEventListener('timeout', () => {
+          console.error('Upload timeout');
+          reject(new Error('Upload timeout - file may be too large'));
+        });
+
+        // Set timeout to 10 minutes for large files
+        xhr.timeout = 600000;
 
         // Send request
         xhr.open('POST', `${supabaseUrl}/functions/v1/upload-to-s3`);
         xhr.setRequestHeader('Authorization', `Bearer ${supabaseAnonKey}`);
+        console.log('Sending upload request...');
         xhr.send(formData);
       });
     } catch (error: any) {
