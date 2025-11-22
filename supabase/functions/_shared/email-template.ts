@@ -10,6 +10,7 @@ interface EmailTemplateProps {
   ctaText?: string;
   ctaLink?: string;
   footerText?: string;
+  logoUrl?: string;
 }
 
 export const generateEmailHTML = ({
@@ -18,7 +19,8 @@ export const generateEmailHTML = ({
   content,
   ctaText,
   ctaLink,
-  footerText = "Need help? Contact us at contact@trackball.cc"
+  footerText = "Need help? Contact us at contact@trackball.cc",
+  logoUrl = "https://euqgjlnwwviskwnnvsaj.supabase.co/storage/v1/object/public/email-assets/trackball-logo.png"
 }: EmailTemplateProps): string => {
   return `
 <!DOCTYPE html>
@@ -48,7 +50,8 @@ export const generateEmailHTML = ({
           
           <!-- Header with logo -->
           <tr>
-            <td style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 32px 40px; text-align: center;">
+            <td style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 40px; text-align: center;">
+              <img src="${logoUrl}" alt="Trackball Distribution" style="width: 80px; height: 80px; margin: 0 auto 16px; display: block;" />
               <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
                 TRACKBALL DISTRIBUTION
               </h1>
