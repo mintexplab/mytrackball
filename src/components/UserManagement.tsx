@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Package, UserPlus, Ban, Lock, Unlock, Trash2 } from "lucide-react";
 import { z } from "zod";
@@ -28,6 +29,9 @@ const UserManagement = () => {
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserName, setNewUserName] = useState("");
+  const [banDialogOpen, setBanDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [banReason, setBanReason] = useState("");
 
   useEffect(() => {
     fetchUsers();
@@ -135,17 +139,51 @@ const UserManagement = () => {
   };
 
   const toggleBanUser = async (userId: string, currentBanStatus: boolean) => {
-    const { error } = await supabase
-      .from("profiles")
-      .update({ is_banned: !currentBanStatus })
-      .eq("id", userId);
+    if (currentBanStatus) {
+      // Unbanning - no reason needed
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_banned: false, ban_reason: null })
+        .eq("id", userId);
 
-    if (error) {
-      toast.error("Failed to update ban status");
+      if (error) {
+        toast.error("Failed to unban user");
+        return;
+      }
+
+      toast.success("User unbanned");
+      fetchUsers();
+    } else {
+      // Banning - open dialog to get reason
+      setSelectedUserId(userId);
+      setBanReason("");
+      setBanDialogOpen(true);
+    }
+  };
+
+  const confirmBan = async () => {
+    if (!banReason.trim()) {
+      toast.error("Please provide a reason for the ban");
       return;
     }
 
-    toast.success(currentBanStatus ? "User unbanned" : "User banned");
+    const { error } = await supabase
+      .from("profiles")
+      .update({ 
+        is_banned: true,
+        ban_reason: banReason.trim()
+      })
+      .eq("id", selectedUserId);
+
+    if (error) {
+      toast.error("Failed to ban user");
+      return;
+    }
+
+    toast.success("User banned");
+    setBanDialogOpen(false);
+    setBanReason("");
+    setSelectedUserId("");
     fetchUsers();
   };
 
@@ -312,6 +350,50 @@ const UserManagement = () => {
                 <Button onClick={createUser} className="w-full bg-gradient-primary hover:opacity-90">
                   Create User
                 </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={banDialogOpen} onOpenChange={setBanDialogOpen}>
+            <DialogContent className="bg-card border-border">
+              <DialogHeader>
+                <DialogTitle className="font-bold text-destructive">Ban User Account</DialogTitle>
+                <DialogDescription>
+                  Please provide a reason for terminating this account. This will be shown to the user.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ban_reason">Reason for Ban</Label>
+                  <Textarea
+                    id="ban_reason"
+                    placeholder="e.g., Violation of Terms of Service, fraudulent activity, copyright infringement..."
+                    value={banReason}
+                    onChange={(e) => setBanReason(e.target.value)}
+                    className="bg-background border-border min-h-[120px]"
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {banReason.length}/500 characters
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={confirmBan} 
+                    className="flex-1 bg-destructive hover:bg-destructive/90"
+                    disabled={!banReason.trim()}
+                  >
+                    <Ban className="w-4 h-4 mr-2" />
+                    Confirm Ban
+                  </Button>
+                  <Button 
+                    onClick={() => setBanDialogOpen(false)} 
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             </DialogContent>
           </Dialog>
