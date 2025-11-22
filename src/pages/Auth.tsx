@@ -179,9 +179,10 @@ const Auth = () => {
       </div>
       
       <Card 
-        className={`w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20 transition-all duration-300 ${isZooming ? 'scale-[3] opacity-0' : 'scale-100 opacity-100'}`}
+        className={`w-full max-w-md relative backdrop-blur-sm bg-black border-primary/30 ${isZooming ? 'scale-[3] opacity-0' : 'scale-100 opacity-100'}`}
         style={{
-          transition: isZooming ? 'all 1.2s ease-in-out' : 'all 0.3s ease-in-out'
+          transition: isZooming ? 'all 1.2s ease-in-out' : 'all 0.3s ease-in-out',
+          boxShadow: '0 0 40px rgba(239, 68, 68, 0.3), 0 0 80px rgba(239, 68, 68, 0.15)'
         }}
       >
         <CardHeader className="space-y-4 text-center">
