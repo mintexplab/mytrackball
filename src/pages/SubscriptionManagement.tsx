@@ -156,10 +156,14 @@ const SubscriptionManagement = () => {
   };
 
   const isCurrentPlan = (plan: Plan) => {
-    // Check both database plan assignment and Stripe subscription
-    const isDbPlan = userPlan?.plan_id === plan.id;
-    const isStripePlan = subscriptionStatus?.product_id === plan.stripe_product_id;
-    return isDbPlan || isStripePlan;
+    // Priority: Stripe subscription overrides database plan assignment
+    // This ensures only ONE plan shows as active
+    if (subscriptionStatus?.subscribed && subscriptionStatus?.product_id) {
+      // If user has active Stripe subscription, match against that
+      return subscriptionStatus.product_id === plan.stripe_product_id;
+    }
+    // If no Stripe subscription, use database plan assignment
+    return userPlan?.plan_id === plan.id;
   };
 
   return (
