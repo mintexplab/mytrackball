@@ -128,6 +128,10 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
       approved: { icon: CheckCircle2, className: "bg-green-500/20 text-green-300 border-green-500/30" },
       rejected: { icon: XCircle, className: "bg-red-500/20 text-red-300 border-red-500/30" },
       published: { icon: CheckCircle2, className: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
+      "taken down": { icon: XCircle, className: "bg-gray-500/20 text-gray-300 border-gray-500/30" },
+      delivering: { icon: Clock, className: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
+      striked: { icon: AlertTriangle, className: "bg-orange-500/20 text-orange-300 border-orange-500/30" },
+      "on hold": { icon: AlertTriangle, className: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
     };
 
     const variant = variants[status] || variants.pending;
@@ -206,29 +210,59 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
                         currentStatus={release.status}
                         onUpdate={fetchReleases}
                       />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateReleaseStatus(release.id, "delivering")}
+                        className="border-blue-500/30 hover:bg-blue-500/20 text-blue-300"
+                      >
+                        Delivering
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateReleaseStatus(release.id, "taken down")}
+                        className="border-gray-500/30 hover:bg-gray-500/20 text-gray-300"
+                      >
+                        Taken Down
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateReleaseStatus(release.id, "striked")}
+                        className="border-orange-500/30 hover:bg-orange-500/20 text-orange-300"
+                      >
+                        Striked
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateReleaseStatus(release.id, "on hold")}
+                        className="border-purple-500/30 hover:bg-purple-500/20 text-purple-300"
+                      >
+                        On Hold
+                      </Button>
                     </>
                   ) : (
                     <>
-                      {release.status === "approved" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => deleteRelease(release.id)}
+                        className="border-red-500/30 hover:bg-red-500/20 text-red-300"
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        Delete
+                      </Button>
+                       {release.status === "approved" && !release.takedown_requested && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => requestTakedown(release.id)}
-                          disabled={release.takedown_requested}
                           className="border-yellow-500/30 hover:bg-yellow-500/20 text-yellow-300"
                         >
                           <AlertTriangle className="w-3 h-3 mr-1" />
-                          {release.takedown_requested ? "Takedown Requested" : "Request Takedown"}
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => deleteRelease(release.id)}
-                          className="border-red-500/30 hover:bg-red-500/20 text-red-300"
-                        >
-                          <Trash2 className="w-3 h-3 mr-1" />
-                          Delete
+                          Request Takedown
                         </Button>
                       )}
                     </>

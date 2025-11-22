@@ -19,6 +19,7 @@ import ArtistLabelOnboarding from "@/components/ArtistLabelOnboarding";
 import ClientInvitations from "@/components/ClientInvitations";
 import ClientInvitationAcceptance from "@/components/ClientInvitationAcceptance";
 import AccountManagerCard from "@/components/AccountManagerCard";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -162,14 +163,12 @@ const Dashboard = () => {
                 <h1 className="text-base sm:text-xl bg-gradient-primary bg-clip-text text-transparent truncate font-medium">
                   {profile?.label_name || "Trackball Distribution"}
                 </h1>
+                {profile?.artist_name && <p className="text-xs text-muted-foreground truncate">{profile.artist_name}</p>}
                 {profile?.user_id && <p className="text-xs text-muted-foreground/70">ID:{profile.user_id}</p>}
               </div>
             </div>
             
             <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-              <Badge variant="outline" className="border-primary/30 bg-primary/5 hidden md:flex text-xs whitespace-nowrap">
-                {userPlan?.plan.name || "Trackball Free"}
-              </Badge>
               <ProfileDropdown userEmail={user?.email} avatarUrl={profile?.avatar_url} onSignOut={handleSignOut} />
             </div>
           </div>
@@ -182,99 +181,121 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
         <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full max-w-3xl grid-cols-5 bg-muted/50 h-auto p-1">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
+          <TabsList className="w-full max-w-5xl mx-auto bg-card/80 backdrop-blur-sm border border-border p-1 rounded-lg sticky top-0 z-10">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
               <Package className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
-            {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && <TabsTrigger value="clients" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
+            {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && <TabsTrigger value="clients" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
                 <Users className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Clients</span>
               </TabsTrigger>}
-            <TabsTrigger value="notifications" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
               <Bell className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Notifications</span>
             </TabsTrigger>
-            <TabsTrigger value="royalties" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
+            <TabsTrigger value="royalties" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
               <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Royalties</span>
             </TabsTrigger>
-            <TabsTrigger value="help" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
+            <TabsTrigger value="help" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
               <HelpCircle className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Help</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 sm:space-y-6 animate-fade-in">
-            <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="text-lg sm:text-2xl font-bold">Quick Stats</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Your distribution overview</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4">
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
-                    <p className="text-xs sm:text-sm text-muted-foreground">Total Releases</p>
-                    <p className="text-xl sm:text-2xl font-bold text-foreground">{releaseCount}</p>
-                  </div>
-                  <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
-                    <p className="text-xs sm:text-sm text-muted-foreground">Active</p>
-                    <p className="text-xl sm:text-2xl font-bold text-accent">{releaseCount}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-              <CardHeader className="pb-3 sm:pb-6">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                  <div className="min-w-0">
-                    <CardTitle className="text-lg sm:text-2xl font-bold">Your Releases</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">Manage your music distribution</CardDescription>
-                  </div>
-                  <Button onClick={() => navigate("/create-release")} className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow w-full sm:w-auto text-sm">
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Release
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ReleasesList userId={user?.id} isAdmin={false} />
-              </CardContent>
-            </Card>
-
-            {userPlan?.plan.name === "Trackball Prestige" && <AccountManagerCard managerName={profile?.account_manager_name} managerEmail={profile?.account_manager_email} managerPhone={profile?.account_manager_phone} managerTimezone={profile?.account_manager_timezone} userTimezone={profile?.user_timezone || "America/New_York"} />}
-
-            <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-              <CardHeader className="pb-3 sm:pb-6">
-                <div className="flex justify-between items-start gap-3">
-                  <div className="min-w-0">
-                    <CardTitle className="text-lg sm:text-2xl font-bold">Your Plan</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">Current distribution plan</CardDescription>
-                  </div>
-                  <Package className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4">
-                <div>
-                  <Badge className="bg-gradient-primary text-white px-2 sm:px-3 py-1 text-xs sm:text-sm">
-                    {userPlan?.plan.name || "Trackball Free"}
-                  </Badge>
-                </div>
-                {userPlan ? <>
-                    <p className="text-sm sm:text-base text-muted-foreground">{userPlan.plan.description}</p>
-                    <div className="pt-3 sm:pt-4 border-t border-border">
-                      <p className="text-xs sm:text-sm font-medium mb-2">Plan Features:</p>
-                      <ul className="space-y-1 text-xs sm:text-sm text-muted-foreground">
-                        {userPlan.plan.features?.map((feature: string, index: number) => <li key={index} className="flex items-start gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 flex-shrink-0" />
-                            <span className="flex-1">{feature}</span>
-                          </li>)}
-                      </ul>
+            <Collapsible defaultOpen>
+              <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="pb-3 sm:pb-6 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <CardTitle className="text-lg sm:text-2xl font-bold">Quick Stats</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">Your distribution overview</CardDescription>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-3 sm:space-y-4">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                      <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
+                        <p className="text-xs sm:text-sm text-muted-foreground">Total Releases</p>
+                        <p className="text-xl sm:text-2xl font-bold text-foreground">{releaseCount}</p>
+                      </div>
+                      <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
+                        <p className="text-xs sm:text-sm text-muted-foreground">Active</p>
+                        <p className="text-xl sm:text-2xl font-bold text-accent">{releaseCount}</p>
+                      </div>
                     </div>
-                  </> : <p className="text-sm sm:text-base text-muted-foreground">Basic distribution plan with essential features</p>}
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            <Collapsible defaultOpen>
+              <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="pb-3 sm:pb-6 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                      <div className="min-w-0">
+                        <CardTitle className="text-lg sm:text-2xl font-bold">Your Releases</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm">Manage your music distribution</CardDescription>
+                      </div>
+                      <Button onClick={(e) => { e.stopPropagation(); navigate("/create-release"); }} className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow w-full sm:w-auto text-sm">
+                        <Plus className="w-4 h-4 mr-2" />
+                        New Release
+                      </Button>
+                    </div>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent>
+                    <ReleasesList userId={user?.id} isAdmin={false} />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            {userPlan?.plan.name === "Trackball Prestige" && (
+              <Collapsible defaultOpen>
+                <AccountManagerCard managerName={profile?.account_manager_name} managerEmail={profile?.account_manager_email} managerPhone={profile?.account_manager_phone} managerTimezone={profile?.account_manager_timezone} userTimezone={profile?.user_timezone || "America/New_York"} />
+              </Collapsible>
+            )}
+
+            <Collapsible defaultOpen>
+              <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="pb-3 sm:pb-6 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="min-w-0">
+                        <CardTitle className="text-lg sm:text-2xl font-bold">Your Plan</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm">Current distribution plan</CardDescription>
+                      </div>
+                      <Package className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
+                    </div>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-3 sm:space-y-4">
+                    <div>
+                      <Badge className="bg-gradient-primary text-white px-2 sm:px-3 py-1 text-xs sm:text-sm">
+                        {userPlan?.plan.name || "Trackball Free"}
+                      </Badge>
+                    </div>
+                    {userPlan ? <>
+                        <p className="text-sm sm:text-base text-muted-foreground">{userPlan.plan.description}</p>
+                        <div className="pt-3 sm:pt-4 border-t border-border">
+                          <p className="text-xs sm:text-sm font-medium mb-2">Plan Features:</p>
+                          <ul className="space-y-1 text-xs sm:text-sm text-muted-foreground">
+                            {userPlan.plan.features?.map((feature: string, index: number) => <li key={index} className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 flex-shrink-0" />
+                                <span className="flex-1">{feature}</span>
+                              </li>)}
+                          </ul>
+                        </div>
+                      </> : <p className="text-sm sm:text-base text-muted-foreground">Basic distribution plan with essential features</p>}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
           </TabsContent>
 
           {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && <TabsContent value="clients" className="animate-fade-in">
