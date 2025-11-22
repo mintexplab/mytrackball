@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic } from "lucide-react";
 import { toast } from "sonner";
 import trackballLogo from "@/assets/trackball-logo.png";
 import AdminPortal from "@/components/AdminPortal";
@@ -20,6 +20,7 @@ import ArtistLabelOnboarding from "@/components/ArtistLabelOnboarding";
 import ClientInvitations from "@/components/ClientInvitations";
 import ClientInvitationAcceptance from "@/components/ClientInvitationAcceptance";
 import AccountManagerCard from "@/components/AccountManagerCard";
+import PublishingTab from "@/components/PublishingTab";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const QuickStatsGrid = ({ userId }: { userId?: string }) => {
@@ -246,6 +247,12 @@ const Dashboard = () => {
               <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Royalties</span>
             </TabsTrigger>
+            {userPlan?.plan.name === "Trackball Prestige" && (
+              <TabsTrigger value="publishing" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
+                <FileMusic className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Publishing</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="help" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
               <HelpCircle className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Help</span>
@@ -361,6 +368,12 @@ const Dashboard = () => {
           <TabsContent value="royalties" className="animate-fade-in">
             {user && <RoyaltiesTab userId={user.id} />}
           </TabsContent>
+
+          {userPlan?.plan.name === "Trackball Prestige" && (
+            <TabsContent value="publishing" className="animate-fade-in">
+              {user && <PublishingTab userId={user.id} />}
+            </TabsContent>
+          )}
 
           <TabsContent value="help" className="animate-fade-in">
             <Card className="backdrop-blur-sm bg-card/80 border-primary/20">

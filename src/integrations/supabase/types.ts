@@ -360,6 +360,71 @@ export type Database = {
           },
         ]
       }
+      publishing_submissions: {
+        Row: {
+          admin_notes: string | null
+          alternate_titles: string[] | null
+          created_at: string | null
+          genre: string | null
+          has_public_domain_content: boolean | null
+          has_third_party_content: boolean | null
+          id: string
+          isrcs: string[]
+          performers: string[] | null
+          publishers: Json
+          shareholders: Json
+          song_title: string
+          song_type: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          alternate_titles?: string[] | null
+          created_at?: string | null
+          genre?: string | null
+          has_public_domain_content?: boolean | null
+          has_third_party_content?: boolean | null
+          id?: string
+          isrcs?: string[]
+          performers?: string[] | null
+          publishers?: Json
+          shareholders?: Json
+          song_title: string
+          song_type: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          alternate_titles?: string[] | null
+          created_at?: string | null
+          genre?: string | null
+          has_public_domain_content?: boolean | null
+          has_third_party_content?: boolean | null
+          id?: string
+          isrcs?: string[]
+          performers?: string[] | null
+          publishers?: Json
+          shareholders?: Json
+          song_title?: string
+          song_type?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "publishing_submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       release_collaborators: {
         Row: {
           collaborator_id: string
