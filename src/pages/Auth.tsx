@@ -166,7 +166,7 @@ const Auth = () => {
             <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
           </div>
           <div>
-            <CardTitle className="text-3xl bg-gradient-primary bg-clip-text text-transparent font-normal font-sans">Trackball Distribution   </CardTitle>
+            <CardTitle className="text-3xl bg-gradient-primary bg-clip-text text-transparent font-normal font-sans text-center">Trackball Distribution</CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
               {isLogin ? "Sign in to your account" : "Create your artist account"}
             </CardDescription>
