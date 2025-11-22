@@ -56,6 +56,45 @@ export type Database = {
         }
         Relationships: []
       }
+      announcement_bar: {
+        Row: {
+          button_link: string | null
+          button_text: string | null
+          created_at: string | null
+          created_by: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          message: string
+          start_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          button_link?: string | null
+          button_text?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          message: string
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          button_link?: string | null
+          button_text?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          message?: string
+          start_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           created_at: string | null
