@@ -32,6 +32,8 @@ import { FloatingAudioPlayer } from "@/components/FloatingAudioPlayer";
 import { MobileMenu } from "@/components/MobileMenu";
 import { OnboardingTutorial } from "@/components/OnboardingTutorial";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AnnouncementBar } from "@/components/AnnouncementBar";
+import { SparkleBeads } from "@/components/SparkleBeads";
 
 const QuickStatsGrid = ({ userId }: { userId?: string }) => {
   const [releases, setReleases] = useState<any[]>([]);
@@ -368,6 +370,8 @@ const Dashboard = () => {
     );
   }
   return <div className="min-h-screen bg-background relative">
+      <AnnouncementBar />
+      
       {isLoggingOut && <div className="fixed inset-0 z-50 bg-background animate-fade-in flex flex-col items-center justify-center gap-4">
           <p className="text-lg text-foreground animate-pulse">Signing you out of My Trackball</p>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>

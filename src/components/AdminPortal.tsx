@@ -23,6 +23,8 @@ import AccountAppealsManagement from "./AccountAppealsManagement";
 import { ProfileDropdown } from "./ProfileDropdown";
 import { MobileMenu } from "./MobileMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { EmailNotificationDialog } from "./EmailNotificationDialog";
+import { AnnouncementBarManagement } from "./AnnouncementBarManagement";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -279,7 +281,13 @@ const AdminPortal = ({
           </TabsContent>
 
           <TabsContent value="announcements">
-            <AnnouncementManagement />
+            <div className="space-y-6">
+              <div className="flex justify-end">
+                <EmailNotificationDialog />
+              </div>
+              <AnnouncementBarManagement />
+              <AnnouncementManagement />
+            </div>
           </TabsContent>
 
           <TabsContent value="royalties">
