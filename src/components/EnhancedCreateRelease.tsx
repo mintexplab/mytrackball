@@ -74,6 +74,50 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     catalog_number: "",
   });
 
+  const generateISRC = async () => {
+    try {
+      const { data: counter, error } = await supabase
+        .from("isrc_counter")
+        .select("*")
+        .single();
+
+      if (error) throw error;
+
+      const year = new Date().getFullYear().toString().slice(-2);
+      const prefix = `CBGNR${year}`;
+      const nextNumber = (counter.last_number + 1).toString().padStart(5, "0");
+      const newIsrc = `${prefix}${nextNumber}`;
+
+      await supabase
+        .from("isrc_counter")
+        .update({ last_number: counter.last_number + 1 })
+        .eq("id", counter.id);
+
+      return newIsrc;
+    } catch (error) {
+      console.error("Error generating ISRC:", error);
+      throw new Error("Failed to generate ISRC");
+    }
+  };
+
+  const autoGenerateISRCs = async () => {
+    try {
+      const updatedTracks = await Promise.all(
+        tracks.map(async (track) => {
+          if (!track.isrc) {
+            const isrc = await generateISRC();
+            return { ...track, isrc };
+          }
+          return track;
+        })
+      );
+      setTracks(updatedTracks);
+      toast.success("ISRCs generated successfully!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to generate ISRCs");
+    }
+  };
+
   const addTrack = () => {
     setTracks([...tracks, {
       id: Date.now().toString(),
@@ -170,6 +214,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
           featured_artists: validatedRelease.featured_artists ? validatedRelease.featured_artists.split(",").map(a => a.trim()) : [],
           notes: validatedRelease.notes || null,
           catalog_number: validatedRelease.catalog_number || null,
+          isrc: tracks[0]?.isrc || null, // Save first track's ISRC to release
         })
         .select()
         .single();
@@ -392,16 +437,27 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
           <Card className="p-4 border-border">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold text-primary">Tracks</h3>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addTrack}
-                className="border-primary/20"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Track
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={autoGenerateISRCs}
+                  className="border-primary/20"
+                >
+                  Auto-Generate ISRCs
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addTrack}
+                  className="border-primary/20"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Track
+                </Button>
+              </div>
             </div>
             
             <div className="space-y-4">
