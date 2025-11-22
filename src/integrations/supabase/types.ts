@@ -409,6 +409,7 @@ export type Database = {
           account_manager_timezone: string | null
           artist_name: string | null
           avatar_url: string | null
+          ban_reason: string | null
           created_at: string | null
           display_name: string | null
           email: string
@@ -433,6 +434,7 @@ export type Database = {
           account_manager_timezone?: string | null
           artist_name?: string | null
           avatar_url?: string | null
+          ban_reason?: string | null
           created_at?: string | null
           display_name?: string | null
           email: string
@@ -457,6 +459,7 @@ export type Database = {
           account_manager_timezone?: string | null
           artist_name?: string | null
           avatar_url?: string | null
+          ban_reason?: string | null
           created_at?: string | null
           display_name?: string | null
           email?: string

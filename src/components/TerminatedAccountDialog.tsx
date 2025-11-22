@@ -24,6 +24,7 @@ export const TerminatedAccountDialog = ({ userId, onSignOut }: TerminatedAccount
   const [userEmail, setUserEmail] = useState("");
   const [userName, setUserName] = useState("");
   const [hasAppeal, setHasAppeal] = useState(false);
+  const [banReason, setBanReason] = useState("");
 
   useEffect(() => {
     checkTerminationStatus();
@@ -54,13 +55,14 @@ export const TerminatedAccountDialog = ({ userId, onSignOut }: TerminatedAccount
   const fetchUserInfo = async () => {
     const { data } = await supabase
       .from("profiles")
-      .select("email, full_name, display_name")
+      .select("email, full_name, display_name, ban_reason")
       .eq("id", userId)
       .single();
 
     if (data) {
       setUserEmail(data.email);
       setUserName(data.display_name || data.full_name || "User");
+      setBanReason(data.ban_reason || "");
     }
 
     // Check if user already has a pending appeal
@@ -113,6 +115,13 @@ export const TerminatedAccountDialog = ({ userId, onSignOut }: TerminatedAccount
               Your Trackball Distribution account has been terminated
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center space-y-4 pt-4">
+              {banReason && (
+                <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/30">
+                  <p className="text-sm font-medium text-foreground mb-2">Reason for termination:</p>
+                  <p className="text-sm text-foreground break-words">{banReason}</p>
+                </div>
+              )}
+
               <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/30">
                 <ul className="text-sm text-foreground space-y-2 text-left list-disc list-inside break-words">
                   <li>You will not receive any of your existing royalties</li>
