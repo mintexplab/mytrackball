@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import PublishingManagement from "./PublishingManagement";
 import LabelInvitationManagement from "./LabelInvitationManagement";
 import MaintenanceManagement from "./MaintenanceManagement";
 import AccountAppealsManagement from "./AccountAppealsManagement";
+import { ProfileDropdown } from "./ProfileDropdown";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -27,7 +28,29 @@ interface AdminPortalProps {
 const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
   const [activeTab, setActiveTab] = useState("users");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [adminEmail, setAdminEmail] = useState<string>("");
+  const [adminAvatar, setAdminAvatar] = useState<string>("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchAdminProfile();
+  }, []);
+
+  const fetchAdminProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email, avatar_url")
+        .eq("id", user.id)
+        .single();
+      
+      if (profile) {
+        setAdminEmail(profile.email);
+        setAdminAvatar(profile.avatar_url || "");
+      }
+    }
+  };
 
   const handleSignOut = async () => {
     setIsLoggingOut(true);
@@ -180,16 +203,11 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
               </DropdownMenu>
             </div>
             
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSignOut}
-              disabled={isLoggingOut}
-              className="border-border hover:bg-muted transition-colors"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              {isLoggingOut ? "Signing Out..." : "Sign Out"}
-            </Button>
+            <ProfileDropdown 
+              userEmail={adminEmail}
+              avatarUrl={adminAvatar}
+              onSignOut={handleSignOut}
+            />
           </div>
         </div>
       </div>
