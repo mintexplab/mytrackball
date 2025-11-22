@@ -15,13 +15,63 @@ import { useS3Upload } from "@/hooks/useS3Upload";
 
 type ReleaseType = "single" | "ep" | "album" | null;
 
+interface TrackContributor {
+  id: string;
+  name: string;
+  role: string;
+}
+
 interface Track {
   id: string;
   title: string;
   isrc: string;
   audioFile: File | null;
   audioUrl: string;
+  contributors: TrackContributor[];
 }
+
+const CONTRIBUTOR_ROLES = [
+  "Composer",
+  "Producer",
+  "Lyricist",
+  "Songwriter",
+  "Co-Writer",
+  "Arranger",
+  "Mixer",
+  "Mastering Engineer",
+  "Recording Engineer",
+  "Audio Engineer",
+  "Vocalist",
+  "Lead Vocalist",
+  "Background Vocalist",
+  "Featured Artist",
+  "Guitarist",
+  "Bassist",
+  "Drummer",
+  "Pianist",
+  "Keyboardist",
+  "DJ",
+  "Percussionist",
+  "Violinist",
+  "Cellist",
+  "Saxophonist",
+  "Trumpeter",
+  "Session Musician",
+  "Conductor",
+  "Sound Designer",
+  "Remixer",
+  "Additional Producer",
+  "Co-Producer",
+  "Executive Producer",
+  "A&R",
+  "Beat Maker",
+  "Programmer",
+  "Vocal Producer",
+  "Vocal Engineer",
+  "Mix Engineer",
+  "Assistant Engineer",
+  "Other"
+];
 
 const releaseSchema = z.object({
   songTitle: z.string().min(1, "Song title is required").max(200),
@@ -75,7 +125,14 @@ const CreateRelease = () => {
   const navigate = useNavigate();
   const { uploadFile, uploading, uploadProgress } = useS3Upload();
   const [releaseType, setReleaseType] = useState<ReleaseType>(null);
-  const [tracks, setTracks] = useState<Track[]>([{ id: "1", title: "", isrc: "", audioFile: null, audioUrl: "" }]);
+  const [tracks, setTracks] = useState<Track[]>([{ 
+    id: "1", 
+    title: "", 
+    isrc: "", 
+    audioFile: null, 
+    audioUrl: "",
+    contributors: []
+  }]);
   const [uploadingFile, setUploadingFile] = useState<'artwork' | 'audio' | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -317,11 +374,40 @@ const CreateRelease = () => {
         title: "",
         isrc,
         audioFile: null,
-        audioUrl: ""
+        audioUrl: "",
+        contributors: []
       }]);
       toast.success(`Track added with ISRC: ${isrc}`);
     } catch (error: any) {
       toast.error(error.message || "Failed to add track");
+    }
+  };
+
+  const addTrackContributor = (trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (track && track.contributors.length < 50) {
+      updateTrack(trackId, "contributors", [
+        ...track.contributors,
+        { id: Date.now().toString(), name: "", role: "Composer" }
+      ]);
+    } else {
+      toast.error("Maximum 50 contributors per track");
+    }
+  };
+
+  const removeTrackContributor = (trackId: string, contributorId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (track) {
+      updateTrack(trackId, "contributors", track.contributors.filter(c => c.id !== contributorId));
+    }
+  };
+
+  const updateTrackContributor = (trackId: string, contributorId: string, field: keyof TrackContributor, value: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (track) {
+      updateTrack(trackId, "contributors", track.contributors.map(c => 
+        c.id === contributorId ? { ...c, [field]: value } : c
+      ));
     }
   };
 
@@ -440,7 +526,10 @@ const CreateRelease = () => {
         track_number: index + 1,
         title: track!.title || validatedData.songTitle,
         isrc: track!.isrc,
-        audio_file_url: track!.audioUrl
+        audio_file_url: track!.audioUrl,
+        composer: track!.contributors.filter(c => c.role === "Composer").map(c => c.name).join(", ") || null,
+        writer: track!.contributors.filter(c => c.role === "Lyricist" || c.role === "Songwriter").map(c => c.name).join(", ") || null,
+        contributor: track!.contributors.map(c => `${c.name} (${c.role})`).join(", ") || null
       }));
 
       const { error: tracksError } = await supabase.from("tracks").insert(trackData);
@@ -895,6 +984,78 @@ const CreateRelease = () => {
                           <p className="text-xs text-muted-foreground">WAV (PCM), FLAC, AIFF, WMA (Lossless) only</p>
                         </div>
                       </label>
+                    </div>
+
+                    {/* Track Contributors */}
+                    <div className="space-y-3 pt-4 border-t border-border">
+                      <div className="flex justify-between items-center">
+                        <Label>Track Contributors ({track.contributors.length}/50)</Label>
+                        {track.contributors.length < 50 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => addTrackContributor(track.id)}
+                          >
+                            <Plus className="w-3 h-3 mr-1" />
+                            Add Contributor
+                          </Button>
+                        )}
+                      </div>
+                      
+                      {track.contributors.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          No contributors added yet. Click "Add Contributor" to add composers, producers, etc.
+                        </p>
+                      )}
+
+                      <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                        {track.contributors.map((contributor) => (
+                          <div key={contributor.id} className="flex gap-2 items-start p-3 rounded-lg bg-background/50 border border-border">
+                            <div className="flex-1 space-y-2">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <Label htmlFor={`contributor-name-${contributor.id}`} className="text-xs">Name</Label>
+                                  <Input
+                                    id={`contributor-name-${contributor.id}`}
+                                    value={contributor.name}
+                                    onChange={(e) => updateTrackContributor(track.id, contributor.id, "name", e.target.value)}
+                                    placeholder="Contributor Name"
+                                    className="bg-background h-9 text-sm"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label htmlFor={`contributor-role-${contributor.id}`} className="text-xs">Role</Label>
+                                  <Select
+                                    value={contributor.role}
+                                    onValueChange={(value) => updateTrackContributor(track.id, contributor.id, "role", value)}
+                                  >
+                                    <SelectTrigger className="bg-background h-9 text-sm">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-[300px]">
+                                      {CONTRIBUTOR_ROLES.map((role) => (
+                                        <SelectItem key={role} value={role} className="text-sm">
+                                          {role}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeTrackContributor(track.id, contributor.id)}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 h-9 w-9 p-0 mt-5"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </Card>
