@@ -219,6 +219,39 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_settings: {
+        Row: {
+          created_at: string | null
+          end_time: string
+          id: string
+          is_active: boolean
+          reason: string
+          start_time: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_time: string
+          id?: string
+          is_active?: boolean
+          reason: string
+          start_time: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          reason?: string
+          start_time?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null

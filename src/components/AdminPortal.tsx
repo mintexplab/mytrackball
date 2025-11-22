@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music, Settings, ChevronDown } from "lucide-react";
+import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music, Settings, ChevronDown, AlertTriangle } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import UserManagement from "./UserManagement";
 import ReleasesList from "./ReleasesList";
@@ -17,6 +17,7 @@ import VersionManagement from "./VersionManagement";
 import ArtistInvitationManagement from "./ArtistInvitationManagement";
 import PublishingManagement from "./PublishingManagement";
 import LabelInvitationManagement from "./LabelInvitationManagement";
+import MaintenanceManagement from "./MaintenanceManagement";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -163,6 +164,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
                     Invite Labels
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setActiveTab("maintenance")} className="cursor-pointer">
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    Maintenance Mode
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActiveTab("version")} className="cursor-pointer">
                     Version Manager
                   </DropdownMenuItem>
@@ -222,6 +227,7 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
                 <DropdownMenuItem onClick={() => setActiveTab("royalties")}>Royalties</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("payouts")}>Payouts</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("publishing")}>Publishing</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("maintenance")}>Maintenance</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("version")}>Version</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -273,6 +279,10 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
 
           <TabsContent value="publishing">
             <PublishingManagement />
+          </TabsContent>
+
+          <TabsContent value="maintenance">
+            <MaintenanceManagement />
           </TabsContent>
 
           <TabsContent value="version">
