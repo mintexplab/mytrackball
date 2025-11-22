@@ -47,6 +47,10 @@ const getStatusDisplay = (status: string) => {
       label: "Striked", 
       className: "bg-purple-500/20 border-purple-500/30 text-purple-300" 
     },
+    "awaiting final qc": { 
+      label: "Awaiting Final QC", 
+      className: "bg-cyan-500/20 border-cyan-500/30 text-cyan-300" 
+    },
   };
 
   return statusMap[status?.toLowerCase()] || { 
@@ -440,6 +444,7 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
                 <SelectItem value="taken down">Taken Down</SelectItem>
                 <SelectItem value="on hold">On Hold</SelectItem>
                 <SelectItem value="striked">Striked</SelectItem>
+                <SelectItem value="awaiting final qc">Awaiting Final QC</SelectItem>
               </SelectContent>
             </Select>
 
