@@ -29,6 +29,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
         *,
         profiles!releases_user_id_fkey(full_name, email)
       `)
+      .is("archived_at", null)  // Only show active (non-archived) releases
       .order("created_at", { ascending: false });
 
     if (!isAdmin && userId) {

@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Download, Music, Calendar, Tag, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, Filter, Download, Music, Calendar, Tag, Trash2, Archive, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
 import ReleaseInfoDialog from "./ReleaseInfoDialog";
 
@@ -22,10 +23,12 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [genreFilter, setGenreFilter] = useState("all");
+  const [selectedReleases, setSelectedReleases] = useState<Set<string>>(new Set());
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     fetchReleases();
-  }, [userId]);
+  }, [userId, showArchived]);
 
   useEffect(() => {
     applyFilters();
@@ -34,14 +37,24 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
   const fetchReleases = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("releases")
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
+      // Filter archived/active releases
+      if (showArchived) {
+        query = query.not("archived_at", "is", null);
+      } else {
+        query = query.is("archived_at", null);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
       setReleases(data || []);
+      setSelectedReleases(new Set()); // Clear selection on refresh
     } catch (error: any) {
       toast.error("Failed to load releases");
     } finally {
@@ -74,10 +87,19 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
     setFilteredReleases(filtered);
   };
 
-  const exportToCsv = () => {
+  const exportToCsv = (selectedOnly: boolean = false) => {
+    const releasesToExport = selectedOnly 
+      ? filteredReleases.filter(r => selectedReleases.has(r.id))
+      : filteredReleases;
+
+    if (releasesToExport.length === 0) {
+      toast.error("No releases to export");
+      return;
+    }
+
     const csvContent = [
       ["Title", "Artist", "Genre", "Release Date", "Status", "UPC", "ISRC"].join(","),
-      ...filteredReleases.map((r) =>
+      ...releasesToExport.map((r) =>
         [
           r.title,
           r.artist_name,
@@ -94,39 +116,187 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "catalog-export.csv";
+    a.download = `catalog-export-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
-    toast.success("Catalog exported successfully");
+    toast.success(`Exported ${releasesToExport.length} release${releasesToExport.length === 1 ? '' : 's'}`);
   };
 
-  const handleDeleteRelease = async (releaseId: string, releaseStatus?: string | null) => {
-    if (releaseStatus === "pending") {
-      toast.error("Cannot delete releases with pending status");
+  const getDeleteMessage = (status: string | null, archived: boolean): string => {
+    if (archived) {
+      return "This release is already archived. Permanently delete it? This cannot be undone.";
+    }
+    
+    switch (status) {
+      case "pending":
+        return "Cannot delete releases awaiting review. Please wait for admin approval or rejection.";
+      case "approved":
+      case "delivering":
+        return "This release is live on streaming platforms. You must request a takedown before archiving.";
+      case "rejected":
+        return "Archive this rejected release? You can restore it later or permanently delete from the archive.";
+      case "taken down":
+        return "Archive this taken down release? You can restore it later or permanently delete from the archive.";
+      default:
+        return "Archive this release? You can restore it later or permanently delete from the archive.";
+    }
+  };
+
+  const canArchive = (status: string | null): boolean => {
+    return status !== "pending" && status !== "approved" && status !== "delivering";
+  };
+
+  const handleArchiveRelease = async (releaseId: string, releaseStatus?: string | null, isArchived?: boolean) => {
+    if (!canArchive(releaseStatus) && !isArchived) {
+      const message = getDeleteMessage(releaseStatus, false);
+      toast.error(message);
       return;
     }
 
-    const deliveredStatuses = ["approved", "delivering"];
-    if (releaseStatus && deliveredStatuses.includes(releaseStatus)) {
-      toast.error(
-        "Live releases must be taken down before deletion. Please request takedown from the release details page."
-      );
-      return;
+    const message = getDeleteMessage(releaseStatus, !!isArchived);
+    
+    if (isArchived) {
+      // Permanent delete from archive
+      if (!confirm(message)) return;
+      
+      const { error } = await supabase.from("releases").delete().eq("id", releaseId);
+      
+      if (error) {
+        toast.error("Failed to delete release");
+        return;
+      }
+      
+      toast.success("Release permanently deleted");
+    } else {
+      // Move to archive (soft delete)
+      if (!confirm(message)) return;
+      
+      const { error } = await supabase
+        .from("releases")
+        .update({ archived_at: new Date().toISOString() })
+        .eq("id", releaseId);
+      
+      if (error) {
+        toast.error("Failed to archive release");
+        return;
+      }
+      
+      toast.success("Release archived. View in 'Archived Releases' to restore or permanently delete.");
     }
-
-    if (!confirm("Are you sure you want to delete this release? This action cannot be undone.")) {
-      return;
-    }
-
-    const { error } = await supabase.from("releases").delete().eq("id", releaseId);
-
-    if (error) {
-      toast.error("Failed to delete release");
-      return;
-    }
-
-    toast.success("Release deleted successfully");
+    
     fetchReleases();
   };
+
+  const handleRestoreRelease = async (releaseId: string) => {
+    if (!confirm("Restore this release from the archive?")) return;
+
+    const { error } = await supabase
+      .from("releases")
+      .update({ archived_at: null })
+      .eq("id", releaseId);
+
+    if (error) {
+      toast.error("Failed to restore release");
+      return;
+    }
+
+    toast.success("Release restored successfully");
+    fetchReleases();
+  };
+
+  const handleRequestTakedown = async (releaseId: string) => {
+    if (!confirm("Request takedown for this release? This will notify the admin to remove it from streaming platforms.")) return;
+
+    const { error } = await supabase
+      .from("releases")
+      .update({ takedown_requested: true })
+      .eq("id", releaseId);
+
+    if (error) {
+      toast.error("Failed to request takedown");
+      return;
+    }
+
+    toast.success("Takedown request submitted");
+    fetchReleases();
+  };
+
+  const handleBulkArchive = async () => {
+    const releasesToArchive = Array.from(selectedReleases);
+    const releases = filteredReleases.filter(r => releasesToArchive.includes(r.id));
+    
+    // Check if any are not archivable
+    const unarchivable = releases.filter(r => !canArchive(r.status) && !r.archived_at);
+    if (unarchivable.length > 0) {
+      toast.error(`${unarchivable.length} selected release(s) cannot be archived (pending/approved/delivering status)`);
+      return;
+    }
+
+    if (!confirm(`Archive ${releasesToArchive.length} selected release(s)?`)) return;
+
+    const { error } = await supabase
+      .from("releases")
+      .update({ archived_at: new Date().toISOString() })
+      .in("id", releasesToArchive);
+
+    if (error) {
+      toast.error("Failed to archive releases");
+      return;
+    }
+
+    toast.success(`${releasesToArchive.length} release(s) archived`);
+    setSelectedReleases(new Set());
+    fetchReleases();
+  };
+
+  const handleBulkTakedown = async () => {
+    const releasesToTakedown = Array.from(selectedReleases);
+    const releases = filteredReleases.filter(r => releasesToTakedown.includes(r.id));
+    
+    // Filter only approved/delivering releases that haven't requested takedown
+    const eligibleReleases = releases.filter(
+      r => (r.status === "approved" || r.status === "delivering") && !r.takedown_requested
+    );
+
+    if (eligibleReleases.length === 0) {
+      toast.error("No eligible releases for takedown (must be approved/delivering and not already requested)");
+      return;
+    }
+
+    if (!confirm(`Request takedown for ${eligibleReleases.length} selected release(s)?`)) return;
+
+    const { error } = await supabase
+      .from("releases")
+      .update({ takedown_requested: true })
+      .in("id", eligibleReleases.map(r => r.id));
+
+    if (error) {
+      toast.error("Failed to request takedowns");
+      return;
+    }
+
+    toast.success(`Takedown requested for ${eligibleReleases.length} release(s)`);
+    setSelectedReleases(new Set());
+    fetchReleases();
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedReleases.size === filteredReleases.length) {
+      setSelectedReleases(new Set());
+    } else {
+      setSelectedReleases(new Set(filteredReleases.map(r => r.id)));
+    }
+  };
+
+  const toggleSelect = (releaseId: string) => {
+    const newSelected = new Set(selectedReleases);
+    if (newSelected.has(releaseId)) {
+      newSelected.delete(releaseId);
+    } else {
+      newSelected.add(releaseId);
+    }
+    setSelectedReleases(newSelected);
+  };
+
   const uniqueGenres = Array.from(new Set(releases.map((r) => r.genre).filter(Boolean)));
 
   useEffect(() => {
@@ -140,6 +310,62 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
 
   return (
     <div className="space-y-4">
+      {/* Bulk Actions Bar */}
+      {selectedReleases.size > 0 && (
+        <Card className="backdrop-blur-sm bg-primary/10 border-primary/40">
+          <CardContent className="py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium">
+                  {selectedReleases.size} selected
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setSelectedReleases(new Set())}
+                  className="h-8"
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Clear
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => exportToCsv(true)}
+                >
+                  <Download className="w-4 h-4 mr-1" />
+                  Export Selected
+                </Button>
+                {!showArchived && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleBulkTakedown}
+                      className="border-yellow-500/30 hover:bg-yellow-500/20 text-yellow-300"
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-1" />
+                      Request Takedown
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleBulkArchive}
+                      className="border-red-500/30 hover:bg-red-500/20 text-red-300"
+                    >
+                      <Archive className="w-4 h-4 mr-1" />
+                      Archive Selected
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Filters */}
       <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
         <CardHeader>
@@ -172,6 +398,7 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
                 <SelectItem value="delivering">Delivering</SelectItem>
+                <SelectItem value="taken down">Taken Down</SelectItem>
               </SelectContent>
             </Select>
 
@@ -191,12 +418,22 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
           </div>
 
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {filteredReleases.length} of {releases.length} releases
-            </p>
-            <Button onClick={exportToCsv} variant="outline" size="sm">
+            <div className="flex items-center gap-4">
+              <p className="text-sm text-muted-foreground">
+                {filteredReleases.length} of {releases.length} releases
+              </p>
+              <Button
+                size="sm"
+                variant={showArchived ? "default" : "outline"}
+                onClick={() => setShowArchived(!showArchived)}
+              >
+                <Archive className="w-4 h-4 mr-1" />
+                {showArchived ? "View Active" : "View Archived"}
+              </Button>
+            </div>
+            <Button onClick={() => exportToCsv(false)} variant="outline" size="sm">
               <Download className="w-4 h-4 mr-2" />
-              Export CSV
+              Export All
             </Button>
           </div>
         </CardContent>
@@ -205,7 +442,20 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
       {/* Releases List */}
       <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
         <CardHeader>
-          <CardTitle className="text-lg">Catalog</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">
+              {showArchived ? "Archived Releases" : "Catalog"}
+            </CardTitle>
+            {filteredReleases.length > 0 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={toggleSelectAll}
+              >
+                {selectedReleases.size === filteredReleases.length ? "Deselect All" : "Select All"}
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -213,7 +463,9 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           ) : filteredReleases.length === 0 ? (
-            <p className="text-center py-12 text-muted-foreground">No releases found</p>
+            <p className="text-center py-12 text-muted-foreground">
+              {showArchived ? "No archived releases" : "No releases found"}
+            </p>
           ) : (
             <div className="space-y-3">
               {filteredReleases.map((release) => (
@@ -223,10 +475,18 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
                   className={`p-4 rounded-lg border transition-all ${
                     selectedReleaseId === release.id
                       ? "border-primary bg-primary/5"
+                      : selectedReleases.has(release.id)
+                      ? "border-primary/50 bg-primary/10"
                       : "border-border bg-muted/30 hover:bg-muted/50"
                   }`}
                 >
                   <div className="flex items-start gap-4">
+                    <Checkbox
+                      checked={selectedReleases.has(release.id)}
+                      onCheckedChange={() => toggleSelect(release.id)}
+                      className="mt-5"
+                    />
+
                     {release.artwork_url ? (
                       <img
                         src={release.artwork_url}
@@ -249,6 +509,11 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
                             {release.status}
                           </Badge>
                         )}
+                        {release.takedown_requested && (
+                          <Badge variant="outline" className="text-xs bg-yellow-500/20 border-yellow-500/30">
+                            Takedown Requested
+                          </Badge>
+                        )}
                         {release.genre && (
                           <Badge variant="outline" className="text-xs gap-1">
                             <Tag className="w-3 h-3" />
@@ -266,15 +531,54 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
 
                     <div className="flex flex-col gap-2 items-end">
                       <ReleaseInfoDialog releaseId={release.id} onFloatingPlayer={onFloatingPlayer} />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-red-500/30 hover:bg-red-500/20 text-red-300"
-                        onClick={() => handleDeleteRelease(release.id, release.status)}
-                      >
-                        <Trash2 className="w-3 h-3 mr-1" />
-                        Delete
-                      </Button>
+                      
+                      {showArchived ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-green-500/30 hover:bg-green-500/20 text-green-300"
+                            onClick={() => handleRestoreRelease(release.id)}
+                          >
+                            <Archive className="w-3 h-3 mr-1" />
+                            Restore
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-red-500/30 hover:bg-red-500/20 text-red-300"
+                            onClick={() => handleArchiveRelease(release.id, release.status, true)}
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" />
+                            Permanent Delete
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          {(release.status === "approved" || release.status === "delivering") && !release.takedown_requested && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-yellow-500/30 hover:bg-yellow-500/20 text-yellow-300"
+                              onClick={() => handleRequestTakedown(release.id)}
+                            >
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              Request Takedown
+                            </Button>
+                          )}
+                          {canArchive(release.status) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-red-500/30 hover:bg-red-500/20 text-red-300"
+                              onClick={() => handleArchiveRelease(release.id, release.status)}
+                            >
+                              <Archive className="w-3 h-3 mr-1" />
+                              Archive
+                            </Button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
