@@ -173,13 +173,6 @@ const Dashboard = () => {
               <ProfileDropdown userEmail={user?.email} avatarUrl={profile?.avatar_url} onSignOut={handleSignOut} />
             </div>
           </div>
-          
-          {/* Mobile plan badge */}
-          <div className="md:hidden mt-2">
-            <Badge variant="outline" className="border-primary/30 bg-primary/5 text-xs">
-              {userPlan?.plan.name || "Trackball Free"}
-            </Badge>
-          </div>
         </div>
       </header>
 
@@ -232,8 +225,6 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {userPlan?.plan.name === "Trackball Prestige" && <AccountManagerCard managerName={profile?.account_manager_name} managerEmail={profile?.account_manager_email} managerPhone={profile?.account_manager_phone} managerTimezone={profile?.account_manager_timezone} userTimezone={profile?.user_timezone || "America/New_York"} />}
-
             <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
               <CardHeader className="pb-3 sm:pb-6">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -251,6 +242,8 @@ const Dashboard = () => {
                 <ReleasesList userId={user?.id} isAdmin={false} />
               </CardContent>
             </Card>
+
+            {userPlan?.plan.name === "Trackball Prestige" && <AccountManagerCard managerName={profile?.account_manager_name} managerEmail={profile?.account_manager_email} managerPhone={profile?.account_manager_phone} managerTimezone={profile?.account_manager_timezone} userTimezone={profile?.user_timezone || "America/New_York"} />}
 
             <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
               <CardHeader className="pb-3 sm:pb-6">
