@@ -82,6 +82,8 @@ const Dashboard = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedCatalogReleaseId, setSelectedCatalogReleaseId] = useState<string | null>(null);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [showMaintenanceDialog, setShowMaintenanceDialog] = useState(false);
   const navigate = useNavigate();
   useEffect(() => {
     const {
@@ -115,7 +117,14 @@ const Dashboard = () => {
           setTimeout(() => {
             setShowLoader(false);
             sessionStorage.setItem('loginLoaderShown', 'true');
+            // Check maintenance mode after loader completes
+            setTimeout(() => {
+              checkMaintenanceMode(session.user.id);
+            }, 300);
           }, randomDelay);
+        } else {
+          // If loader already shown, check maintenance immediately
+          checkMaintenanceMode(session.user.id);
         }
         checkAdminStatus(session.user.id);
         fetchUserPlan(session.user.id);
@@ -142,6 +151,61 @@ const Dashboard = () => {
     }
     setIsAdmin(!!data);
   };
+
+  const checkMaintenanceMode = async (userId: string) => {
+    // Check if user is admin first
+    const { data: isAdminData } = await supabase.rpc('has_role', {
+      _user_id: userId,
+      _role: 'admin'
+    });
+
+    // Admins bypass maintenance mode
+    if (isAdminData) {
+      setMaintenanceMode(false);
+      setShowMaintenanceDialog(false);
+      return;
+    }
+
+    const { data } = await supabase
+      .from("maintenance_settings")
+      .select("*")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (data) {
+      setMaintenanceMode(true);
+      setShowMaintenanceDialog(true);
+    } else {
+      setMaintenanceMode(false);
+      setShowMaintenanceDialog(false);
+    }
+  };
+
+  // Listen for maintenance mode changes
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('maintenance_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'maintenance_settings'
+        },
+        () => {
+          checkMaintenanceMode(user.id);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
   const fetchUserPlan = async (userId: string) => {
     const {
       data
@@ -206,6 +270,15 @@ const Dashboard = () => {
   if (isAdmin) {
     return <AdminPortal onSignOut={handleSignOut} />;
   }
+
+  // Show maintenance dialog if maintenance mode is active
+  if (maintenanceMode && showMaintenanceDialog) {
+    return (
+      <div className="min-h-screen bg-background relative">
+        {user && <MaintenanceDialog userId={user.id} />}
+      </div>
+    );
+  }
   return <div className="min-h-screen bg-background relative">
       {isLoggingOut && <div className="fixed inset-0 z-50 bg-background animate-fade-in flex flex-col items-center justify-center gap-4">
           <p className="text-lg text-foreground animate-pulse">Signing you out of My Trackball</p>
@@ -247,7 +320,6 @@ const Dashboard = () => {
       {user && <AnnouncementDialog userId={user.id} />}
       {user && <ArtistLabelOnboarding userId={user.id} userPlan={userPlan} />}
       {user && <ClientInvitationAcceptance userId={user.id} />}
-      {user && <MaintenanceDialog userId={user.id} />}
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
