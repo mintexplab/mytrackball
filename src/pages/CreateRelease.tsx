@@ -61,7 +61,8 @@ const COUNTRIES = [
 
 const CreateRelease = () => {
   const navigate = useNavigate();
-  const { uploadFile, uploading } = useS3Upload();
+  const { uploadFile, uploading, uploadProgress } = useS3Upload();
+  const [uploadingFile, setUploadingFile] = useState<'artwork' | 'audio' | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -287,12 +288,16 @@ const CreateRelease = () => {
       if (!user) throw new Error("Not authenticated");
 
       // Upload artwork
+      setUploadingFile('artwork');
       const artworkPath = `release-artwork/${user.id}/${Date.now()}.jpg`;
       const artworkUrl = await uploadFile({ file: artworkFile, path: artworkPath });
+      setUploadingFile(null);
 
       // Upload audio
+      setUploadingFile('audio');
       const audioPath = `release-audio/${user.id}/${Date.now()}.${audioFile.name.split('.').pop()}`;
       const audioUrl = await uploadFile({ file: audioFile, path: audioPath });
+      setUploadingFile(null);
 
       // Create release
       const { error: releaseError } = await supabase.from("releases").insert({
@@ -356,10 +361,25 @@ const CreateRelease = () => {
                 <span>Saving...</span>
               </div>
             )}
-            {!isSaving && lastSaved && (
+            {!isSaving && lastSaved && !uploadingFile && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Check className="w-4 h-4 text-green-500" />
                 <span>Draft saved</span>
+              </div>
+            )}
+            {uploadingFile && (
+              <div className="flex items-center gap-2 text-sm">
+                <div className="flex flex-col gap-1">
+                  <span className="text-muted-foreground">
+                    Uploading {uploadingFile}... {uploadProgress}%
+                  </span>
+                  <div className="w-32 h-1 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-primary transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>
