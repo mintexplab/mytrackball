@@ -143,36 +143,38 @@ const BulkUploadTab = ({ userId }: { userId: string }) => {
       let artworkUrl = null;
       let audioUrl = null;
 
-      // Upload artwork if provided
+      // Upload artwork if provided (using S3 via edge function)
       if (release.artworkFile) {
-        const artworkPath = `${userId}/${Date.now()}-${release.artworkFile.name}`;
-        const { error: artworkError } = await supabase.storage
-          .from('release-artwork')
-          .upload(artworkPath, release.artworkFile);
+        const artworkFormData = new FormData();
+        artworkFormData.append('file', release.artworkFile);
+        artworkFormData.append('userId', userId);
+        artworkFormData.append('fileType', 'artwork');
 
-        if (artworkError) throw artworkError;
+        const { data: artworkData, error: artworkError } = await supabase.functions.invoke('upload-to-s3', {
+          body: artworkFormData,
+        });
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('release-artwork')
-          .getPublicUrl(artworkPath);
+        if (artworkError) throw new Error(`Artwork upload failed: ${artworkError.message}`);
+        if (!artworkData?.url) throw new Error('No artwork URL returned');
         
-        artworkUrl = publicUrl;
+        artworkUrl = artworkData.url;
       }
 
-      // Upload audio if provided
+      // Upload audio if provided (using S3 via edge function)
       if (release.audioFile) {
-        const audioPath = `${userId}/${Date.now()}-${release.audioFile.name}`;
-        const { error: audioError } = await supabase.storage
-          .from('release-audio')
-          .upload(audioPath, release.audioFile);
+        const audioFormData = new FormData();
+        audioFormData.append('file', release.audioFile);
+        audioFormData.append('userId', userId);
+        audioFormData.append('fileType', 'audio');
 
-        if (audioError) throw audioError;
+        const { data: audioData, error: audioError } = await supabase.functions.invoke('upload-to-s3', {
+          body: audioFormData,
+        });
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('release-audio')
-          .getPublicUrl(audioPath);
+        if (audioError) throw new Error(`Audio upload failed: ${audioError.message}`);
+        if (!audioData?.url) throw new Error('No audio URL returned');
         
-        audioUrl = publicUrl;
+        audioUrl = audioData.url;
       }
 
       // Create release in database

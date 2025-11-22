@@ -35,6 +35,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { SparkleBeads } from "@/components/SparkleBeads";
 import { DraggableDashboardBlocks } from "@/components/DraggableDashboardBlocks";
+import { DocumentationSection } from "@/components/DocumentationSection";
 import { QuickStatsBlock } from "@/components/dashboard/QuickStatsBlock";
 import { YourReleasesBlock } from "@/components/dashboard/YourReleasesBlock";
 import { YourPlanBlock } from "@/components/dashboard/YourPlanBlock";
@@ -578,61 +579,67 @@ const Dashboard = () => {
           )}
 
           <TabsContent value="help" className="animate-fade-in">
-            <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold flex items-center gap-2 text-left">
-                  <HelpCircle className="w-6 h-6 text-primary" />
-                  Help & Support
-                </CardTitle>
-                <CardDescription className="text-left">Get assistance with your account</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="p-6 rounded-lg bg-muted/50 border border-border">
-                    <h3 className="font-semibold text-lg mb-2">Contact Us</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Need help with your account, releases, or have questions? Our support team is here to assist you.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Button onClick={() => window.location.href = 'mailto:contact@trackball.cc'} className="bg-gradient-primary hover:opacity-90">
-                        <Mail className="w-4 h-4 mr-2" />
-                        Email Support
-                      </Button>
-                      <span className="text-sm text-muted-foreground self-center">
-                        contact@trackball.cc
-                      </span>
-                    </div>
-                  </div>
+            <div className="space-y-6">
+              {/* Documentation Section */}
+              <DocumentationSection />
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                      <h4 className="font-medium mb-2">Distribution Support</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Questions about release submissions, distribution status, or platform delivery
+              {/* Contact Support Section */}
+              <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-2xl font-bold flex items-center gap-2 text-left">
+                    <HelpCircle className="w-6 h-6 text-primary" />
+                    Contact Support
+                  </CardTitle>
+                  <CardDescription className="text-left">Get direct assistance from our team</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="p-6 rounded-lg bg-muted/50 border border-border">
+                      <h3 className="font-semibold text-lg mb-2">Email Us</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Need help with your account, releases, or have questions? Our support team is here to assist you.
                       </p>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <Button onClick={() => window.location.href = 'mailto:contact@trackball.cc'} className="bg-gradient-primary hover:opacity-90">
+                          <Mail className="w-4 h-4 mr-2" />
+                          Email Support
+                        </Button>
+                        <span className="text-sm text-muted-foreground self-center">
+                          contact@trackball.cc
+                        </span>
+                      </div>
                     </div>
-                    <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                      <h4 className="font-medium mb-2">Account & Billing</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Issues with your plan, payments, or account settings
-                      </p>
-                    </div>
-                    <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                      <h4 className="font-medium mb-2">Technical Issues</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Upload problems, file format questions, or technical difficulties
-                      </p>
-                    </div>
-                    <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                      <h4 className="font-medium mb-2">General Inquiries</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Partnership opportunities, feature requests, or general questions
-                      </p>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                        <h4 className="font-medium mb-2">Distribution Support</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Questions about release submissions, distribution status, or platform delivery
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                        <h4 className="font-medium mb-2">Account & Billing</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Issues with your plan, payments, or account settings
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                        <h4 className="font-medium mb-2">Technical Issues</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Upload problems, login issues, or platform bugs
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                        <h4 className="font-medium mb-2">Publishing & Royalties</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Publishing submissions, royalty questions, or payout requests
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </main>
