@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { Plus, Trash2, Music, Upload } from "lucide-react";
 import { z } from "zod";
@@ -49,6 +48,7 @@ const trackSchema = z.object({
 });
 
 const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
+  const [showSelection, setShowSelection] = useState(false);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [releaseType, setReleaseType] = useState<"single" | "album">("single");
@@ -259,6 +259,12 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     }
   };
 
+  const handleSelectionClick = (type: "single" | "album") => {
+    setReleaseType(type);
+    setShowSelection(false);
+    setOpen(true);
+  };
+
   const resetForm = () => {
     setFormData({
       title: "",
@@ -298,10 +304,53 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   }, []);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+    <>
+      {/* Selection Menu Dialog */}
+      <Dialog open={showSelection} onOpenChange={setShowSelection}>
+        <DialogTrigger asChild onClick={() => setShowSelection(true)}>
+          {children}
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[600px] bg-card border-primary/20">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold text-center">Create Submission</DialogTitle>
+            <DialogDescription className="text-center text-lg">
+              Create a new submission
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-8">
+            <button
+              onClick={() => handleSelectionClick("single")}
+              className="group relative overflow-hidden rounded-lg border-2 border-border hover:border-primary/50 transition-all duration-300 bg-background/50 hover:bg-background p-8 flex flex-col items-center justify-center gap-4 min-h-[280px]"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Music className="w-20 h-20 text-primary group-hover:scale-110 transition-transform" />
+              <div className="text-center relative z-10">
+                <h3 className="text-2xl font-bold mb-2">Create Single</h3>
+                <p className="text-muted-foreground">Create a single submission</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => handleSelectionClick("album")}
+              className="group relative overflow-hidden rounded-lg border-2 border-border hover:border-primary/50 transition-all duration-300 bg-background/50 hover:bg-background p-8 flex flex-col items-center justify-center gap-4 min-h-[280px]"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Music className="w-20 h-20 text-primary group-hover:scale-110 transition-transform" />
+              <div className="text-center relative z-10">
+                <h3 className="text-2xl font-bold mb-2">Create Album</h3>
+                <p className="text-muted-foreground">Create an album submission</p>
+              </div>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Release Form Dialog */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild className="hidden">
+          <button />
+        </DialogTrigger>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto bg-card border-primary/20">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Create New Release</DialogTitle>
@@ -310,23 +359,6 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Release Type Selection */}
-          <Card className="p-4 border-border">
-            <h3 className="font-semibold mb-4 text-primary">Release Type</h3>
-            <RadioGroup value={releaseType} onValueChange={(value) => setReleaseType(value as "single" | "album")}>
-              <div className="flex items-center space-x-6">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="single" id="single" />
-                  <Label htmlFor="single" className="cursor-pointer">Single</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="album" id="album" />
-                  <Label htmlFor="album" className="cursor-pointer">Album</Label>
-                </div>
-              </div>
-            </RadioGroup>
-          </Card>
-
           {/* Basic Info */}
           <Card className="p-4 border-border">
             <h3 className="font-semibold mb-4 text-primary">Release Information</h3>
@@ -698,6 +730,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 };
 
