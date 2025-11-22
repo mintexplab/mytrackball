@@ -23,6 +23,7 @@ const ReleasesGallery = ({ userId, onReleaseClick }: ReleasesGalleryProps) => {
     let query = supabase
       .from("releases")
       .select("*")
+      .is("archived_at", null)  // Only show active (non-archived) releases
       .order("created_at", { ascending: false });
 
     if (userId) {

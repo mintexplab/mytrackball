@@ -681,6 +681,7 @@ export type Database = {
       }
       releases: {
         Row: {
+          archived_at: string | null
           artist_name: string
           artwork_url: string | null
           audio_file_url: string | null
@@ -714,6 +715,7 @@ export type Database = {
           volume_number: number | null
         }
         Insert: {
+          archived_at?: string | null
           artist_name: string
           artwork_url?: string | null
           audio_file_url?: string | null
@@ -747,6 +749,7 @@ export type Database = {
           volume_number?: number | null
         }
         Update: {
+          archived_at?: string | null
           artist_name?: string
           artwork_url?: string | null
           audio_file_url?: string | null
