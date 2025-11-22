@@ -8,7 +8,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Info, Music, Calendar, Tag, User, Building2, FileText, Play } from "lucide-react";
 import { toast } from "sonner";
 import { AudioPlayer } from "./AudioPlayer";
-import { FloatingAudioPlayer } from "./FloatingAudioPlayer";
 
 interface ReleaseInfoDialogProps {
   releaseId: string;
@@ -148,12 +147,24 @@ const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogPro
 
               {/* Release Details */}
               <div className="space-y-4">
-                <h4 className="font-bold text-lg">RELEASE DETAILS</h4>
+                <h4 className="font-bold text-lg">SUBMISSION DETAILS</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {release.upc && (
                     <div>
                       <p className="text-sm text-muted-foreground">UPC/EAN</p>
                       <p className="font-medium">{release.upc}</p>
+                    </div>
+                  )}
+                  {release.isrc && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">ISRC</p>
+                      <p className="font-medium">{release.isrc}</p>
+                    </div>
+                  )}
+                  {release.catalog_number && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Catalog Number</p>
+                      <p className="font-medium">{release.catalog_number}</p>
                     </div>
                   )}
                   {release.label_name && (
@@ -171,8 +182,14 @@ const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogPro
                       <p className="font-medium">{release.distributor}</p>
                     </div>
                   )}
+                  <div>
+                    <p className="text-sm text-muted-foreground">Release Type</p>
+                    <p className="font-medium">
+                      {release.is_multi_disc ? "Multi-Disc Release" : "Single Release"}
+                    </p>
+                  </div>
                   {release.featured_artists && release.featured_artists.length > 0 && (
-                    <div>
+                    <div className="md:col-span-2">
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
                         <User className="w-3 h-3" />
                         Featured Artists
@@ -180,6 +197,27 @@ const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogPro
                       <p className="font-medium">{release.featured_artists.join(", ")}</p>
                     </div>
                   )}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Metadata Details */}
+              <div className="space-y-4">
+                <h4 className="font-bold text-lg">METADATA & SETTINGS</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Status</p>
+                    <Badge variant={release.status === "approved" ? "default" : "secondary"}>
+                      {release.status || "Pending"}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Takedown Status</p>
+                    <p className="font-medium">
+                      {release.takedown_requested ? "Requested" : "Active"}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -247,28 +285,57 @@ const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogPro
                   {tracks.map((track) => (
                     <div
                       key={track.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                      className="p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors space-y-2"
                     >
-                      <div className="flex items-center gap-3 flex-1">
-                        <span className="text-sm text-muted-foreground w-8">
-                          {track.track_number}.
-                        </span>
-                        <div className="flex-1">
-                          <p className="font-medium">{track.title}</p>
-                          {track.featured_artists && track.featured_artists.length > 0 && (
-                            <p className="text-sm text-muted-foreground">
-                              feat. {track.featured_artists.join(", ")}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 flex-1">
+                          <span className="text-sm text-muted-foreground w-8">
+                            {track.track_number}.
+                          </span>
+                          <div className="flex-1">
+                            <p className="font-medium">{track.title}</p>
+                            {track.featured_artists && track.featured_artists.length > 0 && (
+                              <p className="text-sm text-muted-foreground">
+                                feat. {track.featured_artists.join(", ")}
+                              </p>
+                            )}
+                            {track.isrc && (
+                              <p className="text-xs text-muted-foreground">ISRC: {track.isrc}</p>
+                            )}
+                          </div>
+                        </div>
+                        {track.duration && (
+                          <span className="text-sm text-muted-foreground">
+                            {formatDuration(track.duration)}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Track Credits */}
+                      {(track.composer || track.writer || track.contributor || track.publisher) && (
+                        <div className="pl-11 pt-2 border-t border-border/50 space-y-1">
+                          {track.composer && (
+                            <p className="text-xs text-muted-foreground">
+                              <span className="font-medium">Composer:</span> {track.composer}
                             </p>
                           )}
-                          {track.isrc && (
-                            <p className="text-xs text-muted-foreground">ISRC: {track.isrc}</p>
+                          {track.writer && (
+                            <p className="text-xs text-muted-foreground">
+                              <span className="font-medium">Writer:</span> {track.writer}
+                            </p>
+                          )}
+                          {track.contributor && (
+                            <p className="text-xs text-muted-foreground">
+                              <span className="font-medium">Contributor:</span> {track.contributor}
+                            </p>
+                          )}
+                          {track.publisher && (
+                            <p className="text-xs text-muted-foreground">
+                              <span className="font-medium">Publisher:</span> {track.publisher}
+                              {track.publisher_ipi && ` (IPI: ${track.publisher_ipi})`}
+                            </p>
                           )}
                         </div>
-                      </div>
-                      {track.duration && (
-                        <span className="text-sm text-muted-foreground">
-                          {formatDuration(track.duration)}
-                        </span>
                       )}
                     </div>
                   ))}
@@ -287,6 +354,51 @@ const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogPro
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                       {release.notes}
                     </p>
+                  </div>
+                </>
+              )}
+
+              {/* Rejection Reason */}
+              {release.rejection_reason && release.status === "rejected" && (
+                <>
+                  <Separator />
+                  <div className="space-y-3">
+                    <h4 className="font-bold text-lg text-destructive">REJECTION REASON</h4>
+                    <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                      <p className="text-sm text-foreground whitespace-pre-wrap">
+                        {release.rejection_reason}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* DDEX Information */}
+              {(release.ddex_party_id || release.ddex_party_name || release.ddex_delivery_destination) && (
+                <>
+                  <Separator />
+                  <div className="space-y-3">
+                    <h4 className="font-bold text-lg">DDEX DELIVERY INFORMATION</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {release.ddex_party_id && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Party ID</p>
+                          <p className="font-medium">{release.ddex_party_id}</p>
+                        </div>
+                      )}
+                      {release.ddex_party_name && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Party Name</p>
+                          <p className="font-medium">{release.ddex_party_name}</p>
+                        </div>
+                      )}
+                      {release.ddex_delivery_destination && (
+                        <div className="md:col-span-2">
+                          <p className="text-sm text-muted-foreground">Delivery Destination</p>
+                          <p className="font-medium">{release.ddex_delivery_destination}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </>
               )}

@@ -349,7 +349,7 @@ const Dashboard = () => {
       
       <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-30">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <div className="flex justify-between items-center gap-2">
+          <div className="flex justify-between items-center gap-4">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                 <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
@@ -370,21 +370,7 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-              <ProfileDropdown userEmail={user?.email} avatarUrl={profile?.avatar_url} onSignOut={handleSignOut} />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {user && <AnnouncementDialog userId={user.id} />}
-      {user && <ArtistLabelOnboarding userId={user.id} userPlan={userPlan} />}
-      {user && <ClientInvitationAcceptance userId={user.id} />}
-
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          <div className="-mx-3 sm:-mx-4 px-3 sm:px-4 pt-2 bg-background/95 backdrop-blur-sm border-b border-border sticky top-[57px] sm:top-[65px] z-20">
-            <div className="flex items-center gap-2 py-2 overflow-x-auto">
+            <div className="flex items-center gap-2 flex-shrink-0 overflow-x-auto">
               {/* Main Tabs */}
               <Button 
                 variant={activeTab === "overview" ? "default" : "ghost"} 
@@ -392,8 +378,8 @@ const Dashboard = () => {
                 onClick={() => setActiveTab("overview")}
                 className={activeTab === "overview" ? "bg-gradient-primary text-primary-foreground" : ""}
               >
-                <Package className="w-4 h-4 mr-2" />
-                Overview
+                <Package className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Overview</span>
               </Button>
 
               {/* Releases Dropdown */}
@@ -401,11 +387,11 @@ const Dashboard = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-1">
                     <FileMusic className="w-4 h-4" />
-                    Releases
+                    <span className="hidden sm:inline">Releases</span>
                     <ChevronDown className="w-3 h-3" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56 bg-card border-border">
+                <DropdownMenuContent align="end" className="w-56 bg-card border-border">
                   <DropdownMenuLabel>Release Management</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setActiveTab("catalog")} className="cursor-pointer">
@@ -426,8 +412,8 @@ const Dashboard = () => {
                   onClick={() => setActiveTab("clients")}
                   className={activeTab === "clients" ? "bg-gradient-primary text-primary-foreground" : ""}
                 >
-                  <Users className="w-4 h-4 mr-2" />
-                  Clients
+                  <Users className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Clients</span>
                 </Button>
               )}
 
@@ -437,8 +423,8 @@ const Dashboard = () => {
                 onClick={() => setActiveTab("notifications")}
                 className={activeTab === "notifications" ? "bg-gradient-primary text-primary-foreground" : ""}
               >
-                <Bell className="w-4 h-4 mr-2" />
-                Notifications
+                <Bell className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Notifications</span>
               </Button>
 
               {/* Financial Dropdown */}
@@ -446,11 +432,11 @@ const Dashboard = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-1">
                     <DollarSign className="w-4 h-4" />
-                    Financial
+                    <span className="hidden sm:inline">Financial</span>
                     <ChevronDown className="w-3 h-3" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56 bg-card border-border">
+                <DropdownMenuContent align="end" className="w-56 bg-card border-border">
                   <DropdownMenuLabel>Financial Management</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setActiveTab("royalties")} className="cursor-pointer">
@@ -472,11 +458,24 @@ const Dashboard = () => {
                 onClick={() => setActiveTab("help")}
                 className={activeTab === "help" ? "bg-gradient-primary text-primary-foreground" : ""}
               >
-                <HelpCircle className="w-4 h-4 mr-2" />
-                Help
+                <HelpCircle className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Help</span>
               </Button>
+
+              <div className="ml-2 pl-2 border-l border-border">
+                <ProfileDropdown userEmail={user?.email} avatarUrl={profile?.avatar_url} onSignOut={handleSignOut} />
+              </div>
             </div>
           </div>
+        </div>
+      </header>
+
+      {user && <AnnouncementDialog userId={user.id} />}
+      {user && <ArtistLabelOnboarding userId={user.id} userPlan={userPlan} />}
+      {user && <ClientInvitationAcceptance userId={user.id} />}
+
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
 
           <TabsContent value="overview" className="space-y-4 sm:space-y-6 animate-fade-in">
             <Collapsible defaultOpen>
