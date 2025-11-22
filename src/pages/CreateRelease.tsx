@@ -295,35 +295,23 @@ const CreateRelease = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Upload artwork to dashboard storage bucket (public)
+      // Upload artwork to S3
       setUploadingFile('artwork');
-      const artworkPath = `${user.id}/${Date.now()}-${artworkFile.name}`;
-      const { error: artworkError } = await supabase.storage
-        .from('release-artwork')
-        .upload(artworkPath, artworkFile);
-      if (artworkError) {
-        throw new Error(`Artwork upload failed: ${artworkError.message}`);
-      }
-      const { data: artworkPublic } = supabase.storage
-        .from('release-artwork')
-        .getPublicUrl(artworkPath);
-      const artworkUrl = artworkPublic.publicUrl;
+      const artworkPath = `release-artwork/${user.id}/${Date.now()}.jpg`;
+      const artworkUrl = await uploadFile({ file: artworkFile, path: artworkPath });
       setUploadingFile(null);
+      if (!artworkUrl) {
+        throw new Error("Artwork upload failed - please try again");
+      }
 
-      // Upload audio to dashboard storage bucket (public)
+      // Upload audio to S3
       setUploadingFile('audio');
-      const audioPath = `${user.id}/${Date.now()}-${audioFile.name}`;
-      const { error: audioError } = await supabase.storage
-        .from('release-audio')
-        .upload(audioPath, audioFile);
-      if (audioError) {
-        throw new Error(`Audio upload failed: ${audioError.message}`);
-      }
-      const { data: audioPublic } = supabase.storage
-        .from('release-audio')
-        .getPublicUrl(audioPath);
-      const audioUrl = audioPublic.publicUrl;
+      const audioPath = `release-audio/${user.id}/${Date.now()}.${audioFile.name.split('.').pop()}`;
+      const audioUrl = await uploadFile({ file: audioFile, path: audioPath });
       setUploadingFile(null);
+      if (!audioUrl) {
+        throw new Error("Audio upload failed - please try again");
+      }
 
       // Create release
       const { error: releaseError } = await supabase.from("releases").insert({
