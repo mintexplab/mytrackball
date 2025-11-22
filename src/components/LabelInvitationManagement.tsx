@@ -11,11 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Building2, UserPlus, X } from "lucide-react";
 import { z } from "zod";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const labelInvitationSchema = z.object({
   label_name: z.string().trim().min(1, "Label name is required").max(100),
   master_account_email: z.string().email("Invalid email address").max(255),
   subscription_tier: z.enum(["Trackball Signature", "Trackball Prestige", "Trackball Partner"]),
+  service_access: z.array(z.string()).min(1, "Select at least one service"),
+  custom_royalty_split: z.number().min(0).max(100).optional(),
 });
 
 const LabelInvitationManagement = () => {
@@ -24,6 +27,14 @@ const LabelInvitationManagement = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [additionalUsers, setAdditionalUsers] = useState<string[]>([]);
   const [newUserEmail, setNewUserEmail] = useState("");
+  const [serviceAccess, setServiceAccess] = useState<string[]>([
+    "catalog",
+    "royalties",
+    "announcements",
+    "support",
+    "settings"
+  ]);
+  const [customRoyaltySplit, setCustomRoyaltySplit] = useState<number>(70);
   const [formData, setFormData] = useState({
     label_name: "",
     master_account_email: "",
@@ -73,7 +84,11 @@ const LabelInvitationManagement = () => {
 
   const sendInvitation = async () => {
     try {
-      const validatedData = labelInvitationSchema.parse(formData);
+      const validatedData = labelInvitationSchema.parse({
+        ...formData,
+        service_access: serviceAccess,
+        custom_royalty_split: formData.subscription_tier === "Trackball Partner" ? customRoyaltySplit : undefined
+      });
 
       // Check if master account already exists
       const { data: existingProfile } = await supabase
@@ -99,6 +114,8 @@ const LabelInvitationManagement = () => {
           master_account_email: validatedData.master_account_email,
           additional_users: additionalUsers,
           subscription_tier: validatedData.subscription_tier,
+          service_access: validatedData.service_access,
+          custom_royalty_split: validatedData.custom_royalty_split || null,
           invited_by: user.id,
           status: "pending"
         })
@@ -131,6 +148,8 @@ const LabelInvitationManagement = () => {
         master_account_email: "",
         subscription_tier: "Trackball Signature"
       });
+      setServiceAccess(["catalog", "royalties", "announcements", "support", "settings"]);
+      setCustomRoyaltySplit(70);
       setAdditionalUsers([]);
       fetchInvitations();
     } catch (error: any) {
@@ -216,6 +235,62 @@ const LabelInvitationManagement = () => {
                   </Select>
                 </div>
 
+                {formData.subscription_tier === "Trackball Partner" && (
+                  <>
+                    <div className="space-y-3 border-t pt-4">
+                      <Label>Service Access *</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { id: "catalog", label: "Catalog Management" },
+                          { id: "royalties", label: "Royalties" },
+                          { id: "publishing", label: "Publishing" },
+                          { id: "announcements", label: "Announcements" },
+                          { id: "support", label: "Support" },
+                          { id: "settings", label: "Settings" }
+                        ].map((service) => (
+                          <div key={service.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={service.id}
+                              checked={serviceAccess.includes(service.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setServiceAccess([...serviceAccess, service.id]);
+                                } else {
+                                  setServiceAccess(serviceAccess.filter(s => s !== service.id));
+                                }
+                              }}
+                            />
+                            <Label
+                              htmlFor={service.id}
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              {service.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 border-t pt-4">
+                      <Label htmlFor="royalty_split">Custom Royalty Split (%) *</Label>
+                      <Input
+                        id="royalty_split"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        placeholder="70"
+                        value={customRoyaltySplit}
+                        onChange={(e) => setCustomRoyaltySplit(parseFloat(e.target.value) || 0)}
+                        className="bg-background border-border"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Percentage of royalties the partner account keeps (0-100%)
+                      </p>
+                    </div>
+                  </>
+                )}
+
                 <div className="space-y-2">
                   <Label>Additional Label Staff/Users</Label>
                   <div className="flex gap-2">
@@ -270,6 +345,8 @@ const LabelInvitationManagement = () => {
                 <TableHead>Master Account</TableHead>
                 <TableHead>Additional Users</TableHead>
                 <TableHead>Subscription</TableHead>
+                <TableHead>Royalty Split</TableHead>
+                <TableHead>Services</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Sent</TableHead>
               </TableRow>
@@ -277,7 +354,7 @@ const LabelInvitationManagement = () => {
             <TableBody>
               {invitations.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                     No label invitations sent yet
                   </TableCell>
                 </TableRow>
@@ -297,6 +374,48 @@ const LabelInvitationManagement = () => {
                       <Badge className="bg-gradient-primary text-white">
                         {invitation.subscription_tier}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {invitation.custom_royalty_split ? (
+                        <span className="font-medium">{invitation.custom_royalty_split}%</span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Default</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {invitation.service_access && invitation.service_access.length > 0 ? (
+                        <Badge variant="outline">{invitation.service_access.length} services</Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">All</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {invitation.custom_royalty_split ? (
+                        <span className="font-medium">{invitation.custom_royalty_split}%</span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Default</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {invitation.service_access && invitation.service_access.length > 0 ? (
+                        <Badge variant="outline">{invitation.service_access.length} services</Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">All</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {invitation.custom_royalty_split ? (
+                        <span className="font-medium">{invitation.custom_royalty_split}%</span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Default</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {invitation.service_access && invitation.service_access.length > 0 ? (
+                        <Badge variant="outline">{invitation.service_access.length} services</Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">All</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {invitation.status === "pending" && (

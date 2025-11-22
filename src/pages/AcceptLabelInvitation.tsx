@@ -162,6 +162,21 @@ const AcceptLabelInvitation = () => {
 
       if (planAssignError) throw planAssignError;
 
+      // If partner tier with custom royalty split, store it
+      if (invitation.subscription_tier === "Trackball Partner" && invitation.custom_royalty_split) {
+        const { error: splitError } = await supabase
+          .from("partner_royalty_splits")
+          .insert({
+            user_id: authData.user.id,
+            royalty_split_percentage: invitation.custom_royalty_split
+          });
+
+        if (splitError) {
+          console.error("Error storing royalty split:", splitError);
+          // Don't fail the signup if this fails, just log it
+        }
+      }
+
       // Mark invitation as accepted
       const { error: updateInviteError } = await supabase
         .from("label_invitations")
