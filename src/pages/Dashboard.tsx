@@ -160,9 +160,8 @@ const Dashboard = () => {
               </div>
               <div className="min-w-0">
                 <h1 className="text-base sm:text-xl bg-gradient-primary bg-clip-text text-transparent truncate font-medium">
-                  {profile?.display_name || profile?.full_name || "MY TRACKBALL"}
+                  {profile?.label_name || "Trackball Distribution"}
                 </h1>
-                {profile?.label_name && <p className="text-xs text-muted-foreground truncate">{profile.label_name}</p>}
                 {profile?.user_id && <p className="text-xs text-muted-foreground/70">ID:{profile.user_id}</p>}
               </div>
             </div>
@@ -171,7 +170,7 @@ const Dashboard = () => {
               <Badge variant="outline" className="border-primary/30 bg-primary/5 hidden md:flex text-xs whitespace-nowrap">
                 {userPlan?.plan.name || "Trackball Free"}
               </Badge>
-              <ProfileDropdown userEmail={user?.email} onSignOut={handleSignOut} />
+              <ProfileDropdown userEmail={user?.email} avatarUrl={profile?.avatar_url} onSignOut={handleSignOut} />
             </div>
           </div>
           
