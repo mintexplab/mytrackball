@@ -6,721 +6,943 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Upload, ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Upload, Plus, X, Check } from "lucide-react";
 import { z } from "zod";
+import { useS3Upload } from "@/hooks/useS3Upload";
 
-interface Track {
+const releaseSchema = z.object({
+  songTitle: z.string().min(1, "Song title is required").max(200),
+  version: z.string().max(100).optional(),
+  artistName: z.string().min(1, "Artist name is required").max(200),
+  featuringArtists: z.string().max(500).optional(),
+  genre: z.string().min(1, "Genre is required"),
+  subGenre: z.string().optional(),
+  label: z.string().max(200).optional(),
+  cLine: z.string().max(200).optional(),
+  pLine: z.string().max(200).optional(),
+  isMusical: z.boolean(),
+  isCoverSong: z.boolean(),
+  previewStart: z.string().optional(),
+  songLanguage: z.string().optional(),
+  lyricsLanguage: z.string().optional(),
+  digitalReleaseDate: z.string().min(1, "Digital release date is required"),
+  originalReleaseDate: z.string().optional(),
+  parentalAdvisory: z.enum(["yes", "no", "clean"]),
+  requestContentId: z.boolean(),
+  countryOfRecording: z.string().optional(),
+  previouslyReleased: z.boolean(),
+  lyrics: z.string().max(5000).optional(),
+  additionalNotes: z.string().max(250).optional(),
+});
+
+interface Contributor {
   id: string;
-  track_number: number;
-  title: string;
-  duration: string;
-  isrc: string;
-  audio_file: File | null;
-  audio_path: string;
-  featured_artists: string;
-  composer: string;
-  writer: string;
-  contributor: string;
-  publisher: string;
-  publisher_ipi: string;
+  name: string;
+  role?: string;
 }
 
-// Validation schemas
-const releaseSchema = z.object({
-  title: z.string().trim().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
-  artist_name: z.string().trim().min(1, "Artist name is required").max(200, "Artist name must be less than 200 characters"),
-  release_date: z.string().optional(),
-  genre: z.string().max(100, "Genre must be less than 100 characters").optional(),
-  upc: z.string().regex(/^\d{12,14}$/, "UPC must be 12-14 digits").optional().or(z.literal("")),
-  copyright_line: z.string().max(500, "Copyright line must be less than 500 characters").optional(),
-  phonographic_line: z.string().max(500, "Phonographic line must be less than 500 characters").optional(),
-  label_name: z.string().max(200, "Label name must be less than 200 characters").optional(),
-  featured_artists: z.string().max(1000, "Featured artists must be less than 1000 characters").optional(),
-  notes: z.string().max(2000, "Notes must be less than 2000 characters").optional(),
-  catalog_number: z.string().max(100, "Catalog number must be less than 100 characters").optional(),
-});
+const GENRES = [
+  "Pop", "Rock", "Hip-Hop", "R&B", "Electronic", "Country", 
+  "Jazz", "Classical", "Alternative", "Indie", "Metal", "Folk"
+];
 
-const trackSchema = z.object({
-  title: z.string().trim().min(1, "Track title is required").max(200, "Track title must be less than 200 characters"),
-  duration: z.string().regex(/^\d*$/, "Duration must be a number").optional().or(z.literal("")),
-  isrc: z.string().regex(/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/, "Invalid ISRC format").optional().or(z.literal("")),
-  audio_path: z.string().max(500, "Audio path too long").optional(),
-  featured_artists: z.string().max(500, "Featured artists must be less than 500 characters").optional(),
-  composer: z.string().max(200, "Composer must be less than 200 characters").optional(),
-  writer: z.string().max(200, "Writer must be less than 200 characters").optional(),
-  contributor: z.string().max(200, "Contributor must be less than 200 characters").optional(),
-  publisher: z.string().max(200, "Publisher must be less than 200 characters").optional(),
-  publisher_ipi: z.string().max(50, "Publisher IPI must be less than 50 characters").optional(),
-});
+const LANGUAGES = [
+  "English", "Spanish", "French", "German", "Italian", "Portuguese",
+  "Japanese", "Korean", "Chinese", "Arabic", "Hindi", "Other"
+];
 
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const ALLOWED_AUDIO_TYPES = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/flac", "audio/aac", "audio/ogg"];
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
-const MAX_AUDIO_SIZE = 500 * 1024 * 1024; // 500MB
-
-const sanitizeFilename = (filename: string): string => {
-  return filename
-    .replace(/[^a-zA-Z0-9._-]/g, "_")
-    .substring(0, 200);
-};
-
-const validateGoogleDriveUrl = (url: string): boolean => {
-  if (!url) return true; // Empty is OK
-  try {
-    const parsed = new URL(url);
-    return parsed.hostname === "drive.google.com" || parsed.hostname === "docs.google.com";
-  } catch {
-    return false;
-  }
-};
+const COUNTRIES = [
+  "United States", "United Kingdom", "Canada", "Australia", "Germany",
+  "France", "Italy", "Spain", "Japan", "South Korea", "Other"
+];
 
 const CreateRelease = () => {
   const navigate = useNavigate();
+  const { uploadFile, uploading } = useS3Upload();
+  const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [userPlan, setUserPlan] = useState<any>(null);
-  const [artworkFile, setArtworkFile] = useState<File | null>(null);
-  const [artworkPreview, setArtworkPreview] = useState<string>("");
-  const [hasUPC, setHasUPC] = useState(false);
-  const [tracks, setTracks] = useState<Track[]>([{
-    id: "1",
-    track_number: 1,
-    title: "",
-    duration: "",
-    isrc: "",
-    audio_file: null,
-    audio_path: "",
-    featured_artists: "",
-    composer: "",
-    writer: "",
-    contributor: "",
-    publisher: "",
-    publisher_ipi: "",
-  }]);
+  
+  // Form data
   const [formData, setFormData] = useState({
-    title: "",
-    artist_name: "",
-    release_date: "",
+    songTitle: "",
+    version: "",
+    artistName: "",
+    featuringArtists: "",
     genre: "",
-    upc: "",
-    copyright_line: "",
-    phonographic_line: "",
-    label_name: "",
-    featured_artists: "",
-    notes: "",
-    catalog_number: "",
+    subGenre: "",
+    label: "",
+    cLine: "",
+    pLine: "",
+    isMusical: false,
+    isCoverSong: false,
+    previewStart: "00:00:00",
+    songLanguage: "",
+    lyricsLanguage: "",
+    digitalReleaseDate: "",
+    originalReleaseDate: "",
+    parentalAdvisory: "no" as "yes" | "no" | "clean",
+    requestContentId: false,
+    countryOfRecording: "",
+    previouslyReleased: false,
+    lyrics: "",
+    additionalNotes: "",
   });
 
-  useEffect(() => {
-    fetchUserPlan();
-  }, []);
+  // Files
+  const [artworkFile, setArtworkFile] = useState<File | null>(null);
+  const [artworkPreview, setArtworkPreview] = useState<string>("");
+  const [audioFile, setAudioFile] = useState<File | null>(null);
 
-  const fetchUserPlan = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+  // Contributors
+  const [authors, setAuthors] = useState<Contributor[]>([{ id: "1", name: "" }]);
+  const [composers, setComposers] = useState<Contributor[]>([{ id: "1", name: "" }]);
+  const [publishers, setPublishers] = useState<Contributor[]>([{ id: "1", name: "" }]);
+  const [producers, setProducers] = useState<Contributor[]>([{ id: "1", name: "" }]);
+  const [performers, setPerformers] = useState<Contributor[]>([{ id: "1", name: "", role: "" }]);
+  const [additionalContributors, setAdditionalContributors] = useState<Contributor[]>([{ id: "1", name: "", role: "" }]);
 
-    const { data } = await supabase
-      .from("user_plans")
-      .select(`
-        *,
-        plan:plans(*)
-      `)
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .maybeSingle();
+  const addContributor = (type: string) => {
+    const newId = Date.now().toString();
+    const newContributor = { id: newId, name: "", role: "" };
     
-    setUserPlan(data);
-  };
-
-  const generateISRC = async () => {
-    try {
-      // Get current counter
-      const { data: counter, error: fetchError } = await supabase
-        .from("isrc_counter")
-        .select("*")
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Increment counter
-      const nextNumber = (counter.last_number + 1) % 100000;
-      const paddedNumber = nextNumber.toString().padStart(5, '0');
-      const newISRC = `${counter.prefix}${paddedNumber}`;
-
-      // Update counter
-      const { error: updateError } = await supabase
-        .from("isrc_counter")
-        .update({ last_number: nextNumber })
-        .eq("id", counter.id);
-
-      if (updateError) throw updateError;
-
-      return newISRC;
-    } catch (error: any) {
-      toast.error("Failed to generate ISRC: " + error.message);
-      return "";
+    switch(type) {
+      case "author":
+        if (authors.length < 10) setAuthors([...authors, newContributor]);
+        break;
+      case "composer":
+        if (composers.length < 10) setComposers([...composers, newContributor]);
+        break;
+      case "publisher":
+        if (publishers.length < 10) setPublishers([...publishers, newContributor]);
+        break;
+      case "producer":
+        if (producers.length < 10) setProducers([...producers, newContributor]);
+        break;
+      case "performer":
+        if (performers.length < 5) setPerformers([...performers, newContributor]);
+        break;
+      case "contributor":
+        if (additionalContributors.length < 5) setAdditionalContributors([...additionalContributors, newContributor]);
+        break;
     }
   };
 
-  const handleGenerateISRC = async (trackId: string) => {
-    const isrc = await generateISRC();
-    if (isrc) {
-      updateTrack(trackId, "isrc", isrc);
-      toast.success("ISRC generated: " + isrc);
+  const removeContributor = (type: string, id: string) => {
+    switch(type) {
+      case "author":
+        setAuthors(authors.filter(c => c.id !== id));
+        break;
+      case "composer":
+        setComposers(composers.filter(c => c.id !== id));
+        break;
+      case "publisher":
+        setPublishers(publishers.filter(c => c.id !== id));
+        break;
+      case "producer":
+        setProducers(producers.filter(c => c.id !== id));
+        break;
+      case "performer":
+        setPerformers(performers.filter(c => c.id !== id));
+        break;
+      case "contributor":
+        setAdditionalContributors(additionalContributors.filter(c => c.id !== id));
+        break;
+    }
+  };
+
+  const updateContributor = (type: string, id: string, field: string, value: string) => {
+    const updateList = (list: Contributor[]) => 
+      list.map(c => c.id === id ? { ...c, [field]: value } : c);
+    
+    switch(type) {
+      case "author":
+        setAuthors(updateList(authors));
+        break;
+      case "composer":
+        setComposers(updateList(composers));
+        break;
+      case "publisher":
+        setPublishers(updateList(publishers));
+        break;
+      case "producer":
+        setProducers(updateList(producers));
+        break;
+      case "performer":
+        setPerformers(updateList(performers));
+        break;
+      case "contributor":
+        setAdditionalContributors(updateList(additionalContributors));
+        break;
     }
   };
 
   const handleArtworkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
-      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-        toast.error("Invalid image format. Please use JPEG, PNG, or WebP.");
-        e.target.value = "";
+      if (!file.type.includes("jpeg") && !file.type.includes("jpg")) {
+        toast.error("Only JPEG/JPG files are allowed");
         return;
       }
       
-      // Validate file size
-      if (file.size > MAX_IMAGE_SIZE) {
-        toast.error("Image is too large. Maximum size is 10MB.");
-        e.target.value = "";
-        return;
-      }
-      
-      setArtworkFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setArtworkPreview(reader.result as string);
+      const img = new Image();
+      img.onload = () => {
+        if (img.width < 1500 || img.height < 1500) {
+          toast.error("Artwork must be at least 1500x1500px");
+          return;
+        }
+        if (img.width > 3000 || img.height > 3000) {
+          toast.error("Artwork must not exceed 3000x3000px");
+          return;
+        }
+        setArtworkFile(file);
+        setArtworkPreview(URL.createObjectURL(file));
       };
-      reader.readAsDataURL(file);
+      img.src = URL.createObjectURL(file);
     }
   };
 
-  const handleTrackAudioChange = (trackId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
-      if (!ALLOWED_AUDIO_TYPES.includes(file.type)) {
-        toast.error("Invalid audio format. Please use MP3, WAV, FLAC, AAC, or OGG.");
-        e.target.value = "";
+      const validTypes = ["audio/wav", "audio/flac", "audio/aiff", "audio/x-ms-wma"];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Only WAV, FLAC, AIFF, or WMA (Lossless) files are allowed");
         return;
       }
-      
-      // Validate file size
-      if (file.size > MAX_AUDIO_SIZE) {
-        toast.error("Audio file is too large. Maximum size is 500MB.");
-        e.target.value = "";
-        return;
-      }
-      
-      setTracks(tracks.map(t => t.id === trackId ? { ...t, audio_file: file } : t));
+      setAudioFile(file);
+      toast.success("Audio file selected");
     }
   };
 
-  const addTrack = () => {
-    setTracks([...tracks, {
-      id: Date.now().toString(),
-      track_number: tracks.length + 1,
-      title: "",
-      duration: "",
-      isrc: "",
-      audio_file: null,
-      audio_path: "",
-      featured_artists: "",
-      composer: "",
-      writer: "",
-      contributor: "",
-      publisher: "",
-      publisher_ipi: "",
-    }]);
-  };
-
-  const removeTrack = (id: string) => {
-    if (tracks.length > 1) {
-      setTracks(tracks.filter(t => t.id !== id).map((t, idx) => ({ ...t, track_number: idx + 1 })));
-    }
-  };
-
-  const updateTrack = (id: string, field: keyof Track, value: string | number | File | null) => {
-    setTracks(tracks.map(t => t.id === id ? { ...t, [field]: value } : t));
-  };
-
-  const uploadFile = async (file: File, bucket: string, path: string) => {
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .upload(path, file, { upsert: true });
-
-    if (error) throw error;
-    return data.path;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setLoading(true);
-
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      // Validate form data
-      const validationResult = releaseSchema.safeParse(formData);
-      if (!validationResult.success) {
-        const error = validationResult.error.errors[0];
-        toast.error(error.message);
+      const validatedData = releaseSchema.parse(formData);
+      
+      if (!artworkFile) {
+        toast.error("Please upload artwork");
+        setLoading(false);
+        return;
+      }
+      
+      if (!audioFile) {
+        toast.error("Please upload audio file");
         setLoading(false);
         return;
       }
 
-      // Validate tracks
-      for (const track of tracks) {
-        const trackValidation = trackSchema.safeParse({
-          title: track.title,
-          duration: track.duration,
-          isrc: track.isrc,
-          audio_path: track.audio_path,
-          featured_artists: track.featured_artists,
-          composer: track.composer,
-          writer: track.writer,
-          contributor: track.contributor,
-          publisher: track.publisher,
-          publisher_ipi: track.publisher_ipi,
-        });
-        
-        if (!trackValidation.success) {
-          const error = trackValidation.error.errors[0];
-          toast.error(`Track ${track.track_number}: ${error.message}`);
-          setLoading(false);
-          return;
-        }
-        
-        // Validate Google Drive URLs
-        if (track.audio_path && !validateGoogleDriveUrl(track.audio_path)) {
-          toast.error(`Track ${track.track_number}: Invalid Google Drive URL`);
-          setLoading(false);
-          return;
-        }
-        
-        // Ensure either audio file or audio path is provided
-        if (!track.audio_file && !track.audio_path) {
-          toast.error(`Track ${track.track_number}: Please upload an audio file or provide a Google Drive link`);
-          setLoading(false);
-          return;
-        }
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
       // Upload artwork
-      let artworkUrl = "";
-      if (artworkFile) {
-        const sanitizedFilename = sanitizeFilename(artworkFile.name);
-        const artworkPath = `${user.id}/${Date.now()}_${sanitizedFilename}`;
-        await uploadFile(artworkFile, "release-artwork", artworkPath);
-        const { data: { publicUrl } } = supabase.storage
-          .from("release-artwork")
-          .getPublicUrl(artworkPath);
-        artworkUrl = publicUrl;
-      }
+      const artworkPath = `release-artwork/${user.id}/${Date.now()}.jpg`;
+      const artworkUrl = await uploadFile({ file: artworkFile, path: artworkPath });
+
+      // Upload audio
+      const audioPath = `release-audio/${user.id}/${Date.now()}.${audioFile.name.split('.').pop()}`;
+      const audioUrl = await uploadFile({ file: audioFile, path: audioPath });
 
       // Create release
-      const { data: release, error: releaseError } = await supabase
-        .from("releases")
-        .insert({
-          user_id: user.id,
-          ...formData,
-          artwork_url: artworkUrl,
-          featured_artists: formData.featured_artists ? formData.featured_artists.split(",").map(a => a.trim()) : [],
-        })
-        .select()
-        .single();
+      const { error: releaseError } = await supabase.from("releases").insert({
+        user_id: user.id,
+        title: validatedData.songTitle,
+        artist_name: validatedData.artistName,
+        genre: validatedData.genre,
+        release_date: validatedData.digitalReleaseDate,
+        artwork_url: artworkUrl,
+        audio_file_url: audioUrl,
+        copyright_line: validatedData.cLine,
+        phonographic_line: validatedData.pLine,
+        featured_artists: validatedData.featuringArtists ? validatedData.featuringArtists.split(",").map(a => a.trim()) : [],
+        label_name: validatedData.label,
+        notes: validatedData.additionalNotes,
+        status: 'pending'
+      });
 
       if (releaseError) throw releaseError;
 
-      // Upload track audio files and create tracks
-      for (const track of tracks) {
-        let audioPath = track.audio_path;
-        
-        if (track.audio_file) {
-          const sanitizedFilename = sanitizeFilename(track.audio_file.name);
-          const fileName = `${user.id}/${release.id}/${Date.now()}_${sanitizedFilename}`;
-          audioPath = await uploadFile(track.audio_file, "release-audio", fileName);
-        }
-
-        const { error: trackError } = await supabase
-          .from("tracks")
-          .insert({
-            release_id: release.id,
-            track_number: track.track_number,
-            title: track.title,
-            duration: track.duration ? parseInt(track.duration) : null,
-            isrc: track.isrc,
-            audio_path: audioPath,
-            featured_artists: track.featured_artists ? track.featured_artists.split(",").map(a => a.trim()) : [],
-            composer: track.composer || null,
-            writer: track.writer || null,
-            contributor: track.contributor || null,
-            publisher: track.publisher || null,
-            publisher_ipi: track.publisher_ipi || null,
-          });
-
-        if (trackError) throw trackError;
-      }
-
-      toast.success("Release submitted for review!");
+      toast.success("Release submitted successfully!");
       navigate("/dashboard");
     } catch (error: any) {
-      toast.error(error.message);
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error(error.message);
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const steps = [
+    { number: 1, title: "Submission Details" },
+    { number: 2, title: "Upload Artwork" },
+    { number: 3, title: "Upload Audio File" },
+    { number: 4, title: "Metadata Details" },
+    { number: 5, title: "Contributors" },
+    { number: 6, title: "Additional Notes" }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="absolute inset-0 bg-gradient-primary opacity-5 blur-3xl" />
-      
       <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Button variant="ghost" onClick={() => navigate("/dashboard")}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              CREATE NEW RELEASE
-            </h1>
+            <h1 className="text-xl font-bold">Submit New Release</h1>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 relative max-w-4xl">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Release Information */}
+      {/* Step Indicator */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-8">
+          {steps.map((step, index) => (
+            <div key={step.number} className="flex items-center flex-1">
+              <div className="flex flex-col items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                  currentStep === step.number 
+                    ? "bg-primary text-primary-foreground" 
+                    : currentStep > step.number
+                    ? "bg-green-500 text-white"
+                    : "bg-muted text-muted-foreground"
+                }`}>
+                  {currentStep > step.number ? <Check className="w-5 h-5" /> : step.number}
+                </div>
+                <span className="text-xs mt-2 text-center hidden md:block">{step.title}</span>
+              </div>
+              {index < steps.length - 1 && (
+                <div className={`flex-1 h-1 mx-2 ${
+                  currentStep > step.number ? "bg-green-500" : "bg-muted"
+                }`} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Step 1: Submission Details */}
+        {currentStep === 1 && (
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
             <CardHeader>
-              <CardTitle className="font-bold">RELEASE INFORMATION</CardTitle>
-              <CardDescription>Basic details about your release</CardDescription>
+              <CardTitle>Add your submission details</CardTitle>
+              <CardDescription>Basic information about your release</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="title">Release Title *</Label>
+                  <Label htmlFor="songTitle">Song Title *</Label>
                   <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    required
+                    id="songTitle"
+                    value={formData.songTitle}
+                    onChange={(e) => setFormData({ ...formData, songTitle: e.target.value })}
+                    placeholder="Enter song title"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="artist_name">Artist Name *</Label>
+                  <Label htmlFor="version">Version</Label>
                   <Input
-                    id="artist_name"
-                    value={formData.artist_name}
-                    onChange={(e) => setFormData({ ...formData, artist_name: e.target.value })}
-                    required
+                    id="version"
+                    value={formData.version}
+                    onChange={(e) => setFormData({ ...formData, version: e.target.value })}
+                    placeholder="Enter version"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="artistName">Artist Name (Main Artist) *</Label>
+                  <Input
+                    id="artistName"
+                    value={formData.artistName}
+                    onChange={(e) => setFormData({ ...formData, artistName: e.target.value })}
+                    placeholder="Main Artist"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="release_date">Release Date</Label>
+                  <Label htmlFor="featuringArtists">Featuring Artist(s)</Label>
                   <Input
-                    id="release_date"
-                    type="date"
-                    value={formData.release_date}
-                    onChange={(e) => setFormData({ ...formData, release_date: e.target.value })}
+                    id="featuringArtists"
+                    value={formData.featuringArtists}
+                    onChange={(e) => setFormData({ ...formData, featuringArtists: e.target.value })}
+                    placeholder="Separate multiple artists with commas"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="genre">Genre *</Label>
+                  <Select value={formData.genre} onValueChange={(value) => setFormData({ ...formData, genre: value })}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="Select genre..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      {GENRES.map((genre) => (
+                        <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="subGenre">Sub-genre</Label>
+                  <Input
+                    id="subGenre"
+                    value={formData.subGenre}
+                    onChange={(e) => setFormData({ ...formData, subGenre: e.target.value })}
+                    placeholder="Please select a genre first"
+                    disabled={!formData.genre}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="label">Label</Label>
+                <Input
+                  id="label"
+                  value={formData.label}
+                  onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                  placeholder="Label name"
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="cLine">C-Line (©)</Label>
+                  <Input
+                    id="cLine"
+                    value={formData.cLine}
+                    onChange={(e) => setFormData({ ...formData, cLine: e.target.value })}
+                    placeholder="C-Line information"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="genre">Genre</Label>
+                  <Label htmlFor="pLine">P-Line (℗)</Label>
                   <Input
-                    id="genre"
-                    value={formData.genre}
-                    onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
+                    id="pLine"
+                    value={formData.pLine}
+                    onChange={(e) => setFormData({ ...formData, pLine: e.target.value })}
+                    placeholder="P-Line information"
                   />
                 </div>
-                <div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Checkbox
-                      id="has_upc"
-                      checked={hasUPC}
-                      onCheckedChange={(checked) => setHasUPC(checked as boolean)}
-                    />
-                    <Label htmlFor="has_upc">I have a UPC</Label>
+              </div>
+
+              <div className="space-y-3">
+                <Label>Is it a Musical / Instrumental?</Label>
+                <RadioGroup 
+                  value={formData.isMusical ? "yes" : "no"}
+                  onValueChange={(value) => setFormData({ ...formData, isMusical: value === "yes" })}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="yes" id="musical-yes" />
+                    <Label htmlFor="musical-yes">Yes</Label>
                   </div>
-                  <Input
-                    id="upc"
-                    value={formData.upc}
-                    onChange={(e) => setFormData({ ...formData, upc: e.target.value })}
-                    disabled={!hasUPC}
-                    placeholder={hasUPC ? "Enter UPC/EAN" : "Check box if you have a UPC"}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="label_name">Label Name</Label>
-                  <Input
-                    id="label_name"
-                    value={formData.label_name}
-                    onChange={(e) => setFormData({ ...formData, label_name: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="catalog_number">Catalog Number</Label>
-                  <Input
-                    id="catalog_number"
-                    value={formData.catalog_number}
-                    onChange={(e) => setFormData({ ...formData, catalog_number: e.target.value })}
-                    placeholder="Optional internal catalog ID"
-                  />
-                </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="musical-no" />
+                    <Label htmlFor="musical-no">No</Label>
+                  </div>
+                </RadioGroup>
               </div>
 
-              <div>
-                <Label htmlFor="featured_artists">Featured Artists (comma-separated)</Label>
-                <Input
-                  id="featured_artists"
-                  value={formData.featured_artists}
-                  onChange={(e) => setFormData({ ...formData, featured_artists: e.target.value })}
-                  placeholder="Artist 1, Artist 2"
-                />
+              <div className="space-y-3">
+                <Label>Is it a Cover Song?</Label>
+                <RadioGroup 
+                  value={formData.isCoverSong ? "yes" : "no"}
+                  onValueChange={(value) => setFormData({ ...formData, isCoverSong: value === "yes" })}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="yes" id="cover-yes" />
+                    <Label htmlFor="cover-yes">Yes</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="cover-no" />
+                    <Label htmlFor="cover-no">No</Label>
+                  </div>
+                </RadioGroup>
               </div>
             </CardContent>
           </Card>
+        )}
 
-          {/* Artwork Upload */}
+        {/* Step 2: Upload Artwork */}
+        {currentStep === 2 && (
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
             <CardHeader>
-              <CardTitle className="font-bold">ARTWORK</CardTitle>
-              <CardDescription>Upload your release artwork (minimum 3000x3000px recommended)</CardDescription>
+              <CardTitle>Upload Artwork</CardTitle>
+              <CardDescription>Upload your release artwork</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
-                  <input
-                    type="file"
-                    id="artwork"
-                    accept="image/*"
-                    onChange={handleArtworkChange}
-                    className="hidden"
-                  />
-                  <label htmlFor="artwork" className="cursor-pointer">
-                    {artworkPreview ? (
-                      <img src={artworkPreview} alt="Artwork preview" className="max-w-xs mx-auto rounded-lg" />
-                    ) : (
-                      <div className="space-y-2">
-                        <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
-                        <p className="text-muted-foreground">Click to upload artwork</p>
-                      </div>
-                    )}
-                  </label>
-                </div>
+            <CardContent className="space-y-4">
+              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+                <input
+                  type="file"
+                  id="artwork"
+                  accept="image/jpeg,image/jpg"
+                  onChange={handleArtworkChange}
+                  className="hidden"
+                />
+                <label htmlFor="artwork" className="cursor-pointer">
+                  {artworkPreview ? (
+                    <img src={artworkPreview} alt="Artwork preview" className="max-w-xs mx-auto rounded-lg" />
+                  ) : (
+                    <div className="space-y-2">
+                      <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
+                      <p className="text-muted-foreground">Select a image or drag here to upload directly</p>
+                      <p className="text-xs text-muted-foreground">JPEG or JPG only</p>
+                      <p className="text-xs text-muted-foreground">Min 1500x1500 Max 3000x3000</p>
+                    </div>
+                  )}
+                </label>
+              </div>
+              <div className="text-xs text-muted-foreground space-y-2">
+                <p>• The cover must not contain internet addresses, email addresses, barcodes, pricing details, references to physical or digital formats, time-sensitive information, misleading content, or any material deemed offensive or explicit.</p>
+                <p>• The cover must include the artist's name and the title of the release.</p>
+                <p>• Please don't include any contact information (e.g: phone numbers) inside the artwork</p>
               </div>
             </CardContent>
           </Card>
+        )}
 
-          {/* Copyright & Credits */}
+        {/* Step 3: Upload Audio */}
+        {currentStep === 3 && (
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
             <CardHeader>
-              <CardTitle className="font-bold">COPYRIGHT & CREDITS</CardTitle>
-              <CardDescription>Legal and credit information</CardDescription>
+              <CardTitle>Upload Audio File</CardTitle>
+              <CardDescription>Upload your audio file</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+                <input
+                  type="file"
+                  id="audio"
+                  accept="audio/wav,audio/flac,audio/aiff,audio/x-ms-wma"
+                  onChange={handleAudioChange}
+                  className="hidden"
+                />
+                <label htmlFor="audio" className="cursor-pointer">
+                  <div className="space-y-2">
+                    <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
+                    <p className="text-muted-foreground">
+                      {audioFile ? audioFile.name : "Select an audio file or drag here to upload"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">WAV (PCM), FLAC, AIFF, WMA (Lossless) only</p>
+                  </div>
+                </label>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 4: Metadata Details */}
+        {currentStep === 4 && (
+          <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+            <CardHeader>
+              <CardTitle>Metadata Details</CardTitle>
+              <CardDescription>Additional release information</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="copyright_line">Copyright Line (℗)</Label>
+                <Label htmlFor="previewStart">Preview Start</Label>
                 <Input
-                  id="copyright_line"
-                  value={formData.copyright_line}
-                  onChange={(e) => setFormData({ ...formData, copyright_line: e.target.value })}
-                  placeholder="© 2024 Label Name"
+                  id="previewStart"
+                  type="time"
+                  step="1"
+                  value={formData.previewStart}
+                  onChange={(e) => setFormData({ ...formData, previewStart: e.target.value })}
                 />
               </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="songLanguage">Song Language</Label>
+                  <Select value={formData.songLanguage} onValueChange={(value) => setFormData({ ...formData, songLanguage: value })}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="Select language..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      {LANGUAGES.map((lang) => (
+                        <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="lyricsLanguage">Lyrics Language</Label>
+                  <Select value={formData.lyricsLanguage} onValueChange={(value) => setFormData({ ...formData, lyricsLanguage: value })}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="Select language..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      {LANGUAGES.map((lang) => (
+                        <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="digitalReleaseDate">Digital Release Date *</Label>
+                  <Input
+                    id="digitalReleaseDate"
+                    type="date"
+                    value={formData.digitalReleaseDate}
+                    onChange={(e) => setFormData({ ...formData, digitalReleaseDate: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="originalReleaseDate">Original Release Date</Label>
+                  <Input
+                    id="originalReleaseDate"
+                    type="date"
+                    value={formData.originalReleaseDate}
+                    onChange={(e) => setFormData({ ...formData, originalReleaseDate: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="text-xs text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded">
+                The distribution of your release may be delayed if it contains text, audio, or cover elements that infringe store guidelines. To avoid this, we strongly recommend submitting your content at least 7 days prior to the release date.
+              </div>
+
+              <div className="space-y-3">
+                <Label>Parental Advisory</Label>
+                <RadioGroup 
+                  value={formData.parentalAdvisory}
+                  onValueChange={(value: "yes" | "no" | "clean") => setFormData({ ...formData, parentalAdvisory: value })}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="yes" id="pa-yes" />
+                    <Label htmlFor="pa-yes">Yes</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="pa-no" />
+                    <Label htmlFor="pa-no">No</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="clean" id="pa-clean" />
+                    <Label htmlFor="pa-clean">Clean</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-3">
+                <Label>Request Content ID</Label>
+                <RadioGroup 
+                  value={formData.requestContentId ? "yes" : "no"}
+                  onValueChange={(value) => setFormData({ ...formData, requestContentId: value === "yes" })}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="yes" id="cid-yes" />
+                    <Label htmlFor="cid-yes">Yes</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="cid-no" />
+                    <Label htmlFor="cid-no">No</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
               <div>
-                <Label htmlFor="phonographic_line">Phonographic Line (©)</Label>
-                <Input
-                  id="phonographic_line"
-                  value={formData.phonographic_line}
-                  onChange={(e) => setFormData({ ...formData, phonographic_line: e.target.value })}
-                  placeholder="℗ 2024 Label Name"
-                />
+                <Label htmlFor="countryOfRecording">Country of Recording</Label>
+                <Select value={formData.countryOfRecording} onValueChange={(value) => setFormData({ ...formData, countryOfRecording: value })}>
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="Select country..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {COUNTRIES.map((country) => (
+                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3">
+                <Label>Is this song previously released?</Label>
+                <RadioGroup 
+                  value={formData.previouslyReleased ? "yes" : "no"}
+                  onValueChange={(value) => setFormData({ ...formData, previouslyReleased: value === "yes" })}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="yes" id="prev-yes" />
+                    <Label htmlFor="prev-yes">Yes</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="prev-no" />
+                    <Label htmlFor="prev-no">No</Label>
+                  </div>
+                </RadioGroup>
               </div>
             </CardContent>
           </Card>
+        )}
 
-          {/* Tracks */}
+        {/* Step 5: Contributors */}
+        {currentStep === 5 && (
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
             <CardHeader>
-              <CardTitle className="font-bold">TRACKS</CardTitle>
-              <CardDescription>Add all tracks for this release</CardDescription>
+              <CardTitle>Contributors</CardTitle>
+              <CardDescription>Add all contributors to this release</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {tracks.map((track) => (
-                <Card key={track.id} className="border-border/50">
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">Track {track.track_number}</h4>
-                      {tracks.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeTrack(track.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
+              {/* Authors */}
+              <div>
+                <Label>Author(s)</Label>
+                {authors.map((author, index) => (
+                  <div key={author.id} className="flex gap-2 mt-2">
+                    <Input
+                      value={author.name}
+                      onChange={(e) => updateContributor("author", author.id, "name", e.target.value)}
+                      placeholder={`Enter Author ${index + 1}`}
+                    />
+                    {authors.length > 1 && (
+                      <Button variant="ghost" size="icon" onClick={() => removeContributor("author", author.id)}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => addContributor("author")}
+                  disabled={authors.length >= 10}
+                  className="mt-2"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Author ({authors.length}/10)
+                </Button>
+              </div>
+
+              {/* Composers */}
+              <div>
+                <Label>Composer(s)</Label>
+                {composers.map((composer, index) => (
+                  <div key={composer.id} className="flex gap-2 mt-2">
+                    <Input
+                      value={composer.name}
+                      onChange={(e) => updateContributor("composer", composer.id, "name", e.target.value)}
+                      placeholder={`Enter Composer ${index + 1}`}
+                    />
+                    {composers.length > 1 && (
+                      <Button variant="ghost" size="icon" onClick={() => removeContributor("composer", composer.id)}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => addContributor("composer")}
+                  disabled={composers.length >= 10}
+                  className="mt-2"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Composer ({composers.length}/10)
+                </Button>
+              </div>
+
+              {/* Publishers */}
+              <div>
+                <Label>Publisher(s)</Label>
+                {publishers.map((publisher, index) => (
+                  <div key={publisher.id} className="flex gap-2 mt-2">
+                    <Input
+                      value={publisher.name}
+                      onChange={(e) => updateContributor("publisher", publisher.id, "name", e.target.value)}
+                      placeholder={`Enter Publisher ${index + 1}`}
+                    />
+                    {publishers.length > 1 && (
+                      <Button variant="ghost" size="icon" onClick={() => removeContributor("publisher", publisher.id)}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => addContributor("publisher")}
+                  disabled={publishers.length >= 10}
+                  className="mt-2"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Publisher ({publishers.length}/10)
+                </Button>
+              </div>
+
+              {/* Producers */}
+              <div>
+                <Label>Producer(s)</Label>
+                {producers.map((producer, index) => (
+                  <div key={producer.id} className="flex gap-2 mt-2">
+                    <Input
+                      value={producer.name}
+                      onChange={(e) => updateContributor("producer", producer.id, "name", e.target.value)}
+                      placeholder={`Enter Producer ${index + 1}`}
+                    />
+                    {producers.length > 1 && (
+                      <Button variant="ghost" size="icon" onClick={() => removeContributor("producer", producer.id)}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => addContributor("producer")}
+                  disabled={producers.length >= 10}
+                  className="mt-2"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Producer ({producers.length}/10)
+                </Button>
+              </div>
+
+              {/* Additional Performers */}
+              <div>
+                <Label>Additional Performer(s)</Label>
+                {performers.map((performer, index) => (
+                  <div key={performer.id} className="grid grid-cols-2 gap-2 mt-2">
+                    <Input
+                      value={performer.name}
+                      onChange={(e) => updateContributor("performer", performer.id, "name", e.target.value)}
+                      placeholder={`Enter Performer ${index + 1}`}
+                    />
+                    <div className="flex gap-2">
+                      <Input
+                        value={performer.role}
+                        onChange={(e) => updateContributor("performer", performer.id, "role", e.target.value)}
+                        placeholder="Role"
+                      />
+                      {performers.length > 1 && (
+                        <Button variant="ghost" size="icon" onClick={() => removeContributor("performer", performer.id)}>
+                          <X className="w-4 h-4" />
                         </Button>
                       )}
                     </div>
+                  </div>
+                ))}
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => addContributor("performer")}
+                  disabled={performers.length >= 5}
+                  className="mt-2"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Performer ({performers.length}/5)
+                </Button>
+              </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label>Track Title *</Label>
-                        <Input
-                          value={track.title}
-                          onChange={(e) => updateTrack(track.id, "title", e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label>Duration (seconds)</Label>
-                        <Input
-                          type="number"
-                          value={track.duration}
-                          onChange={(e) => updateTrack(track.id, "duration", e.target.value)}
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <Label>ISRC</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            value={track.isrc}
-                            onChange={(e) => updateTrack(track.id, "isrc", e.target.value)}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => handleGenerateISRC(track.id)}
-                          >
-                            <Sparkles className="w-4 h-4 mr-2" />
-                            Generate
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="md:col-span-2">
-                        <Label>Featured Artists (comma-separated)</Label>
-                        <Input
-                          value={track.featured_artists}
-                          onChange={(e) => updateTrack(track.id, "featured_artists", e.target.value)}
-                          placeholder="Artist 1, Artist 2"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <Label>Composer</Label>
-                        <Input
-                          value={track.composer}
-                          onChange={(e) => updateTrack(track.id, "composer", e.target.value)}
-                          placeholder="Composer name"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <Label>Writer</Label>
-                        <Input
-                          value={track.writer}
-                          onChange={(e) => updateTrack(track.id, "writer", e.target.value)}
-                          placeholder="Writer name"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <Label>Contributor</Label>
-                        <Input
-                          value={track.contributor}
-                          onChange={(e) => updateTrack(track.id, "contributor", e.target.value)}
-                          placeholder="Contributor name"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <Label>Publisher</Label>
-                        <Input
-                          value={track.publisher}
-                          onChange={(e) => updateTrack(track.id, "publisher", e.target.value)}
-                          placeholder="Publisher name"
-                        />
-                      </div>
-                      {track.publisher && (
-                        <div className="md:col-span-2">
-                          <Label>Publisher IPI</Label>
-                          <Input
-                            value={track.publisher_ipi}
-                            onChange={(e) => updateTrack(track.id, "publisher_ipi", e.target.value)}
-                            placeholder="IPI number"
-                          />
-                        </div>
+              {/* Additional Contributors */}
+              <div>
+                <Label>Additional Contributor(s)</Label>
+                {additionalContributors.map((contributor, index) => (
+                  <div key={contributor.id} className="grid grid-cols-2 gap-2 mt-2">
+                    <Input
+                      value={contributor.name}
+                      onChange={(e) => updateContributor("contributor", contributor.id, "name", e.target.value)}
+                      placeholder={`Enter Contributor ${index + 1}`}
+                    />
+                    <div className="flex gap-2">
+                      <Input
+                        value={contributor.role}
+                        onChange={(e) => updateContributor("contributor", contributor.id, "role", e.target.value)}
+                        placeholder="Role"
+                      />
+                      {additionalContributors.length > 1 && (
+                        <Button variant="ghost" size="icon" onClick={() => removeContributor("contributor", contributor.id)}>
+                          <X className="w-4 h-4" />
+                        </Button>
                       )}
-                      <div className="md:col-span-2">
-                        <Label>Audio File or Google Drive Link</Label>
-                        <div className="space-y-2">
-                          <input
-                            type="file"
-                            accept="audio/*"
-                            onChange={(e) => handleTrackAudioChange(track.id, e)}
-                            className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                          />
-                          <p className="text-xs text-muted-foreground">Or</p>
-                          <Input
-                            placeholder="https://drive.google.com/..."
-                            value={track.audio_path}
-                            onChange={(e) => updateTrack(track.id, "audio_path", e.target.value)}
-                          />
-                        </div>
-                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+                ))}
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => addContributor("contributor")}
+                  disabled={additionalContributors.length >= 5}
+                  className="mt-2"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Contributor ({additionalContributors.length}/5)
+                </Button>
+              </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addTrack}
-                className="w-full"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Track
-              </Button>
+              {/* Lyrics */}
+              <div>
+                <Label htmlFor="lyrics">Lyrics (Optional)</Label>
+                <Textarea
+                  id="lyrics"
+                  value={formData.lyrics}
+                  onChange={(e) => setFormData({ ...formData, lyrics: e.target.value })}
+                  placeholder="Enter lyrics"
+                  className="min-h-[150px]"
+                />
+              </div>
             </CardContent>
           </Card>
+        )}
 
-          {/* Additional Notes */}
+        {/* Step 6: Additional Notes */}
+        {currentStep === 6 && (
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
             <CardHeader>
-              <CardTitle className="font-bold">ADDITIONAL NOTES</CardTitle>
+              <CardTitle>Additional Notes</CardTitle>
+              <CardDescription>
+                If you have any messages for administrators or additional information to share, please feel free to include them here.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Any additional information or special requests..."
-                rows={4}
+                value={formData.additionalNotes}
+                onChange={(e) => setFormData({ ...formData, additionalNotes: e.target.value })}
+                placeholder="Enter Additional Notes"
+                maxLength={250}
+                className="min-h-[150px]"
               />
+              <p className="text-xs text-muted-foreground mt-2">
+                {formData.additionalNotes.length}/250
+              </p>
             </CardContent>
           </Card>
+        )}
 
-          {/* Submit */}
-          <div className="flex gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate("/dashboard")}
-              className="flex-1"
-            >
-              Cancel
+        {/* Navigation Buttons */}
+        <div className="flex justify-between mt-6">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
+            disabled={currentStep === 1}
+          >
+            Previous
+          </Button>
+          {currentStep < 6 ? (
+            <Button onClick={() => setCurrentStep(currentStep + 1)}>
+              Next
             </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="flex-1"
-            >
+          ) : (
+            <Button onClick={handleSubmit} disabled={loading || uploading}>
               {loading ? "Submitting..." : "Submit Release"}
             </Button>
-          </div>
-        </form>
-      </main>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
