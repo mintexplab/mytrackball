@@ -117,13 +117,32 @@ export const OnboardingTutorial = ({ onComplete, onSkip }: OnboardingTutorialPro
       const tryFindElement = () => {
         const element = document.querySelector(step.highlightElement);
         if (element) {
-          const rect = element.getBoundingClientRect();
-          setHighlightStyle({
-            top: rect.top + window.scrollY - 8,
-            left: rect.left + window.scrollX - 8,
-            width: rect.width + 16,
-            height: rect.height + 16,
-          });
+          // Check if element is inside a dropdown/menu and open it
+          const parentDropdown = element.closest('[data-state]');
+          if (parentDropdown) {
+            // Look for trigger button to open dropdown
+            const dropdownTrigger = parentDropdown.querySelector('[role="button"]') || 
+                                   parentDropdown.previousElementSibling;
+            if (dropdownTrigger && dropdownTrigger instanceof HTMLElement) {
+              dropdownTrigger.click();
+              // Wait for dropdown animation
+              setTimeout(() => positionHighlight(element), 300);
+              return;
+            }
+          }
+          
+          // Check if element is in a collapsed menu (mobile)
+          const mobileMenu = element.closest('[data-mobile-menu]');
+          if (mobileMenu) {
+            const menuToggle = document.querySelector('[data-mobile-menu-toggle]');
+            if (menuToggle && menuToggle instanceof HTMLElement) {
+              menuToggle.click();
+              setTimeout(() => positionHighlight(element), 300);
+              return;
+            }
+          }
+          
+          positionHighlight(element);
         } else if (attempts < maxAttempts) {
           attempts++;
           setTimeout(tryFindElement, 100);
@@ -132,6 +151,16 @@ export const OnboardingTutorial = ({ onComplete, onSkip }: OnboardingTutorialPro
           setHighlightStyle({});
           console.warn(`Tutorial element not found: ${step.highlightElement}`);
         }
+      };
+      
+      const positionHighlight = (element: Element) => {
+        const rect = element.getBoundingClientRect();
+        setHighlightStyle({
+          top: rect.top + window.scrollY - 8,
+          left: rect.left + window.scrollX - 8,
+          width: rect.width + 16,
+          height: rect.height + 16,
+        });
       };
       
       tryFindElement();
