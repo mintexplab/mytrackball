@@ -55,7 +55,13 @@ const PublishingTab = ({ userId }: PublishingTabProps) => {
   const [hasThirdParty, setHasThirdParty] = useState(false);
   const [hasPublicDomain, setHasPublicDomain] = useState(false);
   const [shareholders, setShareholders] = useState<any[]>([{ name: "", role: "Composer/Author (CA)", perf_share: 0 }]);
-  const [publishers, setPublishers] = useState<any[]>([{ name: "", role: "Publisher (E)", perf_share: 0, pro: "", ipi: "" }]);
+  const [publishers, setPublishers] = useState<any[]>([{ 
+    name: "XZ1 MUSIC PUBLISHING", 
+    role: "Publisher (E)", 
+    perf_share: 30, 
+    pro: "AllTrack", 
+    ipi: "01280759627" 
+  }]);
 
   // Prefill dialog state
   const [showPrefillDialog, setShowPrefillDialog] = useState(false);
@@ -254,7 +260,13 @@ const PublishingTab = ({ userId }: PublishingTabProps) => {
     setHasThirdParty(false);
     setHasPublicDomain(false);
     setShareholders([{ name: "", role: "Composer/Author (CA)", perf_share: 0 }]);
-    setPublishers([{ name: "", role: "Publisher (E)", perf_share: 0, pro: "", ipi: "" }]);
+    setPublishers([{ 
+      name: "XZ1 MUSIC PUBLISHING", 
+      role: "Publisher (E)", 
+      perf_share: 30, 
+      pro: "AllTrack", 
+      ipi: "01280759627" 
+    }]);
   };
 
   const getStatusBadge = (status: string) => {
@@ -610,6 +622,9 @@ const PublishingTab = ({ userId }: PublishingTabProps) => {
 
               <div className="space-y-4 border-t pt-4">
                 <h3 className="text-lg font-semibold text-left">Publishers</h3>
+                <div className="text-sm text-muted-foreground mb-2 bg-primary/10 p-3 rounded-md border border-primary/20">
+                  <strong>Note:</strong> XZ1 Music Publishing is automatically included at 30% share. You can add additional publishers below.
+                </div>
                 {publishers.map((publisher, idx) => (
                   <div key={idx} className="grid gap-4 p-4 bg-muted/30 rounded-lg">
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -624,6 +639,8 @@ const PublishingTab = ({ userId }: PublishingTabProps) => {
                           }}
                           placeholder="Publisher Name"
                           required
+                          disabled={idx === 0}
+                          className={idx === 0 ? "bg-muted/50 cursor-not-allowed" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -635,8 +652,9 @@ const PublishingTab = ({ userId }: PublishingTabProps) => {
                             newPublishers[idx].role = value;
                             setPublishers(newPublishers);
                           }}
+                          disabled={idx === 0}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className={idx === 0 ? "bg-muted/50 cursor-not-allowed" : ""}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -663,6 +681,8 @@ const PublishingTab = ({ userId }: PublishingTabProps) => {
                           }}
                           placeholder="000.000"
                           required
+                          disabled={idx === 0}
+                          className={idx === 0 ? "bg-muted/50 cursor-not-allowed" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -675,6 +695,8 @@ const PublishingTab = ({ userId }: PublishingTabProps) => {
                             setPublishers(newPublishers);
                           }}
                           placeholder="PRO Name"
+                          disabled={idx === 0}
+                          className={idx === 0 ? "bg-muted/50 cursor-not-allowed" : ""}
                         />
                       </div>
                       <div className="space-y-2">
@@ -687,6 +709,8 @@ const PublishingTab = ({ userId }: PublishingTabProps) => {
                             setPublishers(newPublishers);
                           }}
                           placeholder="IPI Number"
+                          disabled={idx === 0}
+                          className={idx === 0 ? "bg-muted/50 cursor-not-allowed" : ""}
                         />
                       </div>
                     </div>
