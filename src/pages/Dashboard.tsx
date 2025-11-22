@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import trackballLogo from "@/assets/trackball-logo.png";
 import AdminPortal from "@/components/AdminPortal";
 import ReleasesList from "@/components/ReleasesList";
+import ReleasesGallery from "@/components/ReleasesGallery";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
 import { AnnouncementDialog } from "@/components/AnnouncementDialog";
 import { Button } from "@/components/ui/button";
@@ -40,9 +41,9 @@ const QuickStatsGrid = ({ userId }: { userId?: string }) => {
   }, [userId]);
   
   const delivered = releases.filter(r => r.status === "delivering").length;
+  const approved = releases.filter(r => r.status === "approved").length;
   const drafts = releases.filter(r => !r.status || r.status === "rejected").length;
-  const takenDown = releases.filter(r => r.status === "taken down").length;
-  const processing = releases.filter(r => r.status === "pending" || r.status === "approved").length;
+  const processing = releases.filter(r => r.status === "pending").length;
   
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
@@ -51,12 +52,12 @@ const QuickStatsGrid = ({ userId }: { userId?: string }) => {
         <p className="text-xl sm:text-2xl font-bold text-foreground text-left">{delivered}</p>
       </div>
       <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
-        <p className="text-xs sm:text-sm text-muted-foreground text-left">Drafts</p>
-        <p className="text-xl sm:text-2xl font-bold text-foreground text-left">{drafts}</p>
+        <p className="text-xs sm:text-sm text-muted-foreground text-left">Approved</p>
+        <p className="text-xl sm:text-2xl font-bold text-foreground text-left">{approved}</p>
       </div>
       <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
-        <p className="text-xs sm:text-sm text-muted-foreground text-left">Taken Down</p>
-        <p className="text-xl sm:text-2xl font-bold text-foreground text-left">{takenDown}</p>
+        <p className="text-xs sm:text-sm text-muted-foreground text-left">Drafts</p>
+        <p className="text-xl sm:text-2xl font-bold text-foreground text-left">{drafts}</p>
       </div>
       <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
         <p className="text-xs sm:text-sm text-muted-foreground text-left">Processing</p>
@@ -227,7 +228,7 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
         <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
-          <TabsList className="w-full max-w-5xl mx-auto bg-card/80 backdrop-blur-sm border border-border p-1 rounded-lg sticky top-0 z-10">
+          <TabsList className="w-full max-w-5xl mx-auto bg-card/80 backdrop-blur-sm border border-border p-1 rounded-lg sticky top-[73px] z-10">
             <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
               <Package className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Overview</span>
@@ -285,7 +286,7 @@ const Dashboard = () => {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <CardContent>
-                    <ReleasesList userId={user?.id} isAdmin={false} />
+                    <ReleasesGallery userId={user?.id} />
                   </CardContent>
                 </CollapsibleContent>
               </Card>
