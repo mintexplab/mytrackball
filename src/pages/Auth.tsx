@@ -112,7 +112,7 @@ const Auth = () => {
         
         // Trigger zoom animation
         setIsZooming(true);
-        await new Promise(resolve => setTimeout(resolve, 2500));
+        await new Promise(resolve => setTimeout(resolve, 1200));
         
         // Fade to black and show loading
         const fadeOverlay = document.createElement('div');
@@ -181,7 +181,7 @@ const Auth = () => {
       <Card 
         className={`w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20 ${isZooming ? 'scale-[3] opacity-0' : 'scale-100 opacity-100'}`}
         style={{
-          transition: 'all 2.5s ease-in-out'
+          transition: 'all 1.2s ease-in-out'
         }}
       >
         <CardHeader className="space-y-4 text-center">
