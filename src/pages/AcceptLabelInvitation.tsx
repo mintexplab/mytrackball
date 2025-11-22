@@ -29,6 +29,7 @@ export default function AcceptLabelInvitation() {
     password: "",
   });
 
+  // Fetch invitation details from database
   const fetchInvitation = async () => {
     setLoading(true);
     try {
