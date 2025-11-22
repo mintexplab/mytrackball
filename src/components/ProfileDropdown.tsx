@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Settings, CreditCard, Building2, Check, Users2 } from "lucide-react";
+import { LogOut, Settings, CreditCard, Building2, Check, Users2, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, on
   const [labelMemberships, setLabelMemberships] = useState<LabelMembership[]>([]);
   const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pendingInvitationsCount, setPendingInvitationsCount] = useState(0);
   
   const initials = userEmail
     ? userEmail.substring(0, 2).toUpperCase()
@@ -41,6 +42,7 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, on
 
   useEffect(() => {
     fetchLabelMemberships();
+    fetchPendingInvitations();
   }, []);
 
   const fetchLabelMemberships = async () => {
@@ -73,6 +75,32 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, on
       console.error("Error fetching label memberships:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPendingInvitations = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile) return;
+
+      const { count } = await supabase
+        .from("label_invitations")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending")
+        .or(`master_account_email.eq.${profile.email},additional_users.cs.{${profile.email}}`)
+        .gt("expires_at", new Date().toISOString());
+
+      setPendingInvitationsCount(count || 0);
+    } catch (error) {
+      console.error("Error fetching pending invitations:", error);
     }
   };
 
@@ -156,6 +184,20 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, on
             <span>Manage Labels ({labelMemberships.length})</span>
           </DropdownMenuItem>
         )}
+        
+        {/* Label Invitations Link */}
+        <DropdownMenuItem
+          onClick={() => navigate("/label-invitations")}
+          className="cursor-pointer"
+        >
+          <Mail className="mr-2 h-4 w-4" />
+          <span>Label Invitations</span>
+          {pendingInvitationsCount > 0 && (
+            <Badge variant="default" className="ml-auto">
+              {pendingInvitationsCount}
+            </Badge>
+          )}
+        </DropdownMenuItem>
         
         <DropdownMenuSeparator className="bg-border" />
         
