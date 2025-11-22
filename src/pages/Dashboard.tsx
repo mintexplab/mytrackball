@@ -22,6 +22,7 @@ import ClientInvitationAcceptance from "@/components/ClientInvitationAcceptance"
 import AccountManagerCard from "@/components/AccountManagerCard";
 import PublishingTab from "@/components/PublishingTab";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { MaintenanceDialog } from "@/components/MaintenanceDialog";
 
 const QuickStatsGrid = ({ userId }: { userId?: string }) => {
   const [releases, setReleases] = useState<any[]>([]);
@@ -246,6 +247,7 @@ const Dashboard = () => {
       {user && <AnnouncementDialog userId={user.id} />}
       {user && <ArtistLabelOnboarding userId={user.id} userPlan={userPlan} />}
       {user && <ClientInvitationAcceptance userId={user.id} />}
+      {user && <MaintenanceDialog userId={user.id} />}
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
