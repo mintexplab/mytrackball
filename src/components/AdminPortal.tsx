@@ -31,6 +31,8 @@ const AdminPortal = ({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [adminEmail, setAdminEmail] = useState<string>("");
   const [adminAvatar, setAdminAvatar] = useState<string>("");
+  const [adminArtistName, setAdminArtistName] = useState<string>("");
+  const [adminFullName, setAdminFullName] = useState<string>("");
   const navigate = useNavigate();
   useEffect(() => {
     fetchAdminProfile();
@@ -44,10 +46,12 @@ const AdminPortal = ({
     if (user) {
       const {
         data: profile
-      } = await supabase.from("profiles").select("email, avatar_url").eq("id", user.id).single();
+      } = await supabase.from("profiles").select("email, avatar_url, artist_name, full_name").eq("id", user.id).single();
       if (profile) {
         setAdminEmail(profile.email);
         setAdminAvatar(profile.avatar_url || "");
+        setAdminArtistName(profile.artist_name || "");
+        setAdminFullName(profile.full_name || "");
       }
     }
   };
@@ -188,7 +192,13 @@ const AdminPortal = ({
               </DropdownMenu>
             </div>
             
-            <ProfileDropdown userEmail={adminEmail} avatarUrl={adminAvatar} onSignOut={handleSignOut} />
+            <ProfileDropdown 
+              userEmail={adminEmail} 
+              avatarUrl={adminAvatar}
+              artistName={adminArtistName}
+              fullName={adminFullName}
+              onSignOut={handleSignOut} 
+            />
           </div>
         </div>
       </div>

@@ -63,7 +63,7 @@ export const FloatingAudioPlayer = ({ src, title, artist, onClose }: FloatingAud
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-lg border-t border-border shadow-lg z-50 animate-slide-up">
+    <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-lg border-t border-border shadow-lg z-[100] animate-fade-in">
       <audio ref={audioRef} src={src} preload="metadata" />
       
       <div className="container mx-auto px-4 py-3">
