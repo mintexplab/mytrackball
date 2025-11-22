@@ -47,6 +47,7 @@ const AccountSettings = () => {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [userPlan, setUserPlan] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { uploadFile, deleteFile, uploading } = useS3Upload();
   const [formData, setFormData] = useState({
     full_name: "",
@@ -71,6 +72,17 @@ const AccountSettings = () => {
       navigate("/auth");
       return;
     }
+    
+    // Check if user is admin
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    
+    setIsAdmin(!!roleData);
+    
     const {
       data: profileData
     } = await supabase.from("profiles").select("*").eq("id", user.id).single();
@@ -452,54 +464,56 @@ const AccountSettings = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5 text-primary" />
-              Two-Factor Authentication
-            </CardTitle>
-            <CardDescription>Force disable MFA if you're locked out (Admin only)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              If you have MFA enabled but can't access your authentication app, use this button to force-disable MFA using admin privileges.
-            </p>
-            <Button 
-              onClick={async () => {
-                if (!window.confirm("Force disable MFA for your account? This will remove all authentication factors.")) {
-                  return;
-                }
-                
-                setLoading(true);
-                try {
-                  const { data: { session } } = await supabase.auth.getSession();
-                  if (!session) throw new Error("Not authenticated");
+        {isAdmin && (
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="w-5 h-5 text-primary" />
+                Two-Factor Authentication
+              </CardTitle>
+              <CardDescription>Force disable MFA if you're locked out (Admin only)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                If you have MFA enabled but can't access your authentication app, use this button to force-disable MFA using admin privileges.
+              </p>
+              <Button 
+                onClick={async () => {
+                  if (!window.confirm("Force disable MFA for your account? This will remove all authentication factors.")) {
+                    return;
+                  }
+                  
+                  setLoading(true);
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) throw new Error("Not authenticated");
 
-                  const response = await supabase.functions.invoke('disable-mfa-admin', {
-                    headers: {
-                      Authorization: `Bearer ${session.access_token}`
-                    }
-                  });
+                    const response = await supabase.functions.invoke('disable-mfa-admin', {
+                      headers: {
+                        Authorization: `Bearer ${session.access_token}`
+                      }
+                    });
 
-                  if (response.error) throw response.error;
+                    if (response.error) throw response.error;
 
-                  toast.success("MFA disabled successfully! You can now change your email or password.");
-                  await fetchProfile();
-                } catch (error: any) {
-                  console.error('Error disabling MFA:', error);
-                  toast.error(error.message || "Failed to disable MFA");
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              disabled={loading}
-              variant="destructive"
-              className="w-full"
-            >
-              Force Disable MFA (Admin)
-            </Button>
-          </CardContent>
-        </Card>
+                    toast.success("MFA disabled successfully! You can now change your email or password.");
+                    await fetchProfile();
+                  } catch (error: any) {
+                    console.error('Error disabling MFA:', error);
+                    toast.error(error.message || "Failed to disable MFA");
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                variant="destructive"
+                className="w-full"
+              >
+                Force Disable MFA (Admin)
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         <TwoFactorAuth />
 
