@@ -112,7 +112,7 @@ const Auth = () => {
         
         // Trigger zoom animation
         setIsZooming(true);
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
         // Fade to black and show loading
         const fadeOverlay = document.createElement('div');
@@ -171,7 +171,7 @@ const Auth = () => {
         <TrackballBeads />
       </div>
       
-      <Card className={`w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20 transition-all duration-800 ${isZooming ? 'scale-[3] opacity-0' : 'scale-100 opacity-100'}`}>
+      <Card className={`w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20 transition-all duration-[2000ms] ease-in-out ${isZooming ? 'scale-[3] opacity-0' : 'scale-100 opacity-100'}`}>
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-glow overflow-hidden">
             <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
