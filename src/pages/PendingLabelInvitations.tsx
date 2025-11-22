@@ -28,6 +28,7 @@ export default function PendingLabelInvitations() {
   const [invitations, setInvitations] = useState<LabelInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>("");
 
   useEffect(() => {
@@ -93,6 +94,8 @@ export default function PendingLabelInvitations() {
     }
   };
 
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+
   const handleAccept = async (invitationId: string) => {
     try {
       setAcceptingId(invitationId);
@@ -117,6 +120,26 @@ export default function PendingLabelInvitations() {
       toast.error(error.message || "Failed to accept invitation");
     } finally {
       setAcceptingId(null);
+    }
+  };
+
+  const handleReject = async (invitationId: string) => {
+    try {
+      setRejectingId(invitationId);
+
+      const { error } = await supabase.functions.invoke("reject-label-invitation", {
+        body: { invitationId }
+      });
+
+      if (error) throw error;
+
+      toast.success("Invitation rejected");
+      await fetchInvitations();
+    } catch (error: any) {
+      console.error("Error rejecting invitation:", error);
+      toast.error(error.message || "Failed to reject invitation");
+    } finally {
+      setRejectingId(null);
     }
   };
 
@@ -236,7 +259,7 @@ export default function PendingLabelInvitations() {
                   <div className="flex gap-2 pt-4 border-t border-border">
                     <Button
                       onClick={() => handleAccept(invitation.id)}
-                      disabled={acceptingId === invitation.id}
+                      disabled={acceptingId === invitation.id || rejectingId === invitation.id}
                       className="flex-1"
                     >
                       {acceptingId === invitation.id ? (
@@ -249,11 +272,18 @@ export default function PendingLabelInvitations() {
                       )}
                     </Button>
                     <Button
-                      variant="outline"
-                      onClick={() => navigate("/dashboard")}
-                      disabled={acceptingId === invitation.id}
+                      variant="destructive"
+                      onClick={() => handleReject(invitation.id)}
+                      disabled={acceptingId === invitation.id || rejectingId === invitation.id}
                     >
-                      Later
+                      {rejectingId === invitation.id ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Rejecting...
+                        </>
+                      ) : (
+                        "Reject"
+                      )}
                     </Button>
                   </div>
                 </CardContent>
