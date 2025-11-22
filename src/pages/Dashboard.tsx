@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
 import AdminPortal from "@/components/AdminPortal";
 import ReleasesList from "@/components/ReleasesList";
@@ -382,43 +383,99 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          <div className="-mx-3 sm:-mx-4 px-3 sm:px-4 pt-2 bg-background/95 backdrop-blur-sm">
-            <TabsList className="w-full max-w-5xl mx-auto bg-card/80 backdrop-blur-sm border border-border p-1 rounded-lg">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
-              <Package className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="catalog" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
-              <Package className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Catalog</span>
-            </TabsTrigger>
-            <TabsTrigger value="bulk-upload" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
-              <Upload className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Bulk Upload</span>
-            </TabsTrigger>
-            {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && <TabsTrigger value="clients" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
-                <Users className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Clients</span>
-              </TabsTrigger>}
-            <TabsTrigger value="notifications" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
-              <Bell className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Notifications</span>
-            </TabsTrigger>
-            <TabsTrigger value="royalties" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
-              <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Royalties</span>
-            </TabsTrigger>
-            {userPlan?.plan.name === "Trackball Prestige" && (
-              <TabsTrigger value="publishing" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
-                <FileMusic className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Publishing</span>
-              </TabsTrigger>
-            )}
-            <TabsTrigger value="help" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
-              <HelpCircle className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Help</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="-mx-3 sm:-mx-4 px-3 sm:px-4 pt-2 bg-background/95 backdrop-blur-sm border-b border-border sticky top-[57px] sm:top-[65px] z-20">
+            <div className="flex items-center gap-2 py-2 overflow-x-auto">
+              {/* Main Tabs */}
+              <Button 
+                variant={activeTab === "overview" ? "default" : "ghost"} 
+                size="sm" 
+                onClick={() => setActiveTab("overview")}
+                className={activeTab === "overview" ? "bg-gradient-primary text-primary-foreground" : ""}
+              >
+                <Package className="w-4 h-4 mr-2" />
+                Overview
+              </Button>
+
+              {/* Releases Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-1">
+                    <FileMusic className="w-4 h-4" />
+                    Releases
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56 bg-card border-border">
+                  <DropdownMenuLabel>Release Management</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setActiveTab("catalog")} className="cursor-pointer">
+                    <Package className="w-4 h-4 mr-2" />
+                    Catalog
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab("bulk-upload")} className="cursor-pointer">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Bulk Upload
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && (
+                <Button 
+                  variant={activeTab === "clients" ? "default" : "ghost"} 
+                  size="sm" 
+                  onClick={() => setActiveTab("clients")}
+                  className={activeTab === "clients" ? "bg-gradient-primary text-primary-foreground" : ""}
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Clients
+                </Button>
+              )}
+
+              <Button 
+                variant={activeTab === "notifications" ? "default" : "ghost"} 
+                size="sm" 
+                onClick={() => setActiveTab("notifications")}
+                className={activeTab === "notifications" ? "bg-gradient-primary text-primary-foreground" : ""}
+              >
+                <Bell className="w-4 h-4 mr-2" />
+                Notifications
+              </Button>
+
+              {/* Financial Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-1">
+                    <DollarSign className="w-4 h-4" />
+                    Financial
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56 bg-card border-border">
+                  <DropdownMenuLabel>Financial Management</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setActiveTab("royalties")} className="cursor-pointer">
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Royalties
+                  </DropdownMenuItem>
+                  {userPlan?.plan.name === "Trackball Prestige" && (
+                    <DropdownMenuItem onClick={() => setActiveTab("publishing")} className="cursor-pointer">
+                      <FileMusic className="w-4 h-4 mr-2" />
+                      Publishing
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button 
+                variant={activeTab === "help" ? "default" : "ghost"} 
+                size="sm" 
+                onClick={() => setActiveTab("help")}
+                className={activeTab === "help" ? "bg-gradient-primary text-primary-foreground" : ""}
+              >
+                <HelpCircle className="w-4 h-4 mr-2" />
+                Help
+              </Button>
+            </div>
           </div>
 
           <TabsContent value="overview" className="space-y-4 sm:space-y-6 animate-fade-in">
@@ -551,27 +608,11 @@ const Dashboard = () => {
 
           <TabsContent id="catalog-tab-content" value="catalog" className="animate-fade-in">
             {user && (
-              <>
-                {(userPlan?.plan.name === "Trackball Signature" || 
-                  userPlan?.plan.name === "Trackball Prestige" || 
-                  userPlan?.plan.name === "Trackball Partner") ? (
-                  <AdvancedCatalogManagement 
-                    userId={user.id} 
-                    selectedReleaseId={selectedCatalogReleaseId}
-                    onFloatingPlayer={(src, title, artist) => setFloatingPlayer({ src, title, artist })}
-                  />
-                ) : (
-                  <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-                    <CardHeader>
-                      <CardTitle className="text-lg sm:text-2xl font-bold text-left">Catalog</CardTitle>
-                      <CardDescription className="text-xs sm:text-sm text-left">Full list of your releases</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ReleasesList userId={user.id} isAdmin={false} />
-                    </CardContent>
-                  </Card>
-                )}
-              </>
+              <AdvancedCatalogManagement 
+                userId={user.id} 
+                selectedReleaseId={selectedCatalogReleaseId}
+                onFloatingPlayer={(src, title, artist) => setFloatingPlayer({ src, title, artist })}
+              />
             )}
           </TabsContent>
 
