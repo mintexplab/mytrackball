@@ -23,6 +23,7 @@ import AccountManagerCard from "@/components/AccountManagerCard";
 import PublishingTab from "@/components/PublishingTab";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { MaintenanceDialog } from "@/components/MaintenanceDialog";
+import { TerminatedAccountDialog } from "@/components/TerminatedAccountDialog";
 
 const QuickStatsGrid = ({ userId }: { userId?: string }) => {
   const [releases, setReleases] = useState<any[]>([]);
@@ -84,6 +85,8 @@ const Dashboard = () => {
   const [selectedCatalogReleaseId, setSelectedCatalogReleaseId] = useState<string | null>(null);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [showMaintenanceDialog, setShowMaintenanceDialog] = useState(false);
+  const [isTerminated, setIsTerminated] = useState(false);
+  const [showTerminatedDialog, setShowTerminatedDialog] = useState(false);
   const navigate = useNavigate();
   useEffect(() => {
     const {
@@ -108,7 +111,8 @@ const Dashboard = () => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        // Check maintenance mode FIRST, before loader
+        // Check termination and maintenance FIRST, before loader
+        checkTerminationStatus(session.user.id);
         checkMaintenanceMode(session.user.id);
         
         // Check if loader has been shown this session
@@ -146,6 +150,22 @@ const Dashboard = () => {
       return;
     }
     setIsAdmin(!!data);
+  };
+
+  const checkTerminationStatus = async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("is_banned")
+      .eq("id", userId)
+      .single();
+
+    if (data?.is_banned) {
+      setIsTerminated(true);
+      setShowTerminatedDialog(true);
+    } else {
+      setIsTerminated(false);
+      setShowTerminatedDialog(false);
+    }
   };
 
   const checkMaintenanceMode = async (userId: string) => {
@@ -194,6 +214,31 @@ const Dashboard = () => {
         },
         () => {
           checkMaintenanceMode(user.id);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
+  // Listen for profile changes (termination status)
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('profile_termination_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`
+        },
+        () => {
+          checkTerminationStatus(user.id);
         }
       )
       .subscribe();
@@ -265,6 +310,15 @@ const Dashboard = () => {
   }
   if (isAdmin) {
     return <AdminPortal onSignOut={handleSignOut} />;
+  }
+
+  // Show terminated account dialog if user is banned (highest priority)
+  if (isTerminated && showTerminatedDialog && user) {
+    return (
+      <div className="min-h-screen bg-background relative">
+        <TerminatedAccountDialog userId={user.id} onSignOut={handleSignOut} />
+      </div>
+    );
   }
 
   // Show maintenance dialog if maintenance mode is active (before loader)
