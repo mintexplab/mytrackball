@@ -94,8 +94,6 @@ export default function PendingLabelInvitations() {
     }
   };
 
-  const [rejectingId, setRejectingId] = useState<string | null>(null);
-
   const handleAccept = async (invitationId: string) => {
     try {
       setAcceptingId(invitationId);

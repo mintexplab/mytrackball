@@ -29,14 +29,8 @@ export default function AcceptLabelInvitation() {
     password: "",
   });
 
-  useEffect(() => {
-    if (!invitationId) {
-      toast.error("Invalid invitation link");
-      navigate("/auth");
-      return;
-    }
-    fetchInvitation();
-  }, [invitationId]);
+  const fetchInvitation = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("label_invitations")
@@ -70,8 +64,19 @@ export default function AcceptLabelInvitation() {
       console.error("Error fetching invitation:", error);
       toast.error("Failed to load invitation");
       navigate("/auth");
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!invitationId) {
+      toast.error("Invalid invitation link");
+      navigate("/auth");
+      return;
+    }
+    fetchInvitation();
+  }, [invitationId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
