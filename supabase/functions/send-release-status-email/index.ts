@@ -7,6 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 interface ReleaseStatusEmailRequest {
   userEmail: string;
   releaseTitle: string;
@@ -75,15 +84,15 @@ const handler = async (req: Request): Promise<Response> => {
             <div class="content">
               <p>${statusMessage}</p>
               <div class="release-info">
-                <h2 style="margin-top: 0;">${releaseTitle}</h2>
-                <p style="color: #666; margin: 10px 0;">by ${artistName}</p>
+                <h2 style="margin-top: 0;">${escapeHtml(releaseTitle)}</h2>
+                <p style="color: #666; margin: 10px 0;">by ${escapeHtml(artistName)}</p>
                 <div class="status-badge" style="background-color: ${statusColor}; color: white;">
                   ${statusEmoji} ${status.toUpperCase()}
                 </div>
                 ${rejectionReason ? `
                   <div class="rejection-reason">
                     <strong>Rejection Reason:</strong><br>
-                    ${rejectionReason}
+                    ${escapeHtml(rejectionReason)}
                   </div>
                 ` : ''}
               </div>
@@ -111,7 +120,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "My Trackball <releases@trackball.cc>",
         to: [userEmail],
-        subject: `${statusEmoji} Release ${status}: ${releaseTitle}`,
+        subject: `${statusEmoji} Release ${status}: ${escapeHtml(releaseTitle)}`,
         html: htmlContent,
       }),
     });

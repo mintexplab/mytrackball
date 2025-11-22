@@ -10,6 +10,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 interface SystemNotificationRequest {
   type: "payout_request" | "release_submission" | "new_user_signup" | "takedown_request" | "plan_purchase";
   data: {
@@ -62,8 +71,8 @@ const handler = async (req: Request): Promise<Response> => {
         subject = "New Payout Request";
         html = `
           <h2>New Payout Request</h2>
-          <p><strong>User:</strong> ${data.userName} (${data.userEmail})</p>
-          <p><strong>User ID:</strong> ${data.userId}</p>
+          <p><strong>User:</strong> ${escapeHtml(data.userName || '')} (${escapeHtml(data.userEmail || '')})</p>
+          <p><strong>User ID:</strong> ${escapeHtml(data.userId || '')}</p>
           <p><strong>Amount:</strong> $${data.amount}</p>
           <p>Please review this request in the admin portal.</p>
         `;
@@ -73,9 +82,9 @@ const handler = async (req: Request): Promise<Response> => {
         subject = "New Release Submission";
         html = `
           <h2>New Release Submission</h2>
-          <p><strong>User:</strong> ${data.userName} (${data.userEmail})</p>
-          <p><strong>Release:</strong> ${data.releaseTitle}</p>
-          <p><strong>Release ID:</strong> ${data.releaseId}</p>
+          <p><strong>User:</strong> ${escapeHtml(data.userName || '')} (${escapeHtml(data.userEmail || '')})</p>
+          <p><strong>Release:</strong> ${escapeHtml(data.releaseTitle || '')}</p>
+          <p><strong>Release ID:</strong> ${escapeHtml(data.releaseId || '')}</p>
           <p>Please review this release in the admin portal.</p>
         `;
         break;
@@ -84,9 +93,9 @@ const handler = async (req: Request): Promise<Response> => {
         subject = "New User Signup";
         html = `
           <h2>New User Signup</h2>
-          <p><strong>Name:</strong> ${data.userName}</p>
-          <p><strong>Email:</strong> ${data.userEmail}</p>
-          <p><strong>User ID:</strong> ${data.userId}</p>
+          <p><strong>Name:</strong> ${escapeHtml(data.userName || '')}</p>
+          <p><strong>Email:</strong> ${escapeHtml(data.userEmail || '')}</p>
+          <p><strong>User ID:</strong> ${escapeHtml(data.userId || '')}</p>
           <p>A new user has signed up for Trackball Distribution.</p>
         `;
         break;
@@ -95,9 +104,9 @@ const handler = async (req: Request): Promise<Response> => {
         subject = "Takedown Request";
         html = `
           <h2>Takedown Request</h2>
-          <p><strong>User:</strong> ${data.userName} (${data.userEmail})</p>
-          <p><strong>Release:</strong> ${data.releaseTitle}</p>
-          <p><strong>Release ID:</strong> ${data.releaseId}</p>
+          <p><strong>User:</strong> ${escapeHtml(data.userName || '')} (${escapeHtml(data.userEmail || '')})</p>
+          <p><strong>Release:</strong> ${escapeHtml(data.releaseTitle || '')}</p>
+          <p><strong>Release ID:</strong> ${escapeHtml(data.releaseId || '')}</p>
           <p>Please process this takedown request in the admin portal.</p>
         `;
         break;
@@ -106,8 +115,8 @@ const handler = async (req: Request): Promise<Response> => {
         subject = "New Plan Purchase";
         html = `
           <h2>New Plan Purchase</h2>
-          <p><strong>User:</strong> ${data.userName} (${data.userEmail})</p>
-          <p><strong>Plan:</strong> ${data.planName}</p>
+          <p><strong>User:</strong> ${escapeHtml(data.userName || '')} (${escapeHtml(data.userEmail || '')})</p>
+          <p><strong>Plan:</strong> ${escapeHtml(data.planName || '')}</p>
           <p>A user has purchased a new subscription plan.</p>
         `;
         break;
