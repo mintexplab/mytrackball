@@ -21,11 +21,16 @@ import LabelInvitationManagement from "./LabelInvitationManagement";
 import MaintenanceManagement from "./MaintenanceManagement";
 import AccountAppealsManagement from "./AccountAppealsManagement";
 import { ProfileDropdown } from "./ProfileDropdown";
+import { MobileMenu } from "./MobileMenu";
+import { useIsMobile } from "@/hooks/use-mobile";
+
 interface AdminPortalProps {
   onSignOut: () => void;
+  onViewArtistDashboard?: () => void;
 }
 const AdminPortal = ({
-  onSignOut
+  onSignOut,
+  onViewArtistDashboard
 }: AdminPortalProps) => {
   const [activeTab, setActiveTab] = useState("users");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -34,6 +39,7 @@ const AdminPortal = ({
   const [adminArtistName, setAdminArtistName] = useState<string>("");
   const [adminFullName, setAdminFullName] = useState<string>("");
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   useEffect(() => {
     fetchAdminProfile();
   }, []);
@@ -75,10 +81,15 @@ const AdminPortal = ({
       <div className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
+            <MobileMenu 
+              activeTab={activeTab} 
+              setActiveTab={setActiveTab}
+              isAdmin={true}
+            />
             <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center overflow-hidden">
               <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
             </div>
-            <div>
+            <div className="hidden sm:block">
               <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                 ​Trackball Admin      
               </h1>
@@ -89,10 +100,12 @@ const AdminPortal = ({
           </div>
           
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="hidden md:flex">
-              <Users className="w-4 h-4 mr-2" />
-              View Artist Dashboard
-            </Button>
+            {onViewArtistDashboard && (
+              <Button variant="outline" size="sm" onClick={onViewArtistDashboard} className="hidden md:flex">
+                <Users className="w-4 h-4 mr-2" />
+                View Artist Dashboard
+              </Button>
+            )}
             
             {/* Main Navigation */}
             <div className="hidden md:flex items-center gap-2">

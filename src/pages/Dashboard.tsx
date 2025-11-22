@@ -29,6 +29,8 @@ import BulkUploadTab from "@/components/BulkUploadTab";
 import { DraftManagement } from "@/components/DraftManagement";
 import { AdvancedCatalogManagement } from "@/components/AdvancedCatalogManagement";
 import { FloatingAudioPlayer } from "@/components/FloatingAudioPlayer";
+import { MobileMenu } from "@/components/MobileMenu";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const QuickStatsGrid = ({ userId }: { userId?: string }) => {
   const [releases, setReleases] = useState<any[]>([]);
@@ -97,7 +99,9 @@ const Dashboard = () => {
     title: string;
     artist: string;
   } | null>(null);
+  const [viewAsArtist, setViewAsArtist] = useState(false);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   useEffect(() => {
     const {
       data: {
@@ -318,8 +322,8 @@ const Dashboard = () => {
         </div>
       </div>;
   }
-  if (isAdmin) {
-    return <AdminPortal onSignOut={handleSignOut} />;
+  if (isAdmin && !viewAsArtist) {
+    return <AdminPortal onSignOut={handleSignOut} onViewArtistDashboard={() => setViewAsArtist(true)} />;
   }
 
   // Show terminated account dialog if user is banned (highest priority)
@@ -351,10 +355,15 @@ const Dashboard = () => {
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex justify-between items-center gap-4">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <MobileMenu 
+                activeTab={activeTab} 
+                setActiveTab={setActiveTab} 
+                userPlan={userPlan}
+              />
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                 <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 hidden sm:block">
                 <h1 className="text-base sm:text-xl bg-gradient-primary bg-clip-text text-transparent truncate font-medium">
                   {profile?.label_name || "Trackball Distribution"}
                 </h1>
@@ -371,7 +380,8 @@ const Dashboard = () => {
             </div>
             
             <div className="flex items-center gap-2 flex-shrink-0 overflow-x-auto">
-              {/* Main Tabs */}
+              {/* Desktop Navigation */}
+              <div className="hidden md:flex items-center gap-2">
               <Button 
                 variant={activeTab === "overview" ? "default" : "ghost"} 
                 size="sm" 
@@ -460,6 +470,29 @@ const Dashboard = () => {
               >
                 <HelpCircle className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Help</span>
+              </Button>
+              </div>
+
+              {/* Admin: Back to Admin Portal Button */}
+              {isAdmin && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setViewAsArtist(false)}
+                  className="hidden md:flex"
+                >
+                  Back to Admin Portal
+                </Button>
+              )}
+
+              {/* Mobile: New Release Button + Profile */}
+              <Button 
+                size="sm" 
+                variant="default" 
+                className="bg-gradient-primary md:hidden" 
+                onClick={() => navigate("/create-release")}
+              >
+                <Plus className="w-4 h-4" />
               </Button>
 
               <div className="ml-2 pl-2 border-l border-border">
