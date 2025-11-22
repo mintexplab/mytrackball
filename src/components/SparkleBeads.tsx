@@ -41,13 +41,13 @@ export const SparkleBeads = () => {
       {beads.map((bead) => (
         <div
           key={bead.id}
-          className="absolute w-2 h-2 bg-red-500 rounded-full animate-pulse pointer-events-none"
+          className="absolute w-2 h-2 bg-red-500 rounded-full pointer-events-none"
           style={{
             left: `${bead.x}%`,
             top: `${bead.y}%`,
+            animation: `beadFloat ${5 + Math.random() * 3}s ease-in-out infinite, beadPulse 2s ease-in-out infinite`,
             animationDelay: `${bead.delay}s`,
             boxShadow: '0 0 12px rgba(239, 68, 68, 0.9), 0 0 6px rgba(239, 68, 68, 0.6)',
-            animationDuration: '2s'
           }}
         />
       ))}
