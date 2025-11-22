@@ -90,66 +90,36 @@ export default {
             height: "0",
           },
         },
-        "snake1": {
+        "ps2-ripple": {
           "0%": {
-            top: "0%",
+            top: "50%",
             left: "0%",
+            transform: "translate(-50%, -50%) scale(0.8)",
+            opacity: "0.3",
           },
           "25%": {
             top: "25%",
-            left: "75%",
-          },
-          "50%": {
-            top: "75%",
-            left: "75%",
-          },
-          "75%": {
-            top: "75%",
-            left: "0%",
-          },
-          "100%": {
-            top: "0%",
-            left: "0%",
-          },
-        },
-        "snake2": {
-          "0%": {
-            top: "100%",
-            left: "100%",
-          },
-          "25%": {
-            top: "50%",
             left: "25%",
+            transform: "translate(-50%, -50%) scale(1.2)",
+            opacity: "0.5",
           },
           "50%": {
-            top: "0%",
+            top: "50%",
             left: "50%",
+            transform: "translate(-50%, -50%) scale(1)",
+            opacity: "0.4",
           },
           "75%": {
-            top: "50%",
+            top: "75%",
             left: "75%",
-          },
-          "100%": {
-            top: "100%",
-            left: "100%",
-          },
-        },
-        "snake3": {
-          "0%": {
-            top: "50%",
-            left: "50%",
-          },
-          "33%": {
-            top: "0%",
-            left: "100%",
-          },
-          "66%": {
-            top: "100%",
-            left: "0%",
+            transform: "translate(-50%, -50%) scale(1.3)",
+            opacity: "0.3",
           },
           "100%": {
             top: "50%",
-            left: "50%",
+            left: "100%",
+            transform: "translate(-50%, -50%) scale(0.8)",
+            opacity: "0.3",
           },
         },
       },

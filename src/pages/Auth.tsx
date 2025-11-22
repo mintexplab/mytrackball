@@ -147,9 +147,7 @@ const Auth = () => {
   }
   return <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
       <div className="absolute inset-0">
-        <div className="absolute w-96 h-96 bg-red-500/30 rounded-full blur-3xl animate-[snake1_12s_ease-in-out_infinite]" />
-        <div className="absolute w-80 h-80 bg-red-600/20 rounded-full blur-3xl animate-[snake2_15s_ease-in-out_infinite]" />
-        <div className="absolute w-64 h-64 bg-red-400/25 rounded-full blur-3xl animate-[snake3_18s_ease-in-out_infinite]" />
+        <div className="absolute w-64 h-64 bg-red-500/20 rounded-full blur-3xl animate-[ps2-ripple_25s_ease-in-out_infinite]" />
       </div>
       
       <Card className="w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20">
