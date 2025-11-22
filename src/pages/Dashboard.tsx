@@ -18,7 +18,6 @@ import ArtistLabelOnboarding from "@/components/ArtistLabelOnboarding";
 import ClientInvitations from "@/components/ClientInvitations";
 import ClientInvitationAcceptance from "@/components/ClientInvitationAcceptance";
 import AccountManagerCard from "@/components/AccountManagerCard";
-
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -30,41 +29,40 @@ const Dashboard = () => {
   const [showLoader, setShowLoader] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navigate = useNavigate();
-
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          setTimeout(() => {
-            checkAdminStatus(session.user.id);
-            fetchUserPlan(session.user.id);
-          }, 0);
-        }
+    const {
+      data: {
+        subscription
       }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+      if (session?.user) {
+        setTimeout(() => {
+          checkAdminStatus(session.user.id);
+          fetchUserPlan(session.user.id);
+        }, 0);
+      }
+    });
+    supabase.auth.getSession().then(({
+      data: {
+        session
+      }
+    }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
       if (session?.user) {
         // Check if loader has been shown this session
         const loaderShown = sessionStorage.getItem('loginLoaderShown');
-        
         if (!loaderShown) {
           setShowLoader(true);
           // Random delay between 5-10 seconds
           const randomDelay = Math.floor(Math.random() * 5000) + 5000;
-          
           setTimeout(() => {
             setShowLoader(false);
             sessionStorage.setItem('loginLoaderShown', 'true');
           }, randomDelay);
         }
-        
         checkAdminStatus(session.user.id);
         fetchUserPlan(session.user.id);
         fetchReleaseCount(session.user.id);
@@ -73,103 +71,82 @@ const Dashboard = () => {
       }
       setLoading(false);
     });
-
     return () => subscription.unsubscribe();
   }, [navigate]);
-
   const checkAdminStatus = async (userId: string) => {
-    const { data, error } = await supabase.rpc('has_role', {
+    const {
+      data,
+      error
+    } = await supabase.rpc('has_role', {
       _user_id: userId,
       _role: 'admin'
     });
-    
     if (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
       return;
     }
-    
     setIsAdmin(!!data);
   };
-
   const fetchUserPlan = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_plans")
-      .select(`
+    const {
+      data
+    } = await supabase.from("user_plans").select(`
         *,
         plan:plans(*)
-      `)
-      .eq("user_id", userId)
-      .eq("status", "active")
-      .maybeSingle();
-    
+      `).eq("user_id", userId).eq("status", "active").maybeSingle();
     setUserPlan(data);
 
     // Fetch profile with account manager fields
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    
+    const {
+      data: profileData
+    } = await supabase.from("profiles").select("*").eq("id", userId).single();
     setProfile(profileData);
   };
 
   // Refresh profile data periodically to catch admin updates
   useEffect(() => {
     if (!user?.id) return;
-    
     const interval = setInterval(() => {
       fetchUserPlan(user.id);
     }, 30000); // Refresh every 30 seconds
 
     return () => clearInterval(interval);
   }, [user?.id]);
-
   const fetchReleaseCount = async (userId: string) => {
-    const { count } = await supabase
-      .from("releases")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId);
-    
+    const {
+      count
+    } = await supabase.from("releases").select("*", {
+      count: "exact",
+      head: true
+    }).eq("user_id", userId);
     setReleaseCount(count || 0);
   };
-
   const handleSignOut = async () => {
     setIsLoggingOut(true);
-    
+
     // Random delay between 3-10 seconds
     const randomDelay = Math.floor(Math.random() * 7000) + 3000;
-    
     await new Promise(resolve => setTimeout(resolve, randomDelay));
-    
     await supabase.auth.signOut();
     navigate("/auth");
   };
-
   if (loading || showLoader) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+    return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           {showLoader && <p className="text-muted-foreground animate-pulse">Loading your dashboard...</p>}
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (isAdmin) {
     return <AdminPortal onSignOut={handleSignOut} />;
   }
-
-  return (
-    <div className="min-h-screen bg-background relative">
-      {isLoggingOut && (
-        <div className="fixed inset-0 z-50 bg-background animate-fade-in flex flex-col items-center justify-center gap-4">
+  return <div className="min-h-screen bg-background relative">
+      {isLoggingOut && <div className="fixed inset-0 z-50 bg-background animate-fade-in flex flex-col items-center justify-center gap-4">
           <p className="text-lg text-foreground animate-pulse">Signing you out of My Trackball</p>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      )}
+        </div>}
       
       <div className="absolute inset-0 bg-gradient-primary opacity-5 blur-3xl" />
       
@@ -181,15 +158,11 @@ const Dashboard = () => {
                 <Music2 className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-base sm:text-xl font-bold bg-gradient-primary bg-clip-text text-transparent truncate">
+                <h1 className="text-base sm:text-xl bg-gradient-primary bg-clip-text text-transparent truncate font-medium">
                   {profile?.display_name || profile?.full_name || "MY TRACKBALL"}
                 </h1>
-                {profile?.label_name && (
-                  <p className="text-xs text-muted-foreground truncate">{profile.label_name}</p>
-                )}
-                {profile?.user_id && (
-                  <p className="text-xs text-muted-foreground/70">ID:{profile.user_id}</p>
-                )}
+                {profile?.label_name && <p className="text-xs text-muted-foreground truncate">{profile.label_name}</p>}
+                {profile?.user_id && <p className="text-xs text-muted-foreground/70">ID:{profile.user_id}</p>}
               </div>
             </div>
             
@@ -197,10 +170,7 @@ const Dashboard = () => {
               <Badge variant="outline" className="border-primary/30 bg-primary/5 hidden md:flex text-xs whitespace-nowrap">
                 {userPlan?.plan.name || "Trackball Free"}
               </Badge>
-              <ProfileDropdown
-                userEmail={user?.email}
-                onSignOut={handleSignOut}
-              />
+              <ProfileDropdown userEmail={user?.email} onSignOut={handleSignOut} />
             </div>
           </div>
           
@@ -224,12 +194,10 @@ const Dashboard = () => {
               <Package className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
-            {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && (
-              <TabsTrigger value="clients" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
+            {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && <TabsTrigger value="clients" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
                 <Users className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Clients</span>
-              </TabsTrigger>
-            )}
+              </TabsTrigger>}
             <TabsTrigger value="notifications" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2">
               <Bell className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Notifications</span>
@@ -245,15 +213,7 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 sm:space-y-6 animate-fade-in">
-            {userPlan?.plan.name === "Trackball Prestige" && (
-              <AccountManagerCard
-                managerName={profile?.account_manager_name}
-                managerEmail={profile?.account_manager_email}
-                managerPhone={profile?.account_manager_phone}
-                managerTimezone={profile?.account_manager_timezone}
-                userTimezone={profile?.user_timezone || "America/New_York"}
-              />
-            )}
+            {userPlan?.plan.name === "Trackball Prestige" && <AccountManagerCard managerName={profile?.account_manager_name} managerEmail={profile?.account_manager_email} managerPhone={profile?.account_manager_phone} managerTimezone={profile?.account_manager_timezone} userTimezone={profile?.user_timezone || "America/New_York"} />}
 
             <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
               <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
@@ -272,24 +232,18 @@ const Dashboard = () => {
                       {userPlan?.plan.name || "Trackball Free"}
                     </Badge>
                   </div>
-                  {userPlan ? (
-                    <>
+                  {userPlan ? <>
                       <p className="text-sm sm:text-base text-muted-foreground">{userPlan.plan.description}</p>
                       <div className="pt-3 sm:pt-4 border-t border-border">
                         <p className="text-xs sm:text-sm font-medium mb-2">Plan Features:</p>
                         <ul className="space-y-1 text-xs sm:text-sm text-muted-foreground">
-                          {userPlan.plan.features?.map((feature: string, index: number) => (
-                            <li key={index} className="flex items-start gap-2">
+                          {userPlan.plan.features?.map((feature: string, index: number) => <li key={index} className="flex items-start gap-2">
                               <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 flex-shrink-0" />
                               <span className="flex-1">{feature}</span>
-                            </li>
-                          ))}
+                            </li>)}
                         </ul>
                       </div>
-                    </>
-                  ) : (
-                    <p className="text-sm sm:text-base text-muted-foreground">Basic distribution plan with essential features</p>
-                  )}
+                    </> : <p className="text-sm sm:text-base text-muted-foreground">Basic distribution plan with essential features</p>}
                 </CardContent>
               </Card>
 
@@ -320,10 +274,7 @@ const Dashboard = () => {
                     <CardTitle className="text-lg sm:text-2xl font-bold">Your Releases</CardTitle>
                     <CardDescription className="text-xs sm:text-sm">Manage your music distribution</CardDescription>
                   </div>
-                  <Button 
-                    onClick={() => navigate("/create-release")}
-                    className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow w-full sm:w-auto text-sm"
-                  >
+                  <Button onClick={() => navigate("/create-release")} className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow w-full sm:w-auto text-sm">
                     <Plus className="w-4 h-4 mr-2" />
                     New Release
                   </Button>
@@ -335,11 +286,9 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
 
-          {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && (
-            <TabsContent value="clients" className="animate-fade-in">
+          {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && <TabsContent value="clients" className="animate-fade-in">
               <ClientInvitations />
-            </TabsContent>
-          )}
+            </TabsContent>}
 
           <TabsContent value="notifications" className="animate-fade-in">
             {user && <NotificationsTab userId={user.id} />}
@@ -366,10 +315,7 @@ const Dashboard = () => {
                       Need help with your account, releases, or have questions? Our support team is here to assist you.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <Button
-                        onClick={() => window.location.href = 'mailto:contact@trackball.cc'}
-                        className="bg-gradient-primary hover:opacity-90"
-                      >
+                      <Button onClick={() => window.location.href = 'mailto:contact@trackball.cc'} className="bg-gradient-primary hover:opacity-90">
                         <Mail className="w-4 h-4 mr-2" />
                         Email Support
                       </Button>
@@ -411,8 +357,6 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default Dashboard;
