@@ -292,12 +292,18 @@ const CreateRelease = () => {
       const artworkPath = `release-artwork/${user.id}/${Date.now()}.jpg`;
       const artworkUrl = await uploadFile({ file: artworkFile, path: artworkPath });
       setUploadingFile(null);
+      if (!artworkUrl) {
+        throw new Error("Artwork upload failed - please try again");
+      }
 
       // Upload audio
       setUploadingFile('audio');
       const audioPath = `release-audio/${user.id}/${Date.now()}.${audioFile.name.split('.').pop()}`;
       const audioUrl = await uploadFile({ file: audioFile, path: audioPath });
       setUploadingFile(null);
+      if (!audioUrl) {
+        throw new Error("Audio upload failed - please try again");
+      }
 
       // Create release
       const { error: releaseError } = await supabase.from("releases").insert({
