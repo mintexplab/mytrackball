@@ -22,7 +22,9 @@ const releaseSchema = z.object({
   subGenre: z.string().optional(),
   label: z.string().max(200).optional(),
   cLine: z.string().max(200).optional(),
+  cLineYear: z.string().optional(),
   pLine: z.string().max(200).optional(),
+  pLineYear: z.string().optional(),
   isMusical: z.boolean(),
   isCoverSong: z.boolean(),
   previewStart: z.string().optional(),
@@ -68,6 +70,8 @@ const CreateRelease = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
+  const currentYear = new Date().getFullYear();
+  
   // Form data
   const [formData, setFormData] = useState({
     songTitle: "",
@@ -78,7 +82,9 @@ const CreateRelease = () => {
     subGenre: "",
     label: "",
     cLine: "",
+    cLineYear: currentYear.toString(),
     pLine: "",
+    pLineYear: currentYear.toString(),
     isMusical: false,
     isCoverSong: false,
     previewStart: "00:00:00",
@@ -513,24 +519,56 @@ const CreateRelease = () => {
                 />
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
                   <Label htmlFor="cLine">C-Line (©)</Label>
-                  <Input
-                    id="cLine"
-                    value={formData.cLine}
-                    onChange={(e) => setFormData({ ...formData, cLine: e.target.value })}
-                    placeholder="C-Line information"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="cLine"
+                      value={formData.cLine}
+                      onChange={(e) => setFormData({ ...formData, cLine: e.target.value })}
+                      placeholder="C-Line information"
+                      className="flex-1"
+                    />
+                    <Select 
+                      value={formData.cLineYear} 
+                      onValueChange={(value) => setFormData({ ...formData, cLineYear: value })}
+                    >
+                      <SelectTrigger className="bg-background w-[120px]">
+                        <SelectValue placeholder="Year" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        {Array.from({ length: currentYear - 1949 }, (_, i) => currentYear + 1 - i).map((year) => (
+                          <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="pLine">P-Line (℗)</Label>
-                  <Input
-                    id="pLine"
-                    value={formData.pLine}
-                    onChange={(e) => setFormData({ ...formData, pLine: e.target.value })}
-                    placeholder="P-Line information"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="pLine"
+                      value={formData.pLine}
+                      onChange={(e) => setFormData({ ...formData, pLine: e.target.value })}
+                      placeholder="P-Line information"
+                      className="flex-1"
+                    />
+                    <Select 
+                      value={formData.pLineYear} 
+                      onValueChange={(value) => setFormData({ ...formData, pLineYear: value })}
+                    >
+                      <SelectTrigger className="bg-background w-[120px]">
+                        <SelectValue placeholder="Year" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        {Array.from({ length: currentYear - 1949 }, (_, i) => currentYear + 1 - i).map((year) => (
+                          <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
