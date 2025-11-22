@@ -39,8 +39,6 @@ const releaseSchema = z.object({
   phonographic_line: z.string().max(500, "Phonographic line must be less than 500 characters").optional(),
   label_name: z.string().max(200, "Label name must be less than 200 characters").optional(),
   featured_artists: z.string().max(1000, "Featured artists must be less than 1000 characters").optional(),
-  courtesy_line: z.string().max(500, "Courtesy line must be less than 500 characters").optional(),
-  distributor: z.enum(["Believe Music", "The Orchard", ""]),
   notes: z.string().max(2000, "Notes must be less than 2000 characters").optional(),
   catalog_number: z.string().max(100, "Catalog number must be less than 100 characters").optional(),
 });
@@ -111,13 +109,6 @@ const CreateRelease = () => {
     phonographic_line: "",
     label_name: "",
     featured_artists: "",
-    courtesy_line: "",
-    is_multi_disc: false,
-    disc_number: 1,
-    volume_number: 1,
-    total_discs: 1,
-    total_volumes: 1,
-    distributor: "",
     notes: "",
     catalog_number: "",
   });
@@ -319,15 +310,6 @@ const CreateRelease = () => {
         }
       }
 
-      // Check distributor access
-      if (formData.distributor === "The Orchard") {
-        if (!userPlan || userPlan.plan?.name !== "Prestige") {
-          toast.error("The Orchard is only available for Prestige members");
-          setLoading(false);
-          return;
-        }
-      }
-
       // Upload artwork
       let artworkUrl = "";
       if (artworkFile) {
@@ -500,25 +482,6 @@ const CreateRelease = () => {
                   placeholder="Artist 1, Artist 2"
                 />
               </div>
-
-              <div>
-                <Label htmlFor="distributor">Distributor *</Label>
-                <Select
-                  value={formData.distributor}
-                  onValueChange={(value) => setFormData({ ...formData, distributor: value })}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select distributor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Believe Music">Believe Music (All Plans)</SelectItem>
-                    <SelectItem value="The Orchard" disabled={userPlan?.plan?.name !== "Prestige"}>
-                      The Orchard (Prestige Only) {userPlan?.plan?.name !== "Prestige" && "🔒"}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </CardContent>
           </Card>
 
@@ -578,77 +541,6 @@ const CreateRelease = () => {
                   placeholder="℗ 2024 Label Name"
                 />
               </div>
-              <div>
-                <Label htmlFor="courtesy_line">Courtesy Line</Label>
-                <Input
-                  id="courtesy_line"
-                  value={formData.courtesy_line}
-                  onChange={(e) => setFormData({ ...formData, courtesy_line: e.target.value })}
-                  placeholder="Courtesy of..."
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Multi-Disc Options */}
-          <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-            <CardHeader>
-              <CardTitle className="font-bold">MULTI-DISC/VOLUME OPTIONS</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="is_multi_disc"
-                  checked={formData.is_multi_disc}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_multi_disc: checked as boolean })}
-                />
-                <Label htmlFor="is_multi_disc">This is a multi-disc or multi-volume release</Label>
-              </div>
-
-              {formData.is_multi_disc && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <Label htmlFor="disc_number">Disc Number</Label>
-                    <Input
-                      id="disc_number"
-                      type="number"
-                      min="1"
-                      value={formData.disc_number}
-                      onChange={(e) => setFormData({ ...formData, disc_number: parseInt(e.target.value) })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="total_discs">Total Discs</Label>
-                    <Input
-                      id="total_discs"
-                      type="number"
-                      min="1"
-                      value={formData.total_discs}
-                      onChange={(e) => setFormData({ ...formData, total_discs: parseInt(e.target.value) })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="volume_number">Volume Number</Label>
-                    <Input
-                      id="volume_number"
-                      type="number"
-                      min="1"
-                      value={formData.volume_number}
-                      onChange={(e) => setFormData({ ...formData, volume_number: parseInt(e.target.value) })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="total_volumes">Total Volumes</Label>
-                    <Input
-                      id="total_volumes"
-                      type="number"
-                      min="1"
-                      value={formData.total_volumes}
-                      onChange={(e) => setFormData({ ...formData, total_volumes: parseInt(e.target.value) })}
-                    />
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 
