@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Music2, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
+import { TrackballBeads } from "@/components/TrackballBeads";
+import trackballLogo from "@/assets/trackball-logo.png";
 
 const signupSchema = z.object({
   fullName: z.string()
@@ -174,18 +176,21 @@ const AcceptInvitation = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
       <div className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-red-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
-        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-red-400/25 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }} />
+        <TrackballBeads />
       </div>
       
-      <Card className="w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20">
+      <Card 
+        className="w-full max-w-md relative backdrop-blur-sm bg-black border-primary/30"
+        style={{
+          boxShadow: '0 0 40px rgba(239, 68, 68, 0.3), 0 0 80px rgba(239, 68, 68, 0.15)'
+        }}
+      >
         <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-glow">
-            <UserPlus className="w-8 h-8 text-primary-foreground" />
+          <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-glow overflow-hidden">
+            <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
           </div>
           <div>
-            <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <CardTitle className="text-3xl bg-gradient-primary bg-clip-text text-transparent font-normal font-sans text-center">
               You're Invited!
             </CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
@@ -270,7 +275,7 @@ const AcceptInvitation = () => {
               <button
                 type="button"
                 onClick={() => navigate("/auth")}
-                className="text-primary hover:text-primary/80 transition-colors"
+                className="text-primary hover:text-primary/80 transition-all duration-300 hover:scale-105"
               >
                 Already have an account? Sign in
               </button>
