@@ -14,6 +14,8 @@ interface LabelInvitationRequest {
   additional_users: string[];
   subscription_tier: string;
   invitation_id: string;
+  service_access?: string[];
+  custom_royalty_split?: number;
 }
 
 serve(async (req) => {
@@ -27,7 +29,9 @@ serve(async (req) => {
       master_email, 
       additional_users, 
       subscription_tier,
-      invitation_id 
+      invitation_id,
+      service_access,
+      custom_royalty_split
     }: LabelInvitationRequest = await req.json();
 
     const acceptUrl = `${req.headers.get("origin")}/accept-label-invitation?id=${invitation_id}`;
@@ -46,6 +50,8 @@ serve(async (req) => {
             <h2 style="margin-top: 0;">Your Label Details</h2>
             <p><strong>Label Name:</strong> ${label_name}</p>
             <p><strong>Subscription Tier:</strong> ${subscription_tier}</p>
+            ${subscription_tier === 'Trackball Partner' && custom_royalty_split ? `<p><strong>Royalty Split:</strong> ${custom_royalty_split}% (Custom Deal)</p>` : ''}
+            ${subscription_tier === 'Trackball Partner' && service_access && service_access.length > 0 ? `<p><strong>Services Access:</strong> ${service_access.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ')}</p>` : ''}
             ${additional_users.length > 0 ? `<p><strong>Additional Staff:</strong> ${additional_users.length} users invited</p>` : ''}
           </div>
 
@@ -83,6 +89,8 @@ serve(async (req) => {
                 <h2 style="margin-top: 0;">Invitation Details</h2>
                 <p><strong>Label:</strong> ${label_name}</p>
                 <p><strong>Subscription Tier:</strong> ${subscription_tier}</p>
+                ${subscription_tier === 'Trackball Partner' && custom_royalty_split ? `<p><strong>Royalty Split:</strong> ${custom_royalty_split}% (Custom Deal)</p>` : ''}
+                ${subscription_tier === 'Trackball Partner' && service_access && service_access.length > 0 ? `<p><strong>Services Access:</strong> ${service_access.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ')}</p>` : ''}
               </div>
 
               <p>Click the button below to accept your invitation and create your account:</p>

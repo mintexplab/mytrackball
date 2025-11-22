@@ -82,6 +82,51 @@ const LabelInvitationManagement = () => {
     setAdditionalUsers(additionalUsers.filter(e => e !== email));
   };
 
+  const revokeInvitation = async (invitationId: string) => {
+    try {
+      const { error } = await supabase
+        .from("label_invitations")
+        .delete()
+        .eq("id", invitationId);
+
+      if (error) throw error;
+
+      toast.success("Invitation revoked successfully");
+      fetchInvitations();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to revoke invitation");
+    }
+  };
+
+  const deleteLabelAccount = async (masterEmail: string) => {
+    if (!confirm("Are you sure you want to delete this label account? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      // Get the user profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", masterEmail)
+        .single();
+
+      if (!profile) throw new Error("Account not found");
+
+      // Delete the user using edge function
+      const { error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: profile.id }
+      });
+
+      if (error) throw error;
+
+      toast.success("Label account deleted successfully");
+      fetchInvitations();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete account");
+    }
+  };
+
   const sendInvitation = async () => {
     try {
       const validatedData = labelInvitationSchema.parse({
@@ -131,7 +176,9 @@ const LabelInvitationManagement = () => {
           master_email: validatedData.master_account_email,
           additional_users: additionalUsers,
           subscription_tier: validatedData.subscription_tier,
-          invitation_id: invitation.id
+          invitation_id: invitation.id,
+          service_access: validatedData.service_access,
+          custom_royalty_split: validatedData.custom_royalty_split
         }
       });
 
@@ -349,6 +396,7 @@ const LabelInvitationManagement = () => {
                 <TableHead>Services</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Sent</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -376,46 +424,38 @@ const LabelInvitationManagement = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {invitation.custom_royalty_split ? (
-                        <span className="font-medium">{invitation.custom_royalty_split}%</span>
+                      {invitation.status === "pending" ? (
+                        <Badge variant="outline" className="border-yellow-500 text-yellow-500">Pending</Badge>
+                      ) : invitation.status === "accepted" ? (
+                        <Badge variant="outline" className="border-green-500 text-green-500">Accepted</Badge>
                       ) : (
-                        <span className="text-muted-foreground text-sm">Default</span>
+                        <Badge variant="outline" className="border-gray-500 text-gray-500">Expired</Badge>
                       )}
                     </TableCell>
-                    <TableCell>
-                      {invitation.service_access && invitation.service_access.length > 0 ? (
-                        <Badge variant="outline">{invitation.service_access.length} services</Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">All</span>
-                      )}
+                    <TableCell className="text-muted-foreground text-sm">
+                      {new Date(invitation.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      {invitation.custom_royalty_split ? (
-                        <span className="font-medium">{invitation.custom_royalty_split}%</span>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">Default</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {invitation.service_access && invitation.service_access.length > 0 ? (
-                        <Badge variant="outline">{invitation.service_access.length} services</Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">All</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {invitation.custom_royalty_split ? (
-                        <span className="font-medium">{invitation.custom_royalty_split}%</span>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">Default</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {invitation.service_access && invitation.service_access.length > 0 ? (
-                        <Badge variant="outline">{invitation.service_access.length} services</Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">All</span>
-                      )}
+                      <div className="flex gap-2">
+                        {invitation.status === "pending" && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => revokeInvitation(invitation.id)}
+                          >
+                            Revoke
+                          </Button>
+                        )}
+                        {invitation.status === "accepted" && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteLabelAccount(invitation.master_account_email)}
+                          >
+                            Delete Account
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {invitation.status === "pending" && (

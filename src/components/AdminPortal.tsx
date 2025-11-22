@@ -26,6 +26,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { EmailNotificationDialog } from "./EmailNotificationDialog";
 import { AnnouncementBarManagement } from "./AnnouncementBarManagement";
 import { TakedownRequestsManagement } from "./TakedownRequestsManagement";
+import { PartnerPermissionsBreakdown } from "./PartnerPermissionsBreakdown";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -197,6 +198,10 @@ const AdminPortal = ({
                     <Building2 className="w-4 h-4 mr-2" />
                     Invite Labels
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab("partner-permissions")} className="cursor-pointer">
+                    <ShieldAlert className="w-4 h-4 mr-2" />
+                    Partner Permissions
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setActiveTab("appeals")} className="cursor-pointer">
                     <FileText className="w-4 h-4 mr-2" />
@@ -247,6 +252,7 @@ const AdminPortal = ({
                 <DropdownMenuItem onClick={() => setActiveTab("managers")}>Managers</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("invite-artists")}>Invite Artists</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("invite-labels")}>Invite Labels</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("partner-permissions")}>Partner Permissions</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("takedowns")}>Takedowns</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("announcements")}>Announcements</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("royalties")}>Royalties</DropdownMenuItem>
@@ -289,6 +295,10 @@ const AdminPortal = ({
 
           <TabsContent value="invite-labels">
             <LabelInvitationManagement />
+          </TabsContent>
+
+          <TabsContent value="partner-permissions">
+            <PartnerPermissionsBreakdown />
           </TabsContent>
 
           <TabsContent value="announcements">

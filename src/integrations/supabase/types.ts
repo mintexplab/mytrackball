@@ -414,6 +414,54 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_audit_log: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string
+          id: string
+          new_value: Json | null
+          notes: string | null
+          old_value: Json | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          notes?: string | null
+          old_value?: Json | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          notes?: string | null
+          old_value?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_audit_log_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_audit_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_royalty_splits: {
         Row: {
           created_at: string | null
