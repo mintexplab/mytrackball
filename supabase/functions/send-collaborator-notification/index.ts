@@ -10,6 +10,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 interface CollaboratorNotificationRequest {
   collaboratorName: string;
   collaboratorEmail: string;
@@ -55,13 +64,13 @@ const handler = async (req: Request): Promise<Response> => {
     let subject = "You've Been Added as a Collaborator";
     let html = `
       <h2>Collaborator Notification</h2>
-      <p>Hello ${collaboratorName},</p>
-      <p><strong>${inviterName}</strong> has added you as a collaborator on Trackball Distribution.</p>
+      <p>Hello ${escapeHtml(collaboratorName)},</p>
+      <p><strong>${escapeHtml(inviterName)}</strong> has added you as a collaborator on Trackball Distribution.</p>
     `;
 
     if (releaseTitle && percentage) {
       html += `
-        <p><strong>Release:</strong> ${releaseTitle}</p>
+        <p><strong>Release:</strong> ${escapeHtml(releaseTitle)}</p>
         <p><strong>Royalty Percentage:</strong> ${percentage}%</p>
         <p>This means you will receive ${percentage}% of the royalties from this release.</p>
       `;

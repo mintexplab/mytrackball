@@ -10,6 +10,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 interface AnnouncementEmailRequest {
   userEmail: string;
   title: string;
@@ -75,11 +84,11 @@ const handler = async (req: Request): Promise<Response> => {
         <body>
           <div class="container">
             <div class="header">
-              <h1>📢 ${title}</h1>
+              <h1>📢 ${escapeHtml(title)}</h1>
             </div>
             <div class="content">
               <div class="message">
-                ${message.replace(/\n/g, '<br>')}
+                ${escapeHtml(message).replace(/\n/g, '<br>')}
               </div>
             </div>
             <div class="footer">
@@ -100,7 +109,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "My Trackball <notifications@trackball.cc>",
         to: [userEmail],
-        subject: `📢 ${title}`,
+        subject: `📢 ${escapeHtml(title)}`,
         html: htmlContent,
       }),
     });

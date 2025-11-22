@@ -8,6 +8,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { Music2, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { z } from "zod";
+
+const signupSchema = z.object({
+  fullName: z.string()
+    .trim()
+    .min(1, 'Name is required')
+    .max(100, 'Name must be less than 100 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'Name contains invalid characters'),
+  email: z.string().email('Invalid email address').max(255),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(100, 'Password must be less than 100 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
+});
 
 const AcceptInvitation = () => {
   const [searchParams] = useSearchParams();
@@ -66,12 +82,18 @@ const AcceptInvitation = () => {
     setLoading(true);
 
     try {
+      // Validate input
+      const validatedData = signupSchema.parse({
+        fullName,
+        email,
+        password
+      });
       // Create the account
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
+        email: validatedData.email,
+        password: validatedData.password,
         options: {
-          data: { full_name: fullName },
+          data: { full_name: validatedData.fullName },
           emailRedirectTo: `${window.location.origin}/dashboard`,
         },
       });
@@ -109,7 +131,11 @@ const AcceptInvitation = () => {
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Error:", error);
-      toast.error(error.message);
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error(error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -207,10 +233,10 @@ const AcceptInvitation = () => {
                 type="password"
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="bg-background/50 border-border focus:border-primary transition-colors"
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  className="bg-background/50 border-border focus:border-primary transition-colors"
               />
             </div>
             

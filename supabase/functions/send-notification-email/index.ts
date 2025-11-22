@@ -7,6 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 interface NotificationEmailRequest {
   userEmail: string;
   title: string;
@@ -43,11 +52,11 @@ const handler = async (req: Request): Promise<Response> => {
         <body>
           <div class="container">
             <div class="header">
-              <h1>${typeEmoji} ${title}</h1>
+              <h1>${typeEmoji} ${escapeHtml(title)}</h1>
             </div>
             <div class="content">
               <div class="message">
-                ${message.replace(/\n/g, '<br>')}
+                ${escapeHtml(message).replace(/\n/g, '<br>')}
               </div>
               <p style="margin-top: 20px; text-align: center;">
                 <a href="https://trackball.cc/dashboard" style="background: linear-gradient(135deg, #dc2626 0%, #7f1d1d 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
@@ -73,7 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "My Trackball <notifications@trackball.cc>",
         to: [userEmail],
-        subject: `${typeEmoji} ${title}`,
+        subject: `${typeEmoji} ${escapeHtml(title)}`,
         html: htmlContent,
       }),
     });

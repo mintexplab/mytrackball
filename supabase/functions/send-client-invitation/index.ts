@@ -8,6 +8,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 interface InvitationRequest {
   inviterName: string;
   inviterEmail: string;
@@ -34,7 +43,7 @@ const handler = async (req: Request): Promise<Response> => {
       ? `
         <p>You'll have access to:</p>
         <ul>
-          ${permissions.map(p => `<li>${p.charAt(0).toUpperCase() + p.slice(1)}</li>`).join('')}
+          ${permissions.map(p => `<li>${escapeHtml(p.charAt(0).toUpperCase() + p.slice(1))}</li>`).join('')}
         </ul>
       `
       : '';
@@ -73,7 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
                 </div>
                 <div class="content">
                   <p>Hi there,</p>
-                  <p><strong>${inviterName}</strong> (${inviterEmail}) has invited you to join <strong>${labelName}</strong> on My Trackball.</p>
+                  <p><strong>${escapeHtml(inviterName)}</strong> (${escapeHtml(inviterEmail)}) has invited you to join <strong>${escapeHtml(labelName)}</strong> on My Trackball.</p>
                   
                   ${permissionsHtml}
 
