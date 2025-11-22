@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import { TrackballBeads } from "@/components/TrackballBeads";
 import trackballLogo from "@/assets/trackball-logo.png";
+import { ExistingUserLabelInvitation } from "@/components/ExistingUserLabelInvitation";
 
 const signupSchema = z.object({
   fullName: z.string().trim().min(1, "Name is required").max(100),
@@ -23,6 +24,7 @@ const AcceptLabelInvitation = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [invitation, setInvitation] = useState<any>(null);
+  const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -30,6 +32,10 @@ const AcceptLabelInvitation = () => {
   });
 
   useEffect(() => {
+    checkIfExistingUser();
+  }, [searchParams, navigate]);
+
+  const checkIfExistingUser = async () => {
     const invitationId = searchParams.get("id");
     if (!invitationId) {
       toast.error("Invalid invitation link");
@@ -37,8 +43,18 @@ const AcceptLabelInvitation = () => {
       return;
     }
 
-    fetchInvitation(invitationId);
-  }, [searchParams, navigate]);
+    // Check if user is already logged in
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      // User is logged in, show existing user flow
+      setIsExistingUser(true);
+    } else {
+      // User is not logged in, show signup flow
+      setIsExistingUser(false);
+      fetchInvitation(invitationId);
+    }
+  };
 
   const fetchInvitation = async (invitationId: string) => {
     try {
@@ -145,10 +161,27 @@ const AcceptLabelInvitation = () => {
         .update({
           label_name: invitation.label_name,
           label_id: labelId,
+          active_label_id: labelId, // Set this label as active
         })
         .eq("id", authData.user.id);
 
       if (profileError) throw profileError;
+
+      // Create label membership record
+      const isOwner = validatedData.email === invitation.master_account_email;
+      const { error: membershipError } = await supabase
+        .from("user_label_memberships")
+        .insert({
+          user_id: authData.user.id,
+          label_id: labelId,
+          label_name: invitation.label_name,
+          role: isOwner ? "owner" : "member",
+        });
+
+      if (membershipError) {
+        console.error("Error creating membership:", membershipError);
+        // Don't fail the signup if this fails
+      }
 
       // Assign plan
       const { error: planAssignError } = await supabase
@@ -202,12 +235,17 @@ const AcceptLabelInvitation = () => {
     }
   };
 
-  if (!invitation) {
+  if (!invitation && isExistingUser === false) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
+  }
+
+  // If user is logged in, show existing user flow
+  if (isExistingUser) {
+    return <ExistingUserLabelInvitation />;
   }
 
   return (
