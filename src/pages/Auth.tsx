@@ -112,15 +112,21 @@ const Auth = () => {
         
         // Trigger zoom animation
         setIsZooming(true);
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 400));
         
-        // Fade to black
+        // Fade to black and show loading
         const fadeOverlay = document.createElement('div');
-        fadeOverlay.className = 'fixed inset-0 bg-black z-50';
-        fadeOverlay.style.animation = 'fadeIn 0.5s ease-out forwards';
+        fadeOverlay.className = 'fixed inset-0 bg-black z-50 flex flex-col items-center justify-center';
+        fadeOverlay.style.animation = 'fadeIn 0.3s ease-out forwards';
+        fadeOverlay.innerHTML = `
+          <div class="text-center space-y-6">
+            <p class="text-2xl text-foreground">Loading your dashboard</p>
+            <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          </div>
+        `;
         document.body.appendChild(fadeOverlay);
         
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 800));
         navigate("/dashboard");
       } else {
         const {
@@ -164,7 +170,7 @@ const Auth = () => {
         <TrackballBeads />
       </div>
       
-      <Card className={`w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20 transition-all duration-700 ${isZooming ? 'scale-[3] opacity-0' : 'scale-100 opacity-100'}`}>
+      <Card className={`w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20 transition-all duration-400 ${isZooming ? 'scale-[3] opacity-0' : 'scale-100 opacity-100'}`}>
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-glow overflow-hidden">
             <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />

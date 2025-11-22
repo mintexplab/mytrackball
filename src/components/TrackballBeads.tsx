@@ -17,7 +17,27 @@ export const TrackballBeads = () => {
     "THE FUTURE OF MUSIC IS TODAY",
     "MUSIC DISTRIBUTION ON EVERY AXIS",
     "JOIN THE MUSIC DISTRIBUTION REVOLUTION",
-    "DISTRIBUTION AS SMOOTH AS A TRACKBALL"
+    "DISTRIBUTION AS SMOOTH AS A TRACKBALL",
+    "EMPOWERING YOUR MUSIC EVERYWHERE",
+    "BUILT FOR ARTISTS WHO WANT TO BE HEARD",
+    "YOUR SOUND DELIVERED WORLDWIDE",
+    "DISTRIBUTION THAT DOESNT SLOW YOU DOWN",
+    "WHERE INDEPENDENT MUSIC GOES GLOBAL",
+    "TURNING UPLOADS INTO OPPORTUNITIES",
+    "MAKE RELEASES NOT HEADACHES",
+    "THE FAST LANE FOR YOUR NEXT DROP",
+    "MUSIC MOVES FURTHER WITH US",
+    "YOUR CATALOG YOUR CONTROL",
+    "WE HANDLE DELIVERY YOU HANDLE THE ART",
+    "BUILT FOR SMOOTH RELEASES EVERY TIME",
+    "TAKE YOUR SOUND TO EVERY PLATFORM",
+    "RELEASING MUSIC SHOULDNT BE COMPLICATED",
+    "PRECISION DELIVERY FOR EVERY TRACK",
+    "FROM STUDIO TO STREAMING IN ONE FLOW",
+    "UNLOCK YOUR MUSICS REACH",
+    "THE SMARTER WAY TO DISTRIBUTE",
+    "DESIGNED FOR LABELS LOVED BY ARTISTS",
+    "YOUR MUSIC ALWAYS ON TIME"
   ];
 
   const getRandomPosition = () => {
@@ -56,9 +76,16 @@ export const TrackballBeads = () => {
   };
 
   const createNewPhrase = (id: number) => {
-    const phrase = allPhrases[Math.floor(Math.random() * allPhrases.length)];
+    // Get phrases that are not currently displayed
+    const usedPhrases = phrases.map(p => p.phrase);
+    const availablePhrases = allPhrases.filter(p => !usedPhrases.includes(p));
+    
+    // If all phrases are used, allow reuse
+    const phrasePool = availablePhrases.length > 0 ? availablePhrases : allPhrases;
+    const phrase = phrasePool[Math.floor(Math.random() * phrasePool.length)];
+    
     const position = getRandomPosition();
-    const scale = 0.6 + Math.random() * 0.4; // Random scale between 0.6 and 1.0
+    const scale = 0.6 + Math.random() * 0.4;
     
     return {
       id,
