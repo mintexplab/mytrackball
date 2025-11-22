@@ -13,10 +13,12 @@ import { useNavigate } from "react-router-dom";
 interface ProfileDropdownProps {
   userEmail?: string;
   avatarUrl?: string;
+  artistName?: string;
+  fullName?: string;
   onSignOut: () => void;
 }
 
-export const ProfileDropdown = ({ userEmail, avatarUrl, onSignOut }: ProfileDropdownProps) => {
+export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, onSignOut }: ProfileDropdownProps) => {
   const navigate = useNavigate();
   
   const initials = userEmail
@@ -36,7 +38,7 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, onSignOut }: ProfileDrop
       <DropdownMenuContent align="end" className="w-56 bg-card border-border">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">My Account</p>
+            <p className="text-sm font-medium leading-none">{fullName || "My Account"}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {userEmail}
             </p>
@@ -63,7 +65,7 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, onSignOut }: ProfileDrop
           className="cursor-pointer text-destructive focus:text-destructive"
         >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Logout</span>
+          <span>Log off {artistName || "Account"}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

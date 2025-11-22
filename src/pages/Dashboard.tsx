@@ -463,7 +463,13 @@ const Dashboard = () => {
               </Button>
 
               <div className="ml-2 pl-2 border-l border-border">
-                <ProfileDropdown userEmail={user?.email} avatarUrl={profile?.avatar_url} onSignOut={handleSignOut} />
+                <ProfileDropdown 
+                  userEmail={user?.email} 
+                  avatarUrl={profile?.avatar_url}
+                  artistName={profile?.artist_name}
+                  fullName={profile?.full_name}
+                  onSignOut={handleSignOut} 
+                />
               </div>
             </div>
           </div>
