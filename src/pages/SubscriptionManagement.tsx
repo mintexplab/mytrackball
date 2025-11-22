@@ -6,6 +6,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Plan {
   id: string;
@@ -32,6 +42,7 @@ const SubscriptionManagement = () => {
   const navigate = useNavigate();
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+  const [showRedirectDialog, setShowRedirectDialog] = useState(false);
 
   // Fetch user's current plan from database
   const { data: userPlan } = useQuery({
@@ -130,29 +141,13 @@ const SubscriptionManagement = () => {
     }
   };
 
-  const handleManageBilling = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("Please log in to manage billing");
-        return;
-      }
+  const handleManageBilling = () => {
+    setShowRedirectDialog(true);
+  };
 
-      const { data, error } = await supabase.functions.invoke("customer-portal", {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) throw error;
-      
-      if (data.url) {
-        window.open(data.url, "_blank");
-      }
-    } catch (error: any) {
-      console.error("Error accessing customer portal:", error);
-      toast.error(error.message || "Failed to access billing portal");
-    }
+  const handleConfirmRedirect = () => {
+    window.open("https://billing.stripe.com/p/login/aFa3cw74O4B9bK22tTa7C00", "_blank");
+    setShowRedirectDialog(false);
   };
 
   const isCurrentPlan = (plan: Plan) => {
@@ -169,6 +164,21 @@ const SubscriptionManagement = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="absolute inset-0 bg-gradient-primary opacity-5 blur-3xl" />
+      
+      <AlertDialog open={showRedirectDialog} onOpenChange={setShowRedirectDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Redirecting to Payment Manager</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will be redirected to the XZ1 Payment Manager. Please login using the email that you bought a subscription with.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmRedirect}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       
       <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
