@@ -577,6 +577,7 @@ export type Database = {
           account_manager_name: string | null
           account_manager_phone: string | null
           account_manager_timezone: string | null
+          account_type: string | null
           active_label_id: string | null
           artist_name: string | null
           avatar_url: string | null
@@ -603,6 +604,7 @@ export type Database = {
           account_manager_name?: string | null
           account_manager_phone?: string | null
           account_manager_timezone?: string | null
+          account_type?: string | null
           active_label_id?: string | null
           artist_name?: string | null
           avatar_url?: string | null
@@ -629,6 +631,7 @@ export type Database = {
           account_manager_name?: string | null
           account_manager_phone?: string | null
           account_manager_timezone?: string | null
+          account_type?: string | null
           active_label_id?: string | null
           artist_name?: string | null
           avatar_url?: string | null
