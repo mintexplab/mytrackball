@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface UploadOptions {
@@ -15,23 +14,34 @@ export const useS3Upload = () => {
     setUploading(true);
     
     try {
-      // Convert file to base64
-      const base64 = await fileToBase64(file);
-      
-      // Call edge function
-      const { data, error } = await supabase.functions.invoke('upload-to-s3', {
-        body: {
-          file: {
-            name: file.name,
-            type: file.type,
-            base64: base64.split(',')[1], // Remove data:image/jpeg;base64, prefix
-          },
-          path,
-          oldPath,
+      // Use FormData for efficient streaming upload
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('path', path);
+      if (oldPath) {
+        formData.append('oldPath', oldPath);
+      }
+
+      // Get the Supabase URL and anon key from environment
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      // Make direct fetch call to edge function with FormData
+      const response = await fetch(`${supabaseUrl}/functions/v1/upload-to-s3`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
         },
+        body: formData,
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const data = await response.json();
+      
       if (!data?.success) throw new Error('Upload failed');
 
       return data.url;
@@ -48,14 +58,28 @@ export const useS3Upload = () => {
     setUploading(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('upload-to-s3', {
-        body: {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/upload-to-s3`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           action: 'delete',
           oldPath: path,
-        },
+        }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Delete failed');
+      }
+
+      const data = await response.json();
+      
       if (!data?.success) throw new Error('Delete failed');
 
       return true;
@@ -69,13 +93,4 @@ export const useS3Upload = () => {
   };
 
   return { uploadFile, deleteFile, uploading };
-};
-
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-  });
 };
