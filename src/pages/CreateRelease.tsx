@@ -9,9 +9,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Plus, X, Check, Save } from "lucide-react";
+import { ArrowLeft, Upload, Plus, X, Check, Save, Music, Disc3, Album as AlbumIcon, Trash2 } from "lucide-react";
 import { z } from "zod";
 import { useS3Upload } from "@/hooks/useS3Upload";
+
+type ReleaseType = "single" | "ep" | "album" | null;
+
+interface Track {
+  id: string;
+  title: string;
+  isrc: string;
+  audioFile: File | null;
+  audioUrl: string;
+}
 
 const releaseSchema = z.object({
   songTitle: z.string().min(1, "Song title is required").max(200),
@@ -64,6 +74,8 @@ const COUNTRIES = [
 const CreateRelease = () => {
   const navigate = useNavigate();
   const { uploadFile, uploading, uploadProgress } = useS3Upload();
+  const [releaseType, setReleaseType] = useState<ReleaseType>(null);
+  const [tracks, setTracks] = useState<Track[]>([{ id: "1", title: "", isrc: "", audioFile: null, audioUrl: "" }]);
   const [uploadingFile, setUploadingFile] = useState<'artwork' | 'audio' | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -71,6 +83,13 @@ const CreateRelease = () => {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
   const currentYear = new Date().getFullYear();
+  
+  const getTrackLimit = () => {
+    if (releaseType === "single") return 3;
+    if (releaseType === "ep") return 5;
+    if (releaseType === "album") return 25;
+    return 1;
+  };
   
   // Form data
   const [formData, setFormData] = useState({
@@ -103,7 +122,6 @@ const CreateRelease = () => {
   // Files
   const [artworkFile, setArtworkFile] = useState<File | null>(null);
   const [artworkPreview, setArtworkPreview] = useState<string>("");
-  const [audioFile, setAudioFile] = useState<File | null>(null);
 
   // Contributors
   const [authors, setAuthors] = useState<Contributor[]>([{ id: "1", name: "" }]);
@@ -260,7 +278,64 @@ const CreateRelease = () => {
     }
   };
 
-  const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const generateISRC = async () => {
+    try {
+      const { data: counter, error } = await supabase
+        .from("isrc_counter")
+        .select("*")
+        .single();
+
+      if (error) throw error;
+
+      const year = new Date().getFullYear().toString().slice(-2);
+      const prefix = `CBGNR${year}`;
+      const nextNumber = (counter.last_number + 1).toString().padStart(5, "0");
+      const newIsrc = `${prefix}${nextNumber}`;
+
+      await supabase
+        .from("isrc_counter")
+        .update({ last_number: counter.last_number + 1 })
+        .eq("id", counter.id);
+
+      return newIsrc;
+    } catch (error) {
+      console.error("Error generating ISRC:", error);
+      throw new Error("Failed to generate ISRC");
+    }
+  };
+
+  const addTrack = async () => {
+    if (tracks.length >= getTrackLimit()) {
+      toast.error(`Maximum ${getTrackLimit()} tracks allowed for ${releaseType}`);
+      return;
+    }
+    
+    try {
+      const isrc = await generateISRC();
+      setTracks([...tracks, {
+        id: Date.now().toString(),
+        title: "",
+        isrc,
+        audioFile: null,
+        audioUrl: ""
+      }]);
+      toast.success(`Track added with ISRC: ${isrc}`);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add track");
+    }
+  };
+
+  const removeTrack = (id: string) => {
+    if (tracks.length > 1) {
+      setTracks(tracks.filter(t => t.id !== id));
+    }
+  };
+
+  const updateTrack = (id: string, field: keyof Track, value: any) => {
+    setTracks(tracks.map(t => t.id === id ? { ...t, [field]: value } : t));
+  };
+
+  const handleTrackAudioChange = (trackId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const validTypes = ["audio/wav", "audio/flac", "audio/aiff", "audio/x-ms-wma"];
@@ -269,17 +344,27 @@ const CreateRelease = () => {
         return;
       }
 
-      // Temporary safeguard: edge function has a memory limit, so we cap audio uploads
       const maxSizeBytes = 30 * 1024 * 1024; // 30MB
       if (file.size > maxSizeBytes) {
         toast.error("Audio file is too large. Max size is 30MB for now.");
         return;
       }
 
-      setAudioFile(file);
+      updateTrack(trackId, "audioFile", file);
       toast.success("Audio file selected");
     }
   };
+  
+  // Auto-generate ISRC for first track on release type selection
+  useEffect(() => {
+    if (releaseType && tracks[0] && !tracks[0].isrc) {
+      generateISRC().then(isrc => {
+        updateTrack(tracks[0].id, "isrc", isrc);
+      }).catch(err => {
+        console.error("Failed to generate initial ISRC:", err);
+      });
+    }
+  }, [releaseType]);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -292,8 +377,10 @@ const CreateRelease = () => {
         return;
       }
       
-      if (!audioFile) {
-        toast.error("Please upload audio file");
+      // Check all tracks have audio
+      const missingAudio = tracks.some(t => !t.audioFile);
+      if (missingAudio) {
+        toast.error("Please upload audio files for all tracks");
         setLoading(false);
         return;
       }
@@ -310,33 +397,54 @@ const CreateRelease = () => {
         throw new Error("Artwork upload failed - please try again");
       }
 
-      // Upload audio to S3
+      // Upload all track audio files to S3
       setUploadingFile('audio');
-      const audioPath = `release-audio/${user.id}/${Date.now()}.${audioFile.name.split('.').pop()}`;
-      const audioUrl = await uploadFile({ file: audioFile, path: audioPath });
+      const uploadedTracks = await Promise.all(
+        tracks.map(async (track) => {
+          if (!track.audioFile) return null;
+          const audioPath = `release-audio/${user.id}/${Date.now()}_${track.id}.${track.audioFile.name.split('.').pop()}`;
+          const audioUrl = await uploadFile({ file: track.audioFile, path: audioPath });
+          return { ...track, audioUrl };
+        })
+      );
       setUploadingFile(null);
-      if (!audioUrl) {
-        throw new Error("Audio upload failed - please try again");
+
+      const failedUploads = uploadedTracks.filter(t => !t || !t.audioUrl);
+      if (failedUploads.length > 0) {
+        throw new Error("Some audio uploads failed - please try again");
       }
 
       // Create release
-      const { error: releaseError } = await supabase.from("releases").insert({
+      const { data: release, error: releaseError } = await supabase.from("releases").insert({
         user_id: user.id,
         title: validatedData.songTitle,
         artist_name: validatedData.artistName,
         genre: validatedData.genre,
         release_date: validatedData.digitalReleaseDate,
         artwork_url: artworkUrl,
-        audio_file_url: audioUrl,
+        audio_file_url: uploadedTracks[0]?.audioUrl || null,
         copyright_line: validatedData.cLine,
         phonographic_line: validatedData.pLine,
         featured_artists: validatedData.featuringArtists ? validatedData.featuringArtists.split(",").map(a => a.trim()) : [],
         label_name: validatedData.label,
         notes: validatedData.additionalNotes,
+        isrc: uploadedTracks[0]?.isrc || null,
         status: 'pending'
-      });
+      }).select().single();
 
       if (releaseError) throw releaseError;
+
+      // Create track entries
+      const trackData = uploadedTracks.map((track, index) => ({
+        release_id: release.id,
+        track_number: index + 1,
+        title: track!.title || validatedData.songTitle,
+        isrc: track!.isrc,
+        audio_file_url: track!.audioUrl
+      }));
+
+      const { error: tracksError } = await supabase.from("tracks").insert(trackData);
+      if (tracksError) throw tracksError;
 
       // Clear draft after successful submission
       localStorage.removeItem('release-draft');
@@ -364,6 +472,68 @@ const CreateRelease = () => {
     { number: 6, title: "Additional Notes" }
   ];
 
+  // Selection screen
+  if (!releaseType) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-4xl border-primary/20">
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl font-bold mb-2">Create Submission</CardTitle>
+            <CardDescription className="text-lg">Create a new submission</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-8">
+              <button
+                onClick={() => setReleaseType("single")}
+                className="group relative overflow-hidden rounded-lg border-2 border-border hover:border-primary/50 transition-all duration-300 bg-background/50 hover:bg-background p-8 flex flex-col items-center justify-center gap-4 min-h-[280px]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Music className="w-20 h-20 text-primary group-hover:scale-110 transition-transform relative z-10" />
+                <div className="text-center relative z-10">
+                  <h3 className="text-2xl font-bold mb-2">Create Single</h3>
+                  <p className="text-muted-foreground">Create a single submission</p>
+                  <p className="text-sm text-muted-foreground mt-2">Max 3 tracks</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setReleaseType("ep")}
+                className="group relative overflow-hidden rounded-lg border-2 border-border hover:border-primary/50 transition-all duration-300 bg-background/50 hover:bg-background p-8 flex flex-col items-center justify-center gap-4 min-h-[280px]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Disc3 className="w-20 h-20 text-primary group-hover:scale-110 transition-transform relative z-10" />
+                <div className="text-center relative z-10">
+                  <h3 className="text-2xl font-bold mb-2">Create EP</h3>
+                  <p className="text-muted-foreground">Create an EP submission</p>
+                  <p className="text-sm text-muted-foreground mt-2">Max 5 tracks</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setReleaseType("album")}
+                className="group relative overflow-hidden rounded-lg border-2 border-border hover:border-primary/50 transition-all duration-300 bg-background/50 hover:bg-background p-8 flex flex-col items-center justify-center gap-4 min-h-[280px]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <AlbumIcon className="w-20 h-20 text-primary group-hover:scale-110 transition-transform relative z-10" />
+                <div className="text-center relative z-10">
+                  <h3 className="text-2xl font-bold mb-2">Create Album</h3>
+                  <p className="text-muted-foreground">Create an album submission</p>
+                  <p className="text-sm text-muted-foreground mt-2">Max 25 tracks</p>
+                </div>
+              </button>
+            </div>
+            <div className="flex justify-center mt-6">
+              <Button variant="outline" onClick={() => navigate("/dashboard")}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Dashboard
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
@@ -372,7 +542,7 @@ const CreateRelease = () => {
             <Button variant="ghost" onClick={() => navigate("/dashboard")}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-xl font-bold">Submit New Release</h1>
+            <h1 className="text-xl font-bold">Submit New {releaseType.charAt(0).toUpperCase() + releaseType.slice(1)}</h1>
           </div>
           
           <div className="flex items-center gap-2">
@@ -647,32 +817,88 @@ const CreateRelease = () => {
           </Card>
         )}
 
-        {/* Step 3: Upload Audio */}
+        {/* Step 3: Upload Audio Files & Track Management */}
         {currentStep === 3 && (
           <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
             <CardHeader>
-              <CardTitle>Upload Audio File</CardTitle>
-              <CardDescription>Upload your audio file</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
-                <input
-                  type="file"
-                  id="audio"
-                  accept="audio/wav,audio/flac,audio/aiff,audio/x-ms-wma"
-                  onChange={handleAudioChange}
-                  className="hidden"
-                />
-                <label htmlFor="audio" className="cursor-pointer">
-                  <div className="space-y-2">
-                    <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
-                    <p className="text-muted-foreground">
-                      {audioFile ? audioFile.name : "Select an audio file or drag here to upload"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">WAV (PCM), FLAC, AIFF, WMA (Lossless) only</p>
-                  </div>
-                </label>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Upload Audio Files & Tracks</CardTitle>
+                  <CardDescription>Upload your audio files and manage tracks ({tracks.length}/{getTrackLimit()} tracks)</CardDescription>
+                </div>
+                {tracks.length < getTrackLimit() && (
+                  <Button onClick={addTrack} variant="outline" size="sm">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Track
+                  </Button>
+                )}
               </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {tracks.map((track, index) => (
+                <Card key={track.id} className="p-4 border-border/50">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <Music className="w-5 h-5 text-primary" />
+                        <h3 className="font-semibold">Track {index + 1}</h3>
+                      </div>
+                      {tracks.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeTrack(track.id)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor={`track-title-${track.id}`}>Track Title</Label>
+                      <Input
+                        id={`track-title-${track.id}`}
+                        value={track.title}
+                        onChange={(e) => updateTrack(track.id, "title", e.target.value)}
+                        placeholder="Track Name"
+                        className="bg-background/50"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor={`track-isrc-${track.id}`}>ISRC Code</Label>
+                      <Input
+                        id={`track-isrc-${track.id}`}
+                        value={track.isrc}
+                        disabled
+                        className="bg-background/50"
+                      />
+                      <p className="text-xs text-muted-foreground">Auto-generated</p>
+                    </div>
+
+                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                      <input
+                        type="file"
+                        id={`audio-${track.id}`}
+                        accept="audio/wav,audio/flac,audio/aiff,audio/x-ms-wma"
+                        onChange={(e) => handleTrackAudioChange(track.id, e)}
+                        className="hidden"
+                      />
+                      <label htmlFor={`audio-${track.id}`} className="cursor-pointer">
+                        <div className="space-y-2">
+                          <Upload className="w-10 h-10 mx-auto text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">
+                            {track.audioFile ? track.audioFile.name : "Select an audio file or drag here to upload"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">WAV (PCM), FLAC, AIFF, WMA (Lossless) only</p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </CardContent>
           </Card>
         )}
