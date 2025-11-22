@@ -150,8 +150,9 @@ const Auth = () => {
           error
         });
         if (error) throw error;
-        toast.success("Account created! Redirecting...");
-        navigate("/dashboard");
+        toast.success("Account created! Setting up security...");
+        // Redirect to 2FA setup for new accounts
+        navigate("/setup-2fa");
       }
     } catch (error: any) {
       console.error("Auth error", error);
