@@ -34,51 +34,11 @@ import { OnboardingTutorial } from "@/components/OnboardingTutorial";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { SparkleBeads } from "@/components/SparkleBeads";
-
-const QuickStatsGrid = ({ userId }: { userId?: string }) => {
-  const [releases, setReleases] = useState<any[]>([]);
-  
-  useEffect(() => {
-    const fetchReleases = async () => {
-      if (!userId) return;
-      
-      const { data } = await supabase
-        .from("releases")
-        .select("*")
-        .eq("user_id", userId);
-      
-      setReleases(data || []);
-    };
-    
-    fetchReleases();
-  }, [userId]);
-  
-  const delivered = releases.filter(r => r.status === "delivering").length;
-  const approved = releases.filter(r => r.status === "approved").length;
-  const drafts = releases.filter(r => !r.status || r.status === "rejected").length;
-  const processing = releases.filter(r => r.status === "pending").length;
-  
-  return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-      <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
-        <p className="text-xs sm:text-sm text-muted-foreground text-left">Delivered</p>
-        <p className="text-xl sm:text-2xl font-bold text-foreground text-left">{delivered}</p>
-      </div>
-      <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
-        <p className="text-xs sm:text-sm text-muted-foreground text-left">Approved</p>
-        <p className="text-xl sm:text-2xl font-bold text-foreground text-left">{approved}</p>
-      </div>
-      <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
-        <p className="text-xs sm:text-sm text-muted-foreground text-left">Drafts</p>
-        <p className="text-xl sm:text-2xl font-bold text-foreground text-left">{drafts}</p>
-      </div>
-      <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
-        <p className="text-xs sm:text-sm text-muted-foreground text-left">Processing</p>
-        <p className="text-xl sm:text-2xl font-bold text-foreground text-left">{processing}</p>
-      </div>
-    </div>
-  );
-};
+import { DraggableDashboardBlocks } from "@/components/DraggableDashboardBlocks";
+import { QuickStatsBlock } from "@/components/dashboard/QuickStatsBlock";
+import { YourReleasesBlock } from "@/components/dashboard/YourReleasesBlock";
+import { YourPlanBlock } from "@/components/dashboard/YourPlanBlock";
+import { AccountManagerBlock } from "@/components/dashboard/AccountManagerBlock";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -548,41 +508,17 @@ const Dashboard = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
 
           <TabsContent value="overview" className="space-y-4 sm:space-y-6 animate-fade-in">
-            <Collapsible defaultOpen>
-              <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-                <CollapsibleTrigger className="w-full">
-                  <CardHeader className="pb-3 sm:pb-6 cursor-pointer hover:bg-muted/30 transition-colors">
-                    <CardTitle className="text-lg sm:text-2xl font-bold text-left">Quick Stats</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm text-left">Your distribution overview</CardDescription>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="space-y-3 sm:space-y-4">
-                    <QuickStatsGrid userId={user?.id} />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-
-            <Collapsible defaultOpen>
-              <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-                <CollapsibleTrigger className="w-full">
-                  <CardHeader className="pb-3 sm:pb-6 cursor-pointer hover:bg-muted/30 transition-colors">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                      <div className="min-w-0">
-                        <CardTitle className="text-lg sm:text-2xl font-bold text-left">Your Releases</CardTitle>
-                        <CardDescription className="text-xs sm:text-sm text-left">Manage your music distribution</CardDescription>
-                      </div>
-                      <Button onClick={(e) => { e.stopPropagation(); navigate("/create-release"); }} className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow w-full sm:w-auto text-sm" data-tutorial="create-release">
-                        <Plus className="w-4 h-4 mr-2" />
-                        New Release
-                      </Button>
-                    </div>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent>
-                    <ReleasesGallery
+            <DraggableDashboardBlocks
+              blocks={[
+                {
+                  id: "quick-stats",
+                  component: <QuickStatsBlock userId={user?.id} />,
+                  visible: true,
+                },
+                {
+                  id: "your-releases",
+                  component: (
+                    <YourReleasesBlock
                       userId={user?.id}
                       onReleaseClick={(id) => {
                         setSelectedCatalogReleaseId(id);
@@ -593,86 +529,30 @@ const Dashboard = () => {
                         }
                       }}
                     />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-
-            {/* Drafts Section */}
-            <Collapsible defaultOpen>
-              <DraftManagement />
-            </Collapsible>
-
-            {userPlan?.plan.name === "Trackball Prestige" && profile?.account_manager_name && (
-              <Collapsible defaultOpen>
-                <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-                  <CollapsibleTrigger className="w-full">
-                    <CardHeader className="pb-3 sm:pb-6 cursor-pointer hover:bg-muted/30 transition-colors">
-                      <CardTitle className="text-lg sm:text-2xl font-bold text-left">Account Manager</CardTitle>
-                      <CardDescription className="text-xs sm:text-sm text-left">Your dedicated support contact</CardDescription>
-                    </CardHeader>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <CardContent>
-                      <AccountManagerCard managerName={profile?.account_manager_name} managerEmail={profile?.account_manager_email} managerPhone={profile?.account_manager_phone} managerTimezone={profile?.account_manager_timezone} userTimezone={profile?.user_timezone || "America/New_York"} />
-                    </CardContent>
-                  </CollapsibleContent>
-                </Card>
-              </Collapsible>
-            )}
-
-            <Collapsible defaultOpen>
-              <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-                <CollapsibleTrigger className="w-full">
-                  <CardHeader className="pb-3 sm:pb-6 cursor-pointer hover:bg-muted/30 transition-colors">
-                    <div className="flex justify-between items-start gap-3">
-                      <div className="min-w-0">
-                        <CardTitle className="text-lg sm:text-2xl font-bold text-left">Your Plan</CardTitle>
-                        <CardDescription className="text-xs sm:text-sm text-left">Current distribution plan</CardDescription>
-                      </div>
-                      <Package className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
-                    </div>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="space-y-3 sm:space-y-4">
-                    <div>
-                      <Badge className="bg-gradient-primary text-white px-2 sm:px-3 py-1 text-xs sm:text-sm">
-                        {userPlan?.plan.name || "Trackball Free"}
-                      </Badge>
-                    </div>
-                    {userPlan ? (
-                      <>
-                        <p className="text-sm sm:text-base text-muted-foreground">{userPlan.plan.description}</p>
-                        {userPlan.plan.name === "Trackball Partner" ? (
-                          <div className="pt-3 sm:pt-4 border-t border-border">
-                            <div className="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
-                              <p className="text-sm sm:text-base text-foreground">
-                                You have a custom partner deal with Trackball Distribution, please ask your label manager about deal offerings
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="pt-3 sm:pt-4 border-t border-border">
-                            <p className="text-xs sm:text-sm font-medium mb-2">Plan Features:</p>
-                            <ul className="space-y-1 text-xs sm:text-sm text-muted-foreground">
-                              {userPlan.plan.features?.map((feature: string, index: number) => (
-                                <li key={index} className="flex items-start gap-2">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 flex-shrink-0" />
-                                  <span className="flex-1">{feature}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-sm sm:text-base text-muted-foreground">Basic distribution plan with essential features</p>
-                    )}
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+                  ),
+                  visible: true,
+                },
+                {
+                  id: "drafts",
+                  component: (
+                    <Collapsible defaultOpen>
+                      <DraftManagement />
+                    </Collapsible>
+                  ),
+                  visible: true,
+                },
+                {
+                  id: "account-manager",
+                  component: <AccountManagerBlock profile={profile} />,
+                  visible: !!(userPlan?.plan.name === "Trackball Prestige" && profile?.account_manager_name),
+                },
+                {
+                  id: "your-plan",
+                  component: <YourPlanBlock userPlan={userPlan} />,
+                  visible: true,
+                },
+              ]}
+            />
           </TabsContent>
 
           <TabsContent id="catalog-tab-content" value="catalog" className="animate-fade-in">
