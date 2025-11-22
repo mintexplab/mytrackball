@@ -19,9 +19,7 @@ interface ParsedRelease {
   featured_artists?: string;
   copyright_line?: string;
   phonographic_line?: string;
-  courtesy_line?: string;
   catalog_number?: string;
-  distributor?: string;
   audioFile?: File;
   artworkFile?: File;
   audioPreviewUrl?: string;
@@ -47,13 +45,11 @@ const BulkUploadTab = ({ userId }: { userId: string }) => {
       "featured_artists",
       "copyright_line",
       "phonographic_line",
-      "courtesy_line",
-      "catalog_number",
-      "distributor"
+      "catalog_number"
     ];
     
     const csvContent = headers.join(",") + "\n" + 
-      "Example Song,Example Artist,Pop,2025-12-31,Example Label,123456789012,Featured Artist,© 2025 Example,℗ 2025 Example,Courtesy of Example,CAT001,Believe Music";
+      "Example Song,Example Artist,Pop,2025-12-31,Example Label,123456789012,Featured Artist,© 2025 Example,℗ 2025 Example,CAT001";
     
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
@@ -95,9 +91,7 @@ const BulkUploadTab = ({ userId }: { userId: string }) => {
           featured_artists: values[6] || undefined,
           copyright_line: values[7] || undefined,
           phonographic_line: values[8] || undefined,
-          courtesy_line: values[9] || undefined,
-          catalog_number: values[10] || undefined,
-          distributor: values[11] || undefined,
+          catalog_number: values[9] || undefined,
           uploadStatus: 'pending'
         };
         
@@ -186,9 +180,7 @@ const BulkUploadTab = ({ userId }: { userId: string }) => {
           featured_artists: release.featured_artists ? [release.featured_artists] : null,
           copyright_line: release.copyright_line,
           phonographic_line: release.phonographic_line,
-          courtesy_line: release.courtesy_line,
           catalog_number: release.catalog_number,
-          distributor: release.distributor,
           artwork_url: artworkUrl,
           audio_file_url: audioUrl,
           status: 'pending'

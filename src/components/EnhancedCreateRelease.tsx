@@ -35,12 +35,6 @@ const releaseSchema = z.object({
   copyright_line: z.string().trim().max(200, "Copyright line must be less than 200 characters").optional(),
   phonographic_line: z.string().trim().max(200, "Phonographic line must be less than 200 characters").optional(),
   featured_artists: z.string().trim().max(500, "Featured artists must be less than 500 characters").optional(),
-  courtesy_line: z.string().trim().max(200, "Courtesy line must be less than 200 characters").optional(),
-  is_multi_disc: z.boolean(),
-  disc_number: z.number().int().min(1).max(99),
-  volume_number: z.number().int().min(1).max(99),
-  total_discs: z.number().int().min(1).max(99),
-  total_volumes: z.number().int().min(1).max(99),
   notes: z.string().trim().max(2000, "Notes must be less than 2000 characters").optional(),
   catalog_number: z.string().trim().max(100, "Catalog number must be less than 100 characters").optional(),
 });
@@ -76,12 +70,6 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     copyright_line: "",
     phonographic_line: "",
     featured_artists: "",
-    courtesy_line: "",
-    is_multi_disc: false,
-    disc_number: 1,
-    volume_number: 1,
-    total_discs: 1,
-    total_volumes: 1,
     notes: "",
     catalog_number: "",
   });
@@ -179,13 +167,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
           artwork_url: artworkUrl,
           copyright_line: validatedRelease.copyright_line || null,
           phonographic_line: validatedRelease.phonographic_line || null,
-          courtesy_line: validatedRelease.courtesy_line || null,
           featured_artists: validatedRelease.featured_artists ? validatedRelease.featured_artists.split(",").map(a => a.trim()) : [],
-          is_multi_disc: validatedRelease.is_multi_disc,
-          disc_number: validatedRelease.disc_number,
-          volume_number: validatedRelease.volume_number,
-          total_discs: validatedRelease.total_discs,
-          total_volumes: validatedRelease.total_volumes,
           notes: validatedRelease.notes || null,
           catalog_number: validatedRelease.catalog_number || null,
         })
@@ -236,12 +218,6 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
       copyright_line: "",
       phonographic_line: "",
       featured_artists: "",
-      courtesy_line: "",
-      is_multi_disc: false,
-      disc_number: 1,
-      volume_number: 1,
-      total_discs: 1,
-      total_volumes: 1,
       notes: "",
       catalog_number: "",
     });
@@ -409,84 +385,6 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
                   className="bg-background/50 border-border"
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="courtesy_line">Courtesy Line</Label>
-                <Input
-                  id="courtesy_line"
-                  placeholder="Courtesy of..."
-                  value={formData.courtesy_line}
-                  onChange={(e) => setFormData({ ...formData, courtesy_line: e.target.value })}
-                  className="bg-background/50 border-border"
-                />
-              </div>
-            </div>
-          </Card>
-
-          {/* Multi-disc/Volume Options */}
-          <Card className="p-4 border-border">
-            <h3 className="font-semibold mb-4 text-primary">Multi-Disc/Volume Release</h3>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="is_multi_disc"
-                  checked={formData.is_multi_disc}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_multi_disc: checked as boolean })}
-                />
-                <Label htmlFor="is_multi_disc">This is a multi-disc or multi-volume release</Label>
-              </div>
-
-              {formData.is_multi_disc && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="disc_number">Disc Number</Label>
-                    <Input
-                      id="disc_number"
-                      type="number"
-                      min="1"
-                      value={formData.disc_number}
-                      onChange={(e) => setFormData({ ...formData, disc_number: parseInt(e.target.value) })}
-                      className="bg-background/50 border-border"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="total_discs">Total Discs</Label>
-                    <Input
-                      id="total_discs"
-                      type="number"
-                      min="1"
-                      value={formData.total_discs}
-                      onChange={(e) => setFormData({ ...formData, total_discs: parseInt(e.target.value) })}
-                      className="bg-background/50 border-border"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="volume_number">Volume Number</Label>
-                    <Input
-                      id="volume_number"
-                      type="number"
-                      min="1"
-                      value={formData.volume_number}
-                      onChange={(e) => setFormData({ ...formData, volume_number: parseInt(e.target.value) })}
-                      className="bg-background/50 border-border"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="total_volumes">Total Volumes</Label>
-                    <Input
-                      id="total_volumes"
-                      type="number"
-                      min="1"
-                      value={formData.total_volumes}
-                      onChange={(e) => setFormData({ ...formData, total_volumes: parseInt(e.target.value) })}
-                      className="bg-background/50 border-border"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
           </Card>
 
