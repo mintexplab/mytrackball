@@ -213,7 +213,7 @@ const Dashboard = () => {
     };
   }, [user?.id]);
 
-  // Listen for profile changes (termination status)
+  // Listen for profile changes (termination status AND avatar updates)
   useEffect(() => {
     if (!user?.id) return;
 
@@ -227,8 +227,10 @@ const Dashboard = () => {
           table: 'profiles',
           filter: `id=eq.${user.id}`
         },
-        () => {
+        (payload) => {
           checkTerminationStatus(user.id);
+          // Also refresh profile to get updated avatar_url
+          fetchUserPlan(user.id);
         }
       )
       .subscribe();
