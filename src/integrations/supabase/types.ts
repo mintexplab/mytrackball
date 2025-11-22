@@ -267,6 +267,7 @@ export type Database = {
           end_time: string
           id: string
           is_active: boolean
+          maintenance_type: string
           reason: string
           start_time: string
           updated_at: string | null
@@ -277,6 +278,7 @@ export type Database = {
           end_time: string
           id?: string
           is_active?: boolean
+          maintenance_type?: string
           reason: string
           start_time: string
           updated_at?: string | null
@@ -287,6 +289,7 @@ export type Database = {
           end_time?: string
           id?: string
           is_active?: boolean
+          maintenance_type?: string
           reason?: string
           start_time?: string
           updated_at?: string | null

@@ -9,7 +9,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Mail, LogOut } from "lucide-react";
+import { AlertTriangle, Mail, LogOut, ShieldAlert } from "lucide-react";
 import { format } from "date-fns";
 
 interface MaintenanceDialogProps {
@@ -68,6 +68,7 @@ export const MaintenanceDialog = ({ userId, onSignOut }: MaintenanceDialogProps)
 
   if (!maintenanceSettings) return null;
 
+  const isSecurityMode = maintenanceSettings.maintenance_type === 'security';
   const startTime = new Date(maintenanceSettings.start_time);
   const endTime = new Date(maintenanceSettings.end_time);
 
@@ -80,34 +81,54 @@ export const MaintenanceDialog = ({ userId, onSignOut }: MaintenanceDialogProps)
         <AlertDialogHeader>
           <div className="flex items-center justify-center mb-4">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <AlertTriangle className="w-8 h-8 text-primary" />
+              {isSecurityMode ? (
+                <ShieldAlert className="w-8 h-8 text-primary" />
+              ) : (
+                <AlertTriangle className="w-8 h-8 text-primary" />
+              )}
             </div>
           </div>
           <AlertDialogTitle className="text-center text-2xl">
-            My Trackball is currently under maintenance
+            {isSecurityMode 
+              ? "Trackball Distribution has been disabled due to a security issue"
+              : "My Trackball is currently under maintenance"
+            }
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center space-y-4 pt-4">
-            <div className="text-base">
-              <p className="font-semibold text-foreground mb-2">Maintenance Window:</p>
-              <p className="text-muted-foreground">
-                {format(startTime, "MM/dd/yyyy")} at {format(startTime, "HH:mm")}
-              </p>
-              <p className="text-muted-foreground mb-3">to</p>
-              <p className="text-muted-foreground">
-                {format(endTime, "MM/dd/yyyy")} at {format(endTime, "HH:mm")}
-              </p>
-            </div>
-            
-            {maintenanceSettings.reason && (
-              <div className="p-4 bg-muted/50 rounded-lg border border-border">
-                <p className="font-semibold text-foreground mb-2">Reason:</p>
-                <p className="text-sm text-muted-foreground">{maintenanceSettings.reason}</p>
-              </div>
-            )}
+            {isSecurityMode ? (
+              <>
+                <p className="text-base text-muted-foreground">
+                  Your releases are not affected, we are currently resolving the situation as soon as we can.
+                </p>
+                <p className="text-base text-muted-foreground">
+                  You will receive an email when Trackball Distribution is unlocked.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-base">
+                  <p className="font-semibold text-foreground mb-2">Maintenance Window:</p>
+                  <p className="text-muted-foreground">
+                    {format(startTime, "MM/dd/yyyy")} at {format(startTime, "HH:mm")}
+                  </p>
+                  <p className="text-muted-foreground mb-3">to</p>
+                  <p className="text-muted-foreground">
+                    {format(endTime, "MM/dd/yyyy")} at {format(endTime, "HH:mm")}
+                  </p>
+                </div>
+                
+                {maintenanceSettings.reason && (
+                  <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                    <p className="font-semibold text-foreground mb-2">Reason:</p>
+                    <p className="text-sm text-muted-foreground">{maintenanceSettings.reason}</p>
+                  </div>
+                )}
 
-            <p className="text-sm text-muted-foreground">
-              If you need any assistance, contact support by clicking the button below.
-            </p>
+                <p className="text-sm text-muted-foreground">
+                  If you need any assistance, contact support by clicking the button below.
+                </p>
+              </>
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex flex-col gap-2">

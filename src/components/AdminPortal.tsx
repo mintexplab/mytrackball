@@ -155,18 +155,14 @@ const AdminPortal = ({
                 <DropdownMenuContent align="end" className="w-56 bg-card border-border">
                   <DropdownMenuLabel>System Settings</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setActiveTab("managers")} className="cursor-pointer">
-                    <Users className="w-4 h-4 mr-2" />
-                    Account Managers
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab("labels")} className="cursor-pointer">
-                    <Building2 className="w-4 h-4 mr-2" />
-                    Label Accounts
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab("invite-artists")} className="cursor-pointer">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Invite Artists
-                  </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveTab("managers")} className="cursor-pointer">
+                <Users className="w-4 h-4 mr-2" />
+                Account Managers
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveTab("invite-artists")} className="cursor-pointer">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Invite Artists
+              </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActiveTab("invite-labels")} className="cursor-pointer">
                     <Building2 className="w-4 h-4 mr-2" />
                     Invite Labels
@@ -213,7 +209,6 @@ const AdminPortal = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-card border-border">
                 <DropdownMenuItem onClick={() => setActiveTab("managers")}>Managers</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab("labels")}>Labels</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("invite-artists")}>Invite Artists</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("invite-labels")}>Invite Labels</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("announcements")}>Announcements</DropdownMenuItem>
@@ -245,10 +240,6 @@ const AdminPortal = ({
                 <ReleasesList isAdmin={true} />
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="labels">
-            <SubaccountManagement />
           </TabsContent>
 
           <TabsContent value="invite-artists">
