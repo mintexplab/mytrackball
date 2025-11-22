@@ -262,6 +262,14 @@ const CreateRelease = () => {
         toast.error("Only WAV, FLAC, AIFF, or WMA (Lossless) files are allowed");
         return;
       }
+
+      // Temporary safeguard: edge function has a memory limit, so we cap audio uploads
+      const maxSizeBytes = 30 * 1024 * 1024; // 30MB
+      if (file.size > maxSizeBytes) {
+        toast.error("Audio file is too large. Max size is 30MB for now.");
+        return;
+      }
+
       setAudioFile(file);
       toast.success("Audio file selected");
     }
