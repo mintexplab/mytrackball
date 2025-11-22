@@ -9,7 +9,12 @@ import { Shield, Smartphone, CheckCircle2, XCircle, Copy } from "lucide-react";
 import { toast } from "sonner";
 import QRCode from "qrcode";
 
-export const TwoFactorAuth = () => {
+interface TwoFactorAuthProps {
+  onSetupComplete?: () => void;
+  autoStartEnrollment?: boolean;
+}
+
+export const TwoFactorAuth = ({ onSetupComplete, autoStartEnrollment = false }: TwoFactorAuthProps = {}) => {
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [qrCode, setQrCode] = useState("");
@@ -20,7 +25,10 @@ export const TwoFactorAuth = () => {
 
   useEffect(() => {
     checkMfaStatus();
-  }, []);
+    if (autoStartEnrollment && !mfaEnabled) {
+      startEnrollment();
+    }
+  }, [autoStartEnrollment]);
 
   const checkMfaStatus = async () => {
     try {
@@ -87,6 +95,11 @@ export const TwoFactorAuth = () => {
       setQrCode("");
       setSecret("");
       setVerificationCode("");
+      
+      // Call optional callback for setup completion
+      if (onSetupComplete) {
+        onSetupComplete();
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to verify code");
     } finally {

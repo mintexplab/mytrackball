@@ -30,6 +30,7 @@ import { DraftManagement } from "@/components/DraftManagement";
 import { AdvancedCatalogManagement } from "@/components/AdvancedCatalogManagement";
 import { FloatingAudioPlayer } from "@/components/FloatingAudioPlayer";
 import { MobileMenu } from "@/components/MobileMenu";
+import { OnboardingTutorial } from "@/components/OnboardingTutorial";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const QuickStatsGrid = ({ userId }: { userId?: string }) => {
@@ -100,6 +101,7 @@ const Dashboard = () => {
     artist: string;
   } | null>(null);
   const [viewAsArtist, setViewAsArtist] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   useEffect(() => {
@@ -117,7 +119,7 @@ const Dashboard = () => {
         }, 0);
       }
     });
-    supabase.auth.getSession().then(({
+    supabase.auth.getSession().then(async ({
       data: {
         session
       }
@@ -128,6 +130,18 @@ const Dashboard = () => {
         // Check termination and maintenance FIRST, before loader
         checkTerminationStatus(session.user.id);
         checkMaintenanceMode(session.user.id);
+        
+        // Check if user has completed 2FA setup (mandatory for all accounts)
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("mfa_setup_completed")
+          .eq("id", session.user.id)
+          .single();
+        
+        if (!profileData?.mfa_setup_completed) {
+          navigate("/setup-2fa");
+          return;
+        }
         
         // Check if loader has been shown this session
         const loaderShown = sessionStorage.getItem('loginLoaderShown');
@@ -276,6 +290,16 @@ const Dashboard = () => {
     } = await supabase.from("profiles").select("*").eq("id", userId).single();
     setProfile(profileData);
 
+    // Check if onboarding should be shown (only for non-admin, first-time users)
+    const { data: isAdminData } = await supabase.rpc('has_role', {
+      _user_id: userId,
+      _role: 'admin'
+    });
+    
+    if (!isAdminData && !profileData?.onboarding_completed && profileData?.mfa_setup_completed) {
+      setShowOnboarding(true);
+    }
+
     // If user has a parent account, fetch parent account details
     if (profileData?.parent_account_id) {
       const { data: parentData } = await supabase
@@ -387,6 +411,7 @@ const Dashboard = () => {
                 size="sm" 
                 onClick={() => setActiveTab("overview")}
                 className={activeTab === "overview" ? "bg-gradient-primary text-primary-foreground" : ""}
+                data-tutorial="overview-tab"
               >
                 <Package className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Overview</span>
@@ -404,7 +429,7 @@ const Dashboard = () => {
                 <DropdownMenuContent align="end" className="w-56 bg-card border-border">
                   <DropdownMenuLabel>Release Management</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setActiveTab("catalog")} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => setActiveTab("catalog")} className="cursor-pointer" data-tutorial="catalog-tab">
                     <Package className="w-4 h-4 mr-2" />
                     Catalog
                   </DropdownMenuItem>
@@ -432,6 +457,7 @@ const Dashboard = () => {
                 size="sm" 
                 onClick={() => setActiveTab("notifications")}
                 className={activeTab === "notifications" ? "bg-gradient-primary text-primary-foreground" : ""}
+                data-tutorial="notifications-tab"
               >
                 <Bell className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Notifications</span>
@@ -449,7 +475,7 @@ const Dashboard = () => {
                 <DropdownMenuContent align="end" className="w-56 bg-card border-border">
                   <DropdownMenuLabel>Financial Management</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setActiveTab("royalties")} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => setActiveTab("royalties")} className="cursor-pointer" data-tutorial="royalties-tab">
                     <DollarSign className="w-4 h-4 mr-2" />
                     Royalties
                   </DropdownMenuItem>
@@ -502,6 +528,7 @@ const Dashboard = () => {
                   artistName={profile?.artist_name}
                   fullName={profile?.full_name}
                   onSignOut={handleSignOut} 
+                  data-tutorial="profile-dropdown"
                 />
               </div>
             </div>
@@ -542,7 +569,7 @@ const Dashboard = () => {
                         <CardTitle className="text-lg sm:text-2xl font-bold text-left">Your Releases</CardTitle>
                         <CardDescription className="text-xs sm:text-sm text-left">Manage your music distribution</CardDescription>
                       </div>
-                      <Button onClick={(e) => { e.stopPropagation(); navigate("/create-release"); }} className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow w-full sm:w-auto text-sm">
+                      <Button onClick={(e) => { e.stopPropagation(); navigate("/create-release"); }} className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow w-full sm:w-auto text-sm" data-tutorial="create-release">
                         <Plus className="w-4 h-4 mr-2" />
                         New Release
                       </Button>
@@ -743,6 +770,14 @@ const Dashboard = () => {
           title={floatingPlayer.title}
           artist={floatingPlayer.artist}
           onClose={() => setFloatingPlayer(null)}
+        />
+      )}
+
+      {/* Onboarding Tutorial */}
+      {showOnboarding && (
+        <OnboardingTutorial
+          onComplete={() => setShowOnboarding(false)}
+          onSkip={() => setShowOnboarding(false)}
         />
       )}
     </div>;

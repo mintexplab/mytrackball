@@ -418,6 +418,8 @@ export type Database = {
           is_locked: boolean | null
           label_id: string | null
           label_name: string | null
+          mfa_setup_completed: boolean | null
+          onboarding_completed: boolean | null
           parent_account_id: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -440,6 +442,8 @@ export type Database = {
           is_locked?: boolean | null
           label_id?: string | null
           label_name?: string | null
+          mfa_setup_completed?: boolean | null
+          onboarding_completed?: boolean | null
           parent_account_id?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -462,6 +466,8 @@ export type Database = {
           is_locked?: boolean | null
           label_id?: string | null
           label_name?: string | null
+          mfa_setup_completed?: boolean | null
+          onboarding_completed?: boolean | null
           parent_account_id?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null

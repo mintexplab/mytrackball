@@ -12,6 +12,7 @@ import SubscriptionManagement from "./pages/SubscriptionManagement";
 import AcceptInvitation from "./pages/AcceptInvitation";
 import AcceptLabelInvitation from "./pages/AcceptLabelInvitation";
 import ReleaseDetails from "./pages/ReleaseDetails";
+import SetupTwoFactor from "./pages/SetupTwoFactor";
 import NotFound from "./pages/NotFound";
 import Footer from "./components/Footer";
 
@@ -29,6 +30,7 @@ const App = () => {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/setup-2fa" element={<SetupTwoFactor />} />
                 <Route path="/accept-invitation" element={<AcceptInvitation />} />
                 <Route path="/accept-label-invitation" element={<AcceptLabelInvitation />} />
                 <Route path="/dashboard" element={<Dashboard />} />

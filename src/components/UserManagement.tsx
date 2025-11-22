@@ -331,6 +331,7 @@ const UserManagement = () => {
                 <TableHead>Ban</TableHead>
                 <TableHead>Lock</TableHead>
                 <TableHead>Delete</TableHead>
+                <TableHead>Tutorial</TableHead>
                 <TableHead>Notify</TableHead>
               </TableRow>
             </TableHeader>
@@ -441,6 +442,23 @@ const UserManagement = () => {
                       className="text-destructive hover:text-destructive"
                     >
                       <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        await supabase
+                          .from("profiles")
+                          .update({ onboarding_completed: false })
+                          .eq("id", user.id);
+                        toast.success("Tutorial will start on next login");
+                      }}
+                      className="gap-2"
+                      title="Reset tutorial for this user"
+                    >
+                      Start Tutorial
                     </Button>
                   </TableCell>
                   <TableCell>
