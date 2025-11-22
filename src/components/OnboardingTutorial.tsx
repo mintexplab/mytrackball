@@ -90,22 +90,54 @@ export const OnboardingTutorial = ({ onComplete, onSkip }: OnboardingTutorialPro
   const [highlightStyle, setHighlightStyle] = useState<any>({});
 
   useEffect(() => {
-    updateHighlight();
+    // Use requestAnimationFrame to ensure DOM is ready
+    const timer = setTimeout(() => {
+      updateHighlight();
+    }, 100);
+    
+    // Update on window resize or scroll
+    const handleUpdate = () => updateHighlight();
+    window.addEventListener('resize', handleUpdate);
+    window.addEventListener('scroll', handleUpdate, true);
+    
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleUpdate);
+      window.removeEventListener('scroll', handleUpdate, true);
+    };
   }, [currentStep]);
 
   const updateHighlight = () => {
     const step = tutorialSteps[currentStep];
     if (step.highlightElement) {
-      const element = document.querySelector(step.highlightElement);
-      if (element) {
-        const rect = element.getBoundingClientRect();
-        setHighlightStyle({
-          top: rect.top - 8,
-          left: rect.left - 8,
-          width: rect.width + 16,
-          height: rect.height + 16,
-        });
-      }
+      // Try multiple times to find the element in case it's still rendering
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      const tryFindElement = () => {
+        const element = document.querySelector(step.highlightElement);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          setHighlightStyle({
+            top: rect.top + window.scrollY - 8,
+            left: rect.left + window.scrollX - 8,
+            width: rect.width + 16,
+            height: rect.height + 16,
+          });
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(tryFindElement, 100);
+        } else {
+          // Element not found after all attempts, clear highlight
+          setHighlightStyle({});
+          console.warn(`Tutorial element not found: ${step.highlightElement}`);
+        }
+      };
+      
+      tryFindElement();
+    } else {
+      // Clear highlight for center steps
+      setHighlightStyle({});
     }
   };
 
@@ -158,11 +190,16 @@ export const OnboardingTutorial = ({ onComplete, onSkip }: OnboardingTutorialPro
       {/* Dark overlay */}
       <div className="absolute inset-0 bg-black/80 pointer-events-auto" />
       
-      {/* Highlight circle for specific elements */}
+      {/* Highlight box for specific elements */}
       {step.highlightElement && highlightStyle.width && (
         <div
-          className="absolute rounded-lg border-4 border-primary shadow-glow transition-all duration-500 pointer-events-none"
-          style={highlightStyle}
+          className="absolute rounded-lg border-4 border-primary shadow-glow transition-all duration-500 pointer-events-none z-10"
+          style={{
+            top: `${highlightStyle.top}px`,
+            left: `${highlightStyle.left}px`,
+            width: `${highlightStyle.width}px`,
+            height: `${highlightStyle.height}px`,
+          }}
         />
       )}
       
