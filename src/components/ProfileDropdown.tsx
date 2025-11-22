@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Settings, CreditCard, Building2, Check } from "lucide-react";
+import { LogOut, Settings, CreditCard, Building2, Check, Users2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -145,6 +145,18 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, on
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
+        
+        {/* Label Management Link */}
+        {labelMemberships.length > 0 && (
+          <DropdownMenuItem
+            onClick={() => navigate("/label-management")}
+            className="cursor-pointer"
+          >
+            <Users2 className="mr-2 h-4 w-4" />
+            <span>Manage Labels ({labelMemberships.length})</span>
+          </DropdownMenuItem>
+        )}
+        
         <DropdownMenuSeparator className="bg-border" />
         
         {/* Label Switching Section */}
