@@ -180,91 +180,122 @@ const SubscriptionManagement = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 relative max-w-4xl">
-        {subscriptionStatus?.subscribed && (
-          <div className="mb-6 flex justify-end">
-            <Button
-              onClick={handleManageBilling}
-              variant="outline"
-              className="border-primary/20"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Manage Billing
-            </Button>
-          </div>
-        )}
-
         {plansLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2">
-            {plans?.map((plan) => {
-              const isCurrent = isCurrentPlan(plan);
-              const isFree = plan.name === "Trackball Free";
-              
-              return (
-                <Card 
-                  key={plan.id} 
-                  className={`backdrop-blur-sm bg-card/80 border-primary/20 relative ${
-                    isCurrent ? "ring-2 ring-primary" : ""
-                  }`}
-                >
-                  {isCurrent && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary px-4 py-1 rounded-full">
-                      <span className="text-xs font-bold text-primary-foreground flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Your Plan
-                      </span>
-                    </div>
-                  )}
-                  <CardHeader>
-                    <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                    <CardDescription className="text-3xl font-bold text-foreground mt-2">
-                      ${plan.price.toFixed(2)} CAD/year
-                    </CardDescription>
-                    {plan.description && (
-                      <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    {isFree ? (
-                      <Button
-                        className="w-full"
-                        variant="outline"
-                        disabled
-                      >
-                        Free Plan
-                      </Button>
-                    ) : isCurrent ? (
-                      <Button
-                        className="w-full"
-                        variant="outline"
-                        onClick={handleManageBilling}
-                      >
-                        <Settings className="w-4 h-4 mr-2" />
-                        Manage Plan
-                      </Button>
-                    ) : (
-                      <Button
-                        className="w-full bg-gradient-primary hover:opacity-90"
-                        onClick={() => handleSubscribe(plan.stripe_price_id!)}
-                        disabled={isCreatingCheckout || !plan.stripe_price_id}
-                      >
-                        {isCreatingCheckout ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          "Subscribe"
+          <div className="space-y-8">
+            {/* Current Plan Section */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4 text-left">Your Plan</h2>
+              {plans?.map((plan) => {
+                const isCurrent = isCurrentPlan(plan);
+                if (!isCurrent) return null;
+                
+                return (
+                  <Card 
+                    key={plan.id} 
+                    className="backdrop-blur-sm bg-card/80 border-primary/20 ring-2 ring-primary"
+                  >
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-2xl font-bold text-left">{plan.name}</CardTitle>
+                          <CardDescription className="text-3xl font-bold text-foreground mt-2 text-left">
+                            ${plan.price.toFixed(2)} CAD/year
+                          </CardDescription>
+                          {plan.description && (
+                            <p className="text-sm text-muted-foreground mt-2 text-left">{plan.description}</p>
+                          )}
+                        </div>
+                        <div className="bg-primary px-4 py-1 rounded-full">
+                          <span className="text-xs font-bold text-primary-foreground flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Active
+                          </span>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {subscriptionStatus?.subscribed && plan.name !== "Trackball Free" ? (
+                        <Button
+                          className="w-full"
+                          variant="outline"
+                          onClick={handleManageBilling}
+                        >
+                          <Settings className="w-4 h-4 mr-2" />
+                          Manage Billing
+                        </Button>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center">
+                          {plan.name === "Trackball Free" 
+                            ? "This is your current plan" 
+                            : "Plan assigned by administrator"}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Available Plans Section */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4 text-left">Available Plans</h2>
+              <div className="grid gap-6 md:grid-cols-2">
+                {plans?.map((plan) => {
+                  const isCurrent = isCurrentPlan(plan);
+                  if (isCurrent) return null; // Don't show current plan here
+                  
+                  const isFree = plan.name === "Trackball Free";
+                  const isPartner = plan.name === "Trackball Partner";
+                  
+                  return (
+                    <Card 
+                      key={plan.id} 
+                      className="backdrop-blur-sm bg-card/80 border-primary/20"
+                    >
+                      <CardHeader>
+                        <CardTitle className="text-2xl font-bold text-left">{plan.name}</CardTitle>
+                        <CardDescription className="text-3xl font-bold text-foreground mt-2 text-left">
+                          ${plan.price.toFixed(2)} CAD/year
+                        </CardDescription>
+                        {plan.description && (
+                          <p className="text-sm text-muted-foreground mt-2 text-left">{plan.description}</p>
                         )}
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+                      </CardHeader>
+                      <CardContent>
+                        {isFree || isPartner || !plan.stripe_price_id ? (
+                          <Button
+                            className="w-full"
+                            variant="outline"
+                            disabled
+                          >
+                            {isPartner ? "Invitation Only" : "Not Available"}
+                          </Button>
+                        ) : (
+                          <Button
+                            className="w-full bg-gradient-primary hover:opacity-90"
+                            onClick={() => handleSubscribe(plan.stripe_price_id!)}
+                            disabled={isCreatingCheckout}
+                          >
+                            {isCreatingCheckout ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              "Subscribe"
+                            )}
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
       </main>
