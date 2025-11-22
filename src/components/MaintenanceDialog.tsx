@@ -71,8 +71,11 @@ export const MaintenanceDialog = ({ userId }: MaintenanceDialogProps) => {
   const endTime = new Date(maintenanceSettings.end_time);
 
   return (
-    <AlertDialog open={showDialog}>
-      <AlertDialogContent className="bg-card border-primary/30 max-w-md">
+    <AlertDialog open={showDialog} onOpenChange={() => {}}>
+      <AlertDialogContent 
+        className="bg-card border-primary/30 max-w-md" 
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <AlertDialogHeader>
           <div className="flex items-center justify-center mb-4">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -86,11 +89,11 @@ export const MaintenanceDialog = ({ userId }: MaintenanceDialogProps) => {
             <div className="text-base">
               <p className="font-semibold text-foreground mb-2">Maintenance Window:</p>
               <p className="text-muted-foreground">
-                {format(startTime, "MM/dd/yyyy")} at {format(startTime, "hh:mm a")}
+                {format(startTime, "MM/dd/yyyy")} at {format(startTime, "HH:mm")}
               </p>
               <p className="text-muted-foreground mb-3">to</p>
               <p className="text-muted-foreground">
-                {format(endTime, "MM/dd/yyyy")} at {format(endTime, "hh:mm a")}
+                {format(endTime, "MM/dd/yyyy")} at {format(endTime, "HH:mm")}
               </p>
             </div>
             
