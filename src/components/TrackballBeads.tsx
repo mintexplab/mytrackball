@@ -74,7 +74,7 @@ export const TrackballBeads = () => {
           return { ...p, visibleChars: p.visibleChars + 1 };
         }
         return p;
-      }).filter(p => p.visibleChars <= p.phrase.length + 50)); // Remove after fade
+      }).filter(p => p.visibleChars <= p.phrase.length + 100)); // Remove after slow fade
     }, 150);
 
     return () => clearInterval(interval);
@@ -114,7 +114,7 @@ export const TrackballBeads = () => {
 
     const pattern = beadPatterns[char] || [[1, 1]];
     const spacing = 5 * scale;
-    const baseX = charIndex * (spacing * 3);
+    const baseX = charIndex * (spacing * 5.5);
 
     return pattern.map(([x, y], beadIndex) => (
       <div
@@ -136,12 +136,12 @@ export const TrackballBeads = () => {
     <>
       {phrases.map((phraseInstance) => {
         const isFading = phraseInstance.visibleChars > phraseInstance.phrase.length;
-        const opacity = isFading ? Math.max(0, 1 - (phraseInstance.visibleChars - phraseInstance.phrase.length) / 50) : 1;
+        const opacity = isFading ? Math.max(0, 1 - (phraseInstance.visibleChars - phraseInstance.phrase.length) / 100) : 1;
 
         return (
           <div
             key={phraseInstance.id}
-            className="absolute pointer-events-none transition-opacity duration-300"
+            className="absolute pointer-events-none transition-opacity duration-1000"
             style={{
               left: `${phraseInstance.position.x}%`,
               top: `${phraseInstance.position.y}%`,
