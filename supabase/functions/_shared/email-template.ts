@@ -20,7 +20,7 @@ export const generateEmailHTML = ({
   ctaText,
   ctaLink,
   footerText = "Need help? Contact us at contact@trackball.cc",
-  logoUrl = "https://euqgjlnwwviskwnnvsaj.supabase.co/storage/v1/object/public/email-assets/trackball-logo.png"
+  logoUrl = `https://${Deno.env.get('AWS_S3_BUCKET_NAME')}.s3.${Deno.env.get('AWS_REGION') || 'us-east-1'}.amazonaws.com/email-assets/trackball-logo.png`
 }: EmailTemplateProps): string => {
   return `
 <!DOCTYPE html>
