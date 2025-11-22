@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, User, Mail, Lock, Upload, X, Clock } from "lucide-react";
+import { ArrowLeft, User, Mail, Lock, Upload, X, Clock, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -447,6 +447,54 @@ const AccountSettings = () => {
         </Card>
 
         <TwoFactorAuth />
+
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Danger Zone
+            </CardTitle>
+            <CardDescription>Permanently delete your account and all associated data</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Once you delete your account, there is no going back. All your releases, royalty data, and account information will be permanently removed.
+            </p>
+            <Button 
+              variant="destructive" 
+              onClick={async () => {
+                if (window.confirm("Are you absolutely sure? This action cannot be undone. Type 'DELETE' to confirm.")) {
+                  const confirmation = window.prompt("Type 'DELETE' to confirm account deletion:");
+                  if (confirmation === "DELETE") {
+                    try {
+                      const { data: { user } } = await supabase.auth.getUser();
+                      if (!user) throw new Error("Not authenticated");
+                      
+                      // Delete profile (cascading deletes will handle related data)
+                      const { error: deleteError } = await supabase
+                        .from('profiles')
+                        .delete()
+                        .eq('id', user.id);
+                      
+                      if (deleteError) throw deleteError;
+                      
+                      // Sign out and redirect
+                      await supabase.auth.signOut();
+                      toast.success("Account deleted successfully");
+                      navigate("/auth");
+                    } catch (error: any) {
+                      toast.error(error.message || "Failed to delete account");
+                    }
+                  }
+                }
+              }}
+              className="w-full sm:w-auto"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Account
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card className="border-border">
           <CardHeader>
