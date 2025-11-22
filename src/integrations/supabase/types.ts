@@ -279,11 +279,13 @@ export type Database = {
           accepted_at: string | null
           additional_users: string[] | null
           created_at: string | null
+          custom_royalty_split: number | null
           expires_at: string | null
           id: string
           invited_by: string | null
           label_name: string
           master_account_email: string
+          service_access: string[] | null
           status: string
           subscription_tier: string
         }
@@ -291,11 +293,13 @@ export type Database = {
           accepted_at?: string | null
           additional_users?: string[] | null
           created_at?: string | null
+          custom_royalty_split?: number | null
           expires_at?: string | null
           id?: string
           invited_by?: string | null
           label_name: string
           master_account_email: string
+          service_access?: string[] | null
           status?: string
           subscription_tier: string
         }
@@ -303,11 +307,13 @@ export type Database = {
           accepted_at?: string | null
           additional_users?: string[] | null
           created_at?: string | null
+          custom_royalty_split?: number | null
           expires_at?: string | null
           id?: string
           invited_by?: string | null
           label_name?: string
           master_account_email?: string
+          service_access?: string[] | null
           status?: string
           subscription_tier?: string
         }
@@ -407,6 +413,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      partner_royalty_splits: {
+        Row: {
+          created_at: string | null
+          id: string
+          royalty_split_percentage: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          royalty_split_percentage: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          royalty_split_percentage?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_royalty_splits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payout_requests: {
         Row: {

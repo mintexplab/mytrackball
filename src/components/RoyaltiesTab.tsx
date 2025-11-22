@@ -10,6 +10,37 @@ import { toast } from "sonner";
 import { CollaboratorsManagement } from "./CollaboratorsManagement";
 import { z } from "zod";
 
+const PartnerRoyaltySplitDisplay = ({ userId }: { userId: string }) => {
+  const [splitInfo, setSplitInfo] = useState<{ royalty_split_percentage: number } | null>(null);
+
+  useEffect(() => {
+    const fetchSplitInfo = async () => {
+      const { data, error } = await supabase
+        .from("partner_royalty_splits")
+        .select("royalty_split_percentage")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (!error && data) {
+        setSplitInfo(data);
+      }
+    };
+
+    fetchSplitInfo();
+  }, [userId]);
+
+  if (!splitInfo) return null;
+
+  return (
+    <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-md">
+      <p className="text-sm text-muted-foreground">Custom Partner Split</p>
+      <p className="text-lg font-semibold text-primary">
+        You keep {splitInfo.royalty_split_percentage}% of royalties
+      </p>
+    </div>
+  );
+};
+
 const payoutSchema = z.object({
   amount: z.number()
     .positive('Amount must be positive')
@@ -166,6 +197,8 @@ const RoyaltiesTab = ({ userId }: RoyaltiesTabProps) => {
           <p className="text-4xl font-bold text-primary">
             ${totalEarnings.toFixed(2)} <span className="text-xl text-muted-foreground">CAD</span>
           </p>
+          {/* Show custom royalty split for partner accounts */}
+          <PartnerRoyaltySplitDisplay userId={userId} />
         </CardContent>
       </Card>
 
