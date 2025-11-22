@@ -169,15 +169,25 @@ const UserManagement = () => {
       return;
     }
 
-    const { error } = await supabase.auth.admin.deleteUser(userId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`
+        }
+      });
 
-    if (error) {
-      toast.error("Failed to delete user");
-      return;
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast.success("User deleted successfully");
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast.error(error.message || "Failed to delete user");
     }
-
-    toast.success("User deleted successfully");
-    fetchUsers();
   };
 
   const assignPlan = async (userId: string, planId: string) => {

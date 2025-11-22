@@ -456,15 +456,20 @@ const AccountSettings = () => {
                   if (confirmation === "DELETE") {
                     try {
                       const { data: { user } } = await supabase.auth.getUser();
-                      if (!user) throw new Error("Not authenticated");
+                      const { data: { session } } = await supabase.auth.getSession();
                       
-                      // Delete profile (cascading deletes will handle related data)
-                      const { error: deleteError } = await supabase
-                        .from('profiles')
-                        .delete()
-                        .eq('id', user.id);
+                      if (!user || !session) throw new Error("Not authenticated");
                       
-                      if (deleteError) throw deleteError;
+                      // Call edge function to delete user completely
+                      const { data, error } = await supabase.functions.invoke('delete-user', {
+                        body: { userId: user.id },
+                        headers: {
+                          Authorization: `Bearer ${session.access_token}`
+                        }
+                      });
+
+                      if (error) throw error;
+                      if (data?.error) throw new Error(data.error);
                       
                       // Sign out and redirect
                       await supabase.auth.signOut();
