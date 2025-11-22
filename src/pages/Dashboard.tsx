@@ -93,18 +93,6 @@ const Dashboard = () => {
         checkTerminationStatus(session.user.id);
         checkMaintenanceMode(session.user.id);
         
-        // Check if user has completed 2FA setup (mandatory for all accounts)
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("mfa_setup_completed")
-          .eq("id", session.user.id)
-          .single();
-        
-        if (!profileData?.mfa_setup_completed) {
-          navigate("/setup-2fa");
-          return;
-        }
-        
         // Check if loader has been shown this session
         const loaderShown = sessionStorage.getItem('loginLoaderShown');
         if (!loaderShown) {
@@ -414,7 +402,7 @@ const Dashboard = () => {
                   className={activeTab === "clients" ? "bg-gradient-primary text-primary-foreground" : ""}
                 >
                   <Users className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Clients</span>
+                  <span className="hidden sm:inline">Users</span>
                 </Button>
               )}
 

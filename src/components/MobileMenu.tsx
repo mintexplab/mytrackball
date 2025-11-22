@@ -209,7 +209,7 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false 
                   onClick={() => handleTabChange("clients")}
                 >
                   <Users className="w-4 h-4 mr-2" />
-                  Clients
+                  Users
                 </Button>
               </>
             )}

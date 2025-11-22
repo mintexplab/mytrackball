@@ -98,9 +98,16 @@ const SetupTwoFactor = () => {
                 Secure Your Account
               </CardTitle>
               <CardDescription className="text-muted-foreground mt-2">
-                Two-factor authentication is required for all Trackball accounts. This extra layer of security helps protect your music and account data.
+                Add an extra layer of security to your Trackball account with two-factor authentication.
               </CardDescription>
             </div>
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate("/dashboard")}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Skip for now
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
