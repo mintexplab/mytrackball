@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { Plus, Trash2, Music, Upload } from "lucide-react";
 import { z } from "zod";
@@ -31,9 +31,10 @@ const releaseSchema = z.object({
   artist_name: z.string().trim().min(1, "Artist name is required").max(200, "Artist name must be less than 200 characters"),
   release_date: z.string().optional(),
   genre: z.string().trim().max(100, "Genre must be less than 100 characters").optional(),
+  label_name: z.string().trim().min(1, "Label name is required").max(200, "Label name must be less than 200 characters"),
   artwork_url: z.string().trim().url("Must be a valid URL").max(500, "URL too long").optional().or(z.literal("")),
-  copyright_line: z.string().trim().max(200, "Copyright line must be less than 200 characters").optional(),
-  phonographic_line: z.string().trim().max(200, "Phonographic line must be less than 200 characters").optional(),
+  copyright_line: z.string().trim().min(1, "Copyright line (C-Line) is required").max(200, "Copyright line must be less than 200 characters"),
+  phonographic_line: z.string().trim().min(1, "Phonographic line (P-Line) is required").max(200, "Phonographic line must be less than 200 characters"),
   featured_artists: z.string().trim().max(500, "Featured artists must be less than 500 characters").optional(),
   notes: z.string().trim().max(2000, "Notes must be less than 2000 characters").optional(),
   catalog_number: z.string().trim().max(100, "Catalog number must be less than 100 characters").optional(),
@@ -50,6 +51,7 @@ const trackSchema = z.object({
 const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [releaseType, setReleaseType] = useState<"single" | "album">("single");
   const { uploadFile, uploading: s3Uploading } = useS3Upload();
   const [artworkFile, setArtworkFile] = useState<File | null>(null);
   const [tracks, setTracks] = useState<Track[]>([{
@@ -66,6 +68,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     artist_name: "",
     release_date: "",
     genre: "",
+    label_name: "",
     artwork_url: "",
     copyright_line: "",
     phonographic_line: "",
@@ -118,16 +121,18 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     }
   };
 
-  const addTrack = () => {
+  const addTrack = async () => {
+    const newIsrc = await generateISRC();
     setTracks([...tracks, {
       id: Date.now().toString(),
       track_number: tracks.length + 1,
       title: "",
       duration: "",
-      isrc: "",
+      isrc: newIsrc,
       audio_file_url: "",
       featured_artists: "",
     }]);
+    toast.success(`Track added with ISRC: ${newIsrc}`);
   };
 
   const removeTrack = (id: string) => {
@@ -208,9 +213,10 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
           artist_name: validatedRelease.artist_name,
           release_date: validatedRelease.release_date || null,
           genre: validatedRelease.genre || null,
+          label_name: validatedRelease.label_name,
           artwork_url: artworkUrl,
-          copyright_line: validatedRelease.copyright_line || null,
-          phonographic_line: validatedRelease.phonographic_line || null,
+          copyright_line: validatedRelease.copyright_line,
+          phonographic_line: validatedRelease.phonographic_line,
           featured_artists: validatedRelease.featured_artists ? validatedRelease.featured_artists.split(",").map(a => a.trim()) : [],
           notes: validatedRelease.notes || null,
           catalog_number: validatedRelease.catalog_number || null,
@@ -259,6 +265,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
       artist_name: "",
       release_date: "",
       genre: "",
+      label_name: "",
       artwork_url: "",
       copyright_line: "",
       phonographic_line: "",
@@ -276,7 +283,19 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
       featured_artists: "",
     }]);
     setArtworkFile(null);
+    setReleaseType("single");
   };
+
+  // Auto-generate ISRC for first track on mount
+  useEffect(() => {
+    if (tracks[0] && !tracks[0].isrc) {
+      generateISRC().then(isrc => {
+        updateTrack(tracks[0].id, "isrc", isrc);
+      }).catch(err => {
+        console.error("Failed to generate initial ISRC:", err);
+      });
+    }
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -291,6 +310,23 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Release Type Selection */}
+          <Card className="p-4 border-border">
+            <h3 className="font-semibold mb-4 text-primary">Release Type</h3>
+            <RadioGroup value={releaseType} onValueChange={(value) => setReleaseType(value as "single" | "album")}>
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="single" id="single" />
+                  <Label htmlFor="single" className="cursor-pointer">Single</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="album" id="album" />
+                  <Label htmlFor="album" className="cursor-pointer">Album</Label>
+                </div>
+              </div>
+            </RadioGroup>
+          </Card>
+
           {/* Basic Info */}
           <Card className="p-4 border-border">
             <h3 className="font-semibold mb-4 text-primary">Release Information</h3>
@@ -354,6 +390,18 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
                   </div>
 
                   <div className="col-span-2 space-y-2">
+                    <Label htmlFor="label_name">Label Name *</Label>
+                    <Input
+                      id="label_name"
+                      placeholder="Your Label Name"
+                      value={formData.label_name}
+                      onChange={(e) => setFormData({ ...formData, label_name: e.target.value })}
+                      required
+                      className="bg-background/50 border-border"
+                    />
+                  </div>
+
+                  <div className="col-span-2 space-y-2">
                     <Label htmlFor="artwork">Artwork Upload</Label>
                     <div className="flex items-center gap-4">
                       <Button
@@ -410,23 +458,25 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
             <h3 className="font-semibold mb-4 text-primary">Copyright & Credits</h3>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="copyright_line">© Copyright Line</Label>
+                <Label htmlFor="copyright_line">© Copyright Line (C-Line) *</Label>
                 <Input
                   id="copyright_line"
-                  placeholder="© 2024 Your Name"
+                  placeholder="© 2025 Your Name"
                   value={formData.copyright_line}
                   onChange={(e) => setFormData({ ...formData, copyright_line: e.target.value })}
+                  required
                   className="bg-background/50 border-border"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phonographic_line">℗ Phonographic Line</Label>
+                <Label htmlFor="phonographic_line">℗ Phonographic Line (P-Line) *</Label>
                 <Input
                   id="phonographic_line"
-                  placeholder="℗ 2024 Your Label"
+                  placeholder="℗ 2025 Your Label"
                   value={formData.phonographic_line}
                   onChange={(e) => setFormData({ ...formData, phonographic_line: e.target.value })}
+                  required
                   className="bg-background/50 border-border"
                 />
               </div>
@@ -434,31 +484,32 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
           </Card>
 
           {/* Tracks */}
-          <Card className="p-4 border-border">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-primary">Tracks</h3>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={autoGenerateISRCs}
-                  className="border-primary/20"
-                >
-                  Auto-Generate ISRCs
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addTrack}
-                  className="border-primary/20"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Track
-                </Button>
+          {releaseType === "album" && (
+            <Card className="p-4 border-border">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-semibold text-primary">Tracks</h3>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={autoGenerateISRCs}
+                    className="border-primary/20"
+                  >
+                    Generate All ISRCs
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addTrack}
+                    className="border-primary/20"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Track
+                  </Button>
+                </div>
               </div>
-            </div>
             
             <div className="space-y-4">
               {tracks.map((track, index) => (
@@ -542,7 +593,78 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
                 </Card>
               ))}
             </div>
-          </Card>
+            </Card>
+          )}
+
+          {/* Single Track Info */}
+          {releaseType === "single" && (
+            <Card className="p-4 border-border">
+              <h3 className="font-semibold mb-4 text-primary">Track Information</h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="track-title">Track Title *</Label>
+                  <Input
+                    id="track-title"
+                    placeholder="Song Name"
+                    value={tracks[0]?.title || ""}
+                    onChange={(e) => updateTrack(tracks[0].id, "title", e.target.value)}
+                    required
+                    className="bg-background/50 border-border"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="track-duration">Duration (seconds)</Label>
+                    <Input
+                      id="track-duration"
+                      type="number"
+                      placeholder="180"
+                      value={tracks[0]?.duration || ""}
+                      onChange={(e) => updateTrack(tracks[0].id, "duration", e.target.value)}
+                      className="bg-background/50 border-border"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="track-isrc">ISRC Code *</Label>
+                    <Input
+                      id="track-isrc"
+                      placeholder="CBGNR25xxxxx"
+                      value={tracks[0]?.isrc || ""}
+                      onChange={(e) => updateTrack(tracks[0].id, "isrc", e.target.value)}
+                      required
+                      className="bg-background/50 border-border"
+                      disabled
+                    />
+                    <p className="text-xs text-muted-foreground">Auto-generated</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="track-audio">Audio File URL</Label>
+                  <Input
+                    id="track-audio"
+                    placeholder="https://example.com/track.mp3"
+                    value={tracks[0]?.audio_file_url || ""}
+                    onChange={(e) => updateTrack(tracks[0].id, "audio_file_url", e.target.value)}
+                    className="bg-background/50 border-border"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="track-featured">Featured Artists</Label>
+                  <Input
+                    id="track-featured"
+                    placeholder="Artist 1, Artist 2"
+                    value={tracks[0]?.featured_artists || ""}
+                    onChange={(e) => updateTrack(tracks[0].id, "featured_artists", e.target.value)}
+                    className="bg-background/50 border-border"
+                  />
+                </div>
+              </div>
+            </Card>
+          )}
 
           {/* Notes */}
           <div className="space-y-2">
