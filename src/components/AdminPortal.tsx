@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music, Settings, ChevronDown, AlertTriangle, FileText } from "lucide-react";
+import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music, Settings, ChevronDown, AlertTriangle, FileText, ShieldAlert } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
 import UserManagement from "./UserManagement";
@@ -25,6 +25,7 @@ import { MobileMenu } from "./MobileMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { EmailNotificationDialog } from "./EmailNotificationDialog";
 import { AnnouncementBarManagement } from "./AnnouncementBarManagement";
+import { TakedownRequestsManagement } from "./TakedownRequestsManagement";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -119,6 +120,11 @@ const AdminPortal = ({
               <Button variant={activeTab === "releases" ? "default" : "ghost"} size="sm" onClick={() => setActiveTab("releases")} className={activeTab === "releases" ? "bg-gradient-primary text-primary-foreground" : ""}>
                 <FileMusic className="w-4 h-4 mr-2" />
                 Releases
+              </Button>
+
+              <Button variant={activeTab === "takedowns" ? "default" : "ghost"} size="sm" onClick={() => setActiveTab("takedowns")} className={activeTab === "takedowns" ? "bg-gradient-primary text-primary-foreground" : ""}>
+                <ShieldAlert className="w-4 h-4 mr-2" />
+                Takedowns
               </Button>
 
               {/* Content Dropdown */}
@@ -241,6 +247,7 @@ const AdminPortal = ({
                 <DropdownMenuItem onClick={() => setActiveTab("managers")}>Managers</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("invite-artists")}>Invite Artists</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("invite-labels")}>Invite Labels</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("takedowns")}>Takedowns</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("announcements")}>Announcements</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("royalties")}>Royalties</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("payouts")}>Payouts</DropdownMenuItem>
@@ -270,6 +277,10 @@ const AdminPortal = ({
                 <ReleasesList isAdmin={true} />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="takedowns">
+            <TakedownRequestsManagement />
           </TabsContent>
 
           <TabsContent value="invite-artists">
