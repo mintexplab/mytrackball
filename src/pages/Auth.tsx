@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { MfaVerification } from "@/components/MfaVerification";
 import { TrackballBeads } from "@/components/TrackballBeads";
-import { SparkleBeads } from "@/components/SparkleBeads";
 import trackballLogo from "@/assets/trackball-logo.png";
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,6 +16,7 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [showMfaVerification, setShowMfaVerification] = useState(false);
+  const [isZooming, setIsZooming] = useState(false);
   const navigate = useNavigate();
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,6 +109,18 @@ const Auth = () => {
           }
         }
         toast.success("Welcome back!");
+        
+        // Trigger zoom animation
+        setIsZooming(true);
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Fade to black
+        const fadeOverlay = document.createElement('div');
+        fadeOverlay.className = 'fixed inset-0 bg-black z-50';
+        fadeOverlay.style.animation = 'fadeIn 0.5s ease-out forwards';
+        document.body.appendChild(fadeOverlay);
+        
+        await new Promise(resolve => setTimeout(resolve, 500));
         navigate("/dashboard");
       } else {
         const {
@@ -150,10 +162,9 @@ const Auth = () => {
   return <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
       <div className="absolute inset-0">
         <TrackballBeads />
-        <SparkleBeads />
       </div>
       
-      <Card className="w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20">
+      <Card className={`w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20 transition-all duration-700 ${isZooming ? 'scale-[3] opacity-0' : 'scale-100 opacity-100'}`}>
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-glow overflow-hidden">
             <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
