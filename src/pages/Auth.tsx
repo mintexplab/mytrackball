@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Music2 } from "lucide-react";
 import { MfaVerification } from "@/components/MfaVerification";
+import trackballLogo from "@/assets/trackball-logo.png";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -152,8 +152,8 @@ const Auth = () => {
       
       <Card className="w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20">
         <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-glow">
-            <Music2 className="w-8 h-8 text-primary-foreground" />
+          <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-glow p-2">
+            <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">

@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Music2, Bell, DollarSign, HelpCircle, Mail, Users } from "lucide-react";
+import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users } from "lucide-react";
 import { toast } from "sonner";
+import trackballLogo from "@/assets/trackball-logo.png";
 import AdminPortal from "@/components/AdminPortal";
 import ReleasesList from "@/components/ReleasesList";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
@@ -154,8 +155,8 @@ const Dashboard = () => {
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex justify-between items-center gap-2">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                <Music2 className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0 p-1">
+                <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-contain" />
               </div>
               <div className="min-w-0">
                 <h1 className="text-base sm:text-xl bg-gradient-primary bg-clip-text text-transparent truncate font-medium">
