@@ -75,26 +75,35 @@ const BulkUploadTab = ({ userId }: { userId: string }) => {
     try {
       const text = await file.text();
       const lines = text.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim());
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      
+      // Create a mapping of header names to indices
+      const headerMap: Record<string, number> = {};
+      headers.forEach((header, index) => {
+        headerMap[header] = index;
+      });
       
       const releases: ParsedRelease[] = [];
       
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim());
+        
+        // Use header-based mapping, ignoring unknown columns like lyrics
         const release: ParsedRelease = {
-          title: values[0] || '',
-          artist_name: values[1] || '',
-          genre: values[2] || undefined,
-          release_date: values[3] || undefined,
-          label_name: values[4] || undefined,
-          upc: values[5] || undefined,
-          featured_artists: values[6] || undefined,
-          copyright_line: values[7] || undefined,
-          phonographic_line: values[8] || undefined,
-          catalog_number: values[9] || undefined,
+          title: values[headerMap['title']] || '',
+          artist_name: values[headerMap['artist_name'] || headerMap['artist']] || '',
+          genre: values[headerMap['genre']] || undefined,
+          release_date: values[headerMap['release_date'] || headerMap['releasedate']] || undefined,
+          label_name: values[headerMap['label_name'] || headerMap['label']] || undefined,
+          upc: values[headerMap['upc']] || undefined,
+          featured_artists: values[headerMap['featured_artists'] || headerMap['featuredartists']] || undefined,
+          copyright_line: values[headerMap['copyright_line'] || headerMap['copyright']] || undefined,
+          phonographic_line: values[headerMap['phonographic_line'] || headerMap['phonographic']] || undefined,
+          catalog_number: values[headerMap['catalog_number'] || headerMap['catalognumber']] || undefined,
           uploadStatus: 'pending'
         };
         
+        // Only include releases with required fields
         if (release.title && release.artist_name) {
           releases.push(release);
         }
