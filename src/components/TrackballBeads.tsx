@@ -22,12 +22,12 @@ export const TrackballBeads = () => {
 
   const getRandomPosition = () => {
     const positions = [
-      { x: 5, y: 5 },      // Top left
-      { x: 60, y: 5 },     // Top right
-      { x: 5, y: 85 },     // Bottom left
-      { x: 60, y: 85 },    // Bottom right
-      { x: 5, y: 45 },     // Middle left
-      { x: 65, y: 45 },    // Middle right
+      { x: 2, y: 5 },      // Top left
+      { x: 70, y: 5 },     // Top right
+      { x: 2, y: 80 },     // Bottom left
+      { x: 70, y: 80 },    // Bottom right
+      { x: 2, y: 15 },     // Upper left
+      { x: 75, y: 15 },    // Upper right
     ];
     return positions[Math.floor(Math.random() * positions.length)];
   };
