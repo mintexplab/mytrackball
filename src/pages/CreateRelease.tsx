@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Plus, X, Check } from "lucide-react";
+import { ArrowLeft, Upload, Plus, X, Check, Save } from "lucide-react";
 import { z } from "zod";
 import { useS3Upload } from "@/hooks/useS3Upload";
 
@@ -64,6 +64,8 @@ const CreateRelease = () => {
   const { uploadFile, uploading } = useS3Upload();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -103,6 +105,53 @@ const CreateRelease = () => {
   const [producers, setProducers] = useState<Contributor[]>([{ id: "1", name: "" }]);
   const [performers, setPerformers] = useState<Contributor[]>([{ id: "1", name: "", role: "" }]);
   const [additionalContributors, setAdditionalContributors] = useState<Contributor[]>([{ id: "1", name: "", role: "" }]);
+
+  // Load saved draft on mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem('release-draft');
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        setFormData(draft.formData);
+        setAuthors(draft.authors || [{ id: "1", name: "" }]);
+        setComposers(draft.composers || [{ id: "1", name: "" }]);
+        setPublishers(draft.publishers || [{ id: "1", name: "" }]);
+        setProducers(draft.producers || [{ id: "1", name: "" }]);
+        setPerformers(draft.performers || [{ id: "1", name: "", role: "" }]);
+        setAdditionalContributors(draft.additionalContributors || [{ id: "1", name: "", role: "" }]);
+        setArtworkPreview(draft.artworkPreview || "");
+        setCurrentStep(draft.currentStep || 1);
+        setLastSaved(new Date(draft.lastSaved));
+        toast.success("Draft restored");
+      } catch (error) {
+        console.error("Failed to load draft:", error);
+      }
+    }
+  }, []);
+
+  // Auto-save to localStorage
+  useEffect(() => {
+    const saveTimeout = setTimeout(() => {
+      setIsSaving(true);
+      const draft = {
+        formData,
+        authors,
+        composers,
+        publishers,
+        producers,
+        performers,
+        additionalContributors,
+        artworkPreview,
+        currentStep,
+        lastSaved: new Date().toISOString()
+      };
+      localStorage.setItem('release-draft', JSON.stringify(draft));
+      setLastSaved(new Date());
+      setIsSaving(false);
+    }, 1000); // Debounce 1 second
+
+    return () => clearTimeout(saveTimeout);
+  }, [formData, authors, composers, publishers, producers, performers, additionalContributors, artworkPreview, currentStep]);
 
   const addContributor = (type: string) => {
     const newId = Date.now().toString();
@@ -264,6 +313,9 @@ const CreateRelease = () => {
 
       if (releaseError) throw releaseError;
 
+      // Clear draft after successful submission
+      localStorage.removeItem('release-draft');
+      
       toast.success("Release submitted successfully!");
       navigate("/dashboard");
     } catch (error: any) {
@@ -295,6 +347,21 @@ const CreateRelease = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <h1 className="text-xl font-bold">Submit New Release</h1>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {isSaving && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Save className="w-4 h-4 animate-pulse" />
+                <span>Saving...</span>
+              </div>
+            )}
+            {!isSaving && lastSaved && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Check className="w-4 h-4 text-green-500" />
+                <span>Draft saved</span>
+              </div>
+            )}
           </div>
         </div>
       </header>

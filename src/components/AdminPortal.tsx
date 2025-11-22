@@ -85,6 +85,11 @@ const AdminPortal = ({
           </div>
           
           <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")} className="hidden md:flex">
+              <Users className="w-4 h-4 mr-2" />
+              View Artist Dashboard
+            </Button>
+            
             {/* Main Navigation */}
             <div className="hidden md:flex items-center gap-2">
               <Button variant={activeTab === "users" ? "default" : "ghost"} size="sm" onClick={() => setActiveTab("users")} className={activeTab === "users" ? "bg-gradient-primary text-primary-foreground" : ""}>
