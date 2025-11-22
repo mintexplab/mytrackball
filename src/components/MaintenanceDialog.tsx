@@ -110,7 +110,7 @@ export const MaintenanceDialog = ({ userId, onSignOut }: MaintenanceDialogProps)
             </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+        <AlertDialogFooter className="flex flex-col gap-2">
           <Button
             onClick={handleContactSupport}
             className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
