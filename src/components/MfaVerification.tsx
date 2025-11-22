@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Shield, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -16,6 +17,7 @@ interface MfaVerificationProps {
 export const MfaVerification = ({ onVerified, onCancel }: MfaVerificationProps) => {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rememberDevice, setRememberDevice] = useState(false);
 
   const verifyMfaCode = async () => {
     if (!code || code.length !== 6) {
@@ -43,6 +45,19 @@ export const MfaVerification = ({ onVerified, onCancel }: MfaVerificationProps) 
       });
 
       if (verify.error) throw verify.error;
+
+      // Store trusted device if remember me is checked
+      if (rememberDevice) {
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + 30);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          localStorage.setItem('mfa_trusted_device', JSON.stringify({
+            userId: user.id,
+            expires: expirationDate.toISOString()
+          }));
+        }
+      }
 
       toast.success("Verification successful!");
       onVerified();
@@ -99,6 +114,20 @@ export const MfaVerification = ({ onVerified, onCancel }: MfaVerificationProps) 
               autoFocus
               className="bg-background/50 border-border text-center text-2xl tracking-widest"
             />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="remember-device" 
+              checked={rememberDevice}
+              onCheckedChange={(checked) => setRememberDevice(checked as boolean)}
+            />
+            <Label 
+              htmlFor="remember-device" 
+              className="text-sm font-normal cursor-pointer"
+            >
+              Remember me for 30 days
+            </Label>
           </div>
 
           <div className="flex gap-2">
