@@ -49,9 +49,10 @@ Deno.serve(async (req) => {
       // Convert file to Uint8Array using streaming
       const fileData = new Uint8Array(await file.arrayBuffer());
 
-      // Upload to S3
+      // Upload to S3 with public read access
       await s3Bucket.putObject(path, fileData, {
         contentType: file.type,
+        acl: 'public-read',
       });
 
       // Construct public URL
@@ -110,6 +111,7 @@ Deno.serve(async (req) => {
 
       await s3Bucket.putObject(path, fileData, {
         contentType: body.file.type,
+        acl: 'public-read',
       });
 
       const bucketName = bucket || Deno.env.get('AWS_S3_BUCKET_NAME')!;
