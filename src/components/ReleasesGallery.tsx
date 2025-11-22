@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Music } from "lucide-react";
+import { Music, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ReleasesGalleryProps {
   userId?: string;
@@ -39,6 +40,38 @@ const ReleasesGallery = ({ userId, onReleaseClick }: ReleasesGalleryProps) => {
     setLoading(false);
   };
 
+  const handleDelete = async (releaseId: string, releaseStatus: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (releaseStatus === "pending") {
+      toast.error("Cannot delete releases with pending status");
+      return;
+    }
+
+    const deliveredStatuses = ["approved", "delivering"];
+    if (deliveredStatuses.includes(releaseStatus)) {
+      toast.error("Live releases must be taken down before deletion. Please request takedown from the release details page.");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to delete this release? This action cannot be undone.")) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("releases")
+      .delete()
+      .eq("id", releaseId);
+
+    if (error) {
+      toast.error("Failed to delete release");
+      return;
+    }
+
+    toast.success("Release deleted successfully");
+    fetchReleases();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -60,16 +93,18 @@ const ReleasesGallery = ({ userId, onReleaseClick }: ReleasesGalleryProps) => {
       {releases.map((release) => (
         <div
           key={release.id}
-          onClick={() => {
-            if (onReleaseClick) {
-              onReleaseClick(release.id);
-            } else {
-              navigate(`/release/${release.id}`);
-            }
-          }}
-          className="group cursor-pointer"
+          className="group"
         >
-          <div className="relative aspect-square rounded-lg overflow-hidden bg-muted mb-3 shadow-md transition-all duration-300 group-hover:shadow-xl group-hover:scale-105">
+          <div
+            onClick={() => {
+              if (onReleaseClick) {
+                onReleaseClick(release.id);
+              } else {
+                navigate(`/release/${release.id}`);
+              }
+            }}
+            className="relative aspect-square rounded-lg overflow-hidden bg-muted mb-3 shadow-md transition-all duration-300 group-hover:shadow-xl group-hover:scale-105 cursor-pointer"
+          >
             {release.artwork_url ? (
               <img
                 src={release.artwork_url}
@@ -82,6 +117,16 @@ const ReleasesGallery = ({ userId, onReleaseClick }: ReleasesGalleryProps) => {
               </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            {release.status !== "pending" && (
+              <Button
+                size="icon"
+                variant="destructive"
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                onClick={(e) => handleDelete(release.id, release.status, e)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
           </div>
           <div className="space-y-1">
             <h3 className="font-semibold text-sm line-clamp-1 text-left group-hover:text-primary transition-colors">
