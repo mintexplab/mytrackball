@@ -34,7 +34,39 @@ const ReleaseDetails = () => {
     setLoading(false);
   };
 
+  const requestTakedown = async () => {
+    const { error } = await supabase
+      .from("releases")
+      .update({ takedown_requested: true })
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Failed to request takedown");
+      return;
+    }
+
+    toast.success("Takedown requested - admin will process this shortly");
+    fetchRelease();
+  };
+
   const deleteRelease = async () => {
+    // Check if release is pending
+    if (release?.status === "pending") {
+      toast.error("Cannot delete releases with pending status");
+      return;
+    }
+
+    // Check if release is approved/delivered - require takedown first
+    const deliveredStatuses = ["approved", "delivering"];
+    if (deliveredStatuses.includes(release?.status)) {
+      if (!confirm("This release is live. You must request takedown before deleting. Request takedown now?")) {
+        return;
+      }
+      await requestTakedown();
+      return;
+    }
+
+    // For all other statuses (rejected, taken down, striked, on hold), allow direct deletion
     if (!confirm("Are you sure you want to delete this release? This action cannot be undone.")) {
       return;
     }
@@ -239,15 +271,22 @@ const ReleaseDetails = () => {
                 <CardTitle className="text-left text-destructive">Danger Zone</CardTitle>
                 <CardDescription className="text-left">Irreversible actions</CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button
-                  variant="destructive"
-                  onClick={deleteRelease}
-                  className="w-full sm:w-auto"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Release
-                </Button>
+              <CardContent className="space-y-3">
+                {release?.status !== "pending" && (
+                  <Button
+                    variant="destructive"
+                    onClick={deleteRelease}
+                    className="w-full sm:w-auto"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Release
+                  </Button>
+                )}
+                {release?.status === "pending" && (
+                  <p className="text-sm text-muted-foreground">
+                    Releases with pending status cannot be deleted
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
