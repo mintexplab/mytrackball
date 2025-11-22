@@ -54,18 +54,15 @@ const Auth = () => {
           return;
         }
 
-        // Check if user is banned or locked
+        // Check if user is locked
         if (data.user) {
           const {
             data: profile
           } = await supabase.from("profiles").select("is_banned, is_locked, full_name, user_id").eq("id", data.user.id).single();
           console.log("Profile after login", profile);
-          if (profile?.is_banned) {
-            await supabase.auth.signOut();
-            toast.error("Your account has been suspended. Please contact support.");
-            setLoading(false);
-            return;
-          }
+          
+          // Banned users will be handled by the TerminatedAccountDialog in Dashboard
+          
           if (profile?.is_locked) {
             await supabase.auth.signOut();
             // Show locked account modal
