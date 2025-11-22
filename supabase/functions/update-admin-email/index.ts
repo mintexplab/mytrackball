@@ -49,27 +49,19 @@ serve(async (req) => {
       throw new Error('Unauthorized: Only admins can update emails');
     }
 
-    const { oldEmail, newEmail } = await req.json();
+    const { newEmail } = await req.json();
     
-    if (!oldEmail || !newEmail) {
-      throw new Error('Both oldEmail and newEmail are required');
+    if (!newEmail) {
+      throw new Error('newEmail is required');
     }
 
-    // Find the user by old email
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('id, user_id')
-      .eq('email', oldEmail)
-      .single();
-
-    if (!profile) {
-      throw new Error(`User with email ${oldEmail} not found`);
-    }
-
-    // Update the user's email using admin API
+    // Update the user's email using admin API with email_confirm set to true to skip verification
     const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      profile.user_id,
-      { email: newEmail }
+      requestingUser.id,
+      { 
+        email: newEmail,
+        email_confirm: true  // This bypasses email verification
+      }
     );
 
     if (updateError) {
@@ -80,7 +72,7 @@ serve(async (req) => {
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({ email: newEmail })
-      .eq('user_id', profile.user_id);
+      .eq('user_id', requestingUser.id);
 
     if (profileError) {
       throw profileError;
@@ -89,8 +81,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Email updated from ${oldEmail} to ${newEmail}`,
-        userId: profile.user_id
+        message: `Email updated to ${newEmail}`,
+        userId: requestingUser.id
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
