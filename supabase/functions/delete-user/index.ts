@@ -23,30 +23,16 @@ serve(async (req) => {
       }
     );
 
-    // Get the authorization header from the request
+    // Get and validate the authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('No authorization header');
     }
 
-    // Verify the user making the request
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        },
-        global: {
-          headers: {
-            Authorization: authHeader
-          }
-        }
-      }
-    );
-
-    const { data: { user: requestingUser }, error: userError } = await supabaseClient.auth.getUser();
+    // Extract JWT token and verify the user
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user: requestingUser }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    
     if (userError || !requestingUser) {
       throw new Error('Not authenticated');
     }
