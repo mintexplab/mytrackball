@@ -100,10 +100,10 @@ export const TerminatedAccountDialog = ({ userId, onSignOut }: TerminatedAccount
     <>
       <AlertDialog open={showDialog} onOpenChange={() => {}}>
         <AlertDialogContent 
-          className="bg-card border-destructive/50 max-w-md" 
+          className="bg-card border-destructive/50 max-w-md w-full" 
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
-          <AlertDialogHeader>
+          <AlertDialogHeader className="space-y-4">
             <div className="flex items-center justify-center mb-4">
               <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
                 <XCircle className="w-8 h-8 text-destructive" />
@@ -114,7 +114,7 @@ export const TerminatedAccountDialog = ({ userId, onSignOut }: TerminatedAccount
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center space-y-4 pt-4">
               <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/30">
-                <ul className="text-sm text-foreground space-y-2 text-left list-disc list-inside">
+                <ul className="text-sm text-foreground space-y-2 text-left list-disc list-inside break-words">
                   <li>You will not receive any of your existing royalties</li>
                   <li>All of your releases have been scheduled for takedown from DSPs</li>
                   <li>If you purchased a subscription plan, it will be cancelled and you will not be refunded</li>
@@ -126,11 +126,11 @@ export const TerminatedAccountDialog = ({ userId, onSignOut }: TerminatedAccount
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-col gap-2">
+          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col w-full">
             {!hasAppeal && (
               <Button
                 onClick={() => setShowAppealDialog(true)}
-                className="w-full bg-primary hover:opacity-90"
+                className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
               >
                 <FileText className="w-4 h-4 mr-2" />
                 Submit Appeal
