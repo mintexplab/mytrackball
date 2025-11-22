@@ -122,6 +122,30 @@ export default {
             opacity: "0.3",
           },
         },
+        "beadFloat": {
+          "0%, 100%": {
+            transform: "translate(0, 0)",
+          },
+          "25%": {
+            transform: "translate(15px, -15px)",
+          },
+          "50%": {
+            transform: "translate(-10px, 10px)",
+          },
+          "75%": {
+            transform: "translate(10px, 15px)",
+          },
+        },
+        "beadPulse": {
+          "0%, 100%": {
+            opacity: "0.6",
+            transform: "scale(1)",
+          },
+          "50%": {
+            opacity: "1",
+            transform: "scale(1.3)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
