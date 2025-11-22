@@ -116,17 +116,20 @@ const Auth = () => {
         
         // Fade to black and show loading
         const fadeOverlay = document.createElement('div');
-        fadeOverlay.className = 'fixed inset-0 bg-black z-50 flex flex-col items-center justify-center';
-        fadeOverlay.style.animation = 'fadeIn 0.3s ease-out forwards';
+        fadeOverlay.className = 'fixed inset-0 bg-black z-50 flex items-center justify-center';
         fadeOverlay.innerHTML = `
-          <div class="text-center space-y-6">
-            <p class="text-2xl text-foreground">Loading your dashboard</p>
-            <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <div class="text-center space-y-8">
+            <p class="text-2xl text-foreground animate-pulse">Loading your dashboard</p>
+            <div class="relative w-16 h-16 mx-auto">
+              <div class="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
+              <div class="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin"></div>
+            </div>
           </div>
         `;
         document.body.appendChild(fadeOverlay);
         
-        await new Promise(resolve => setTimeout(resolve, 800));
+        const loadingDuration = 5000 + Math.random() * 3000; // 5-8 seconds
+        await new Promise(resolve => setTimeout(resolve, loadingDuration));
         navigate("/dashboard");
       } else {
         const {
