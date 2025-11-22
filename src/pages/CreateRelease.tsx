@@ -564,67 +564,77 @@ const CreateRelease = () => {
   // Selection screen
   if (!releaseType) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-4xl border-primary/20">
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold mb-2">Create Submission</CardTitle>
-            <CardDescription className="text-lg">Create a new submission</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-8">
-              <button
-                onClick={() => setReleaseType("single")}
-                className="group relative overflow-hidden rounded-lg border-2 border-border hover:border-primary/50 transition-all duration-300 bg-background/50 hover:bg-background p-8 flex flex-col items-center justify-center gap-4 min-h-[280px]"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <Music className="w-20 h-20 text-primary group-hover:scale-110 transition-transform relative z-10" />
-                <div className="text-center relative z-10">
-                  <h3 className="text-2xl font-bold mb-2">Create Single</h3>
-                  <p className="text-muted-foreground">Create a single submission</p>
-                  <p className="text-sm text-muted-foreground mt-2">Max 3 tracks</p>
-                </div>
-              </button>
-
-              <button
-                onClick={() => setReleaseType("ep")}
-                className="group relative overflow-hidden rounded-lg border-2 border-border hover:border-primary/50 transition-all duration-300 bg-background/50 hover:bg-background p-8 flex flex-col items-center justify-center gap-4 min-h-[280px]"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <Disc3 className="w-20 h-20 text-primary group-hover:scale-110 transition-transform relative z-10" />
-                <div className="text-center relative z-10">
-                  <h3 className="text-2xl font-bold mb-2">Create EP</h3>
-                  <p className="text-muted-foreground">Create an EP submission</p>
-                  <p className="text-sm text-muted-foreground mt-2">Max 5 tracks</p>
-                </div>
-              </button>
-
-              <button
-                onClick={() => setReleaseType("album")}
-                className="group relative overflow-hidden rounded-lg border-2 border-border hover:border-primary/50 transition-all duration-300 bg-background/50 hover:bg-background p-8 flex flex-col items-center justify-center gap-4 min-h-[280px]"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <AlbumIcon className="w-20 h-20 text-primary group-hover:scale-110 transition-transform relative z-10" />
-                <div className="text-center relative z-10">
-                  <h3 className="text-2xl font-bold mb-2">Create Album</h3>
-                  <p className="text-muted-foreground">Create an album submission</p>
-                  <p className="text-sm text-muted-foreground mt-2">Max 25 tracks</p>
-                </div>
-              </button>
-            </div>
-            <div className="flex justify-center mt-6">
-              <Button variant="outline" onClick={() => navigate("/dashboard")}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
+          <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+                <ArrowLeft className="w-5 h-5" />
               </Button>
+              <h1 className="text-xl font-bold">Create New Release</h1>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </header>
+        
+        <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[calc(100vh-80px)]">
+          <Card className="w-full max-w-4xl border-primary/20 animate-fade-in">
+            <CardHeader className="text-center">
+              <CardTitle className="text-3xl font-bold mb-2">Create Submission</CardTitle>
+              <CardDescription className="text-lg">Create a new submission</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-8">
+                <button
+                  onClick={() => setReleaseType("single")}
+                  className="group relative overflow-hidden rounded-lg border-2 border-border hover:border-primary/50 transition-all duration-300 bg-background/50 hover:bg-background p-8 flex flex-col items-center justify-center gap-4 min-h-[280px] animate-fade-in"
+                  style={{ animationDelay: "0.1s" }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Music className="w-20 h-20 text-primary group-hover:scale-110 transition-transform relative z-10" />
+                  <div className="text-center relative z-10">
+                    <h3 className="text-2xl font-bold mb-2">Create Single</h3>
+                    <p className="text-muted-foreground">Create a single submission</p>
+                    <p className="text-sm text-muted-foreground mt-2">Max 3 tracks</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setReleaseType("ep")}
+                  className="group relative overflow-hidden rounded-lg border-2 border-border hover:border-primary/50 transition-all duration-300 bg-background/50 hover:bg-background p-8 flex flex-col items-center justify-center gap-4 min-h-[280px] animate-fade-in"
+                  style={{ animationDelay: "0.2s" }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Disc3 className="w-20 h-20 text-primary group-hover:scale-110 transition-transform relative z-10" />
+                  <div className="text-center relative z-10">
+                    <h3 className="text-2xl font-bold mb-2">Create EP</h3>
+                    <p className="text-muted-foreground">Create an EP submission</p>
+                    <p className="text-sm text-muted-foreground mt-2">Max 5 tracks</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setReleaseType("album")}
+                  className="group relative overflow-hidden rounded-lg border-2 border-border hover:border-primary/50 transition-all duration-300 bg-background/50 hover:bg-background p-8 flex flex-col items-center justify-center gap-4 min-h-[280px] animate-fade-in"
+                  style={{ animationDelay: "0.3s" }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <AlbumIcon className="w-20 h-20 text-primary group-hover:scale-110 transition-transform relative z-10" />
+                  <div className="text-center relative z-10">
+                    <h3 className="text-2xl font-bold mb-2">Create Album</h3>
+                    <p className="text-muted-foreground">Create an album submission</p>
+                    <p className="text-sm text-muted-foreground mt-2">Max 25 tracks</p>
+                  </div>
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-fade-in">
       <header className="border-b border-border backdrop-blur-sm bg-card/50 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -694,7 +704,7 @@ const CreateRelease = () => {
 
         {/* Step 1: Submission Details */}
         {currentStep === 1 && (
-          <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+          <Card className="backdrop-blur-sm bg-card/80 border-primary/20 animate-fade-in">
             <CardHeader>
               <CardTitle>Add your submission details</CardTitle>
               <CardDescription>Basic information about your release</CardDescription>
@@ -870,7 +880,7 @@ const CreateRelease = () => {
 
         {/* Step 2: Upload Artwork */}
         {currentStep === 2 && (
-          <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+          <Card className="backdrop-blur-sm bg-card/80 border-primary/20 animate-fade-in">
             <CardHeader>
               <CardTitle>Upload Artwork</CardTitle>
               <CardDescription>Upload your release artwork</CardDescription>
@@ -908,7 +918,7 @@ const CreateRelease = () => {
 
         {/* Step 3: Upload Audio Files & Track Management */}
         {currentStep === 3 && (
-          <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+          <Card className="backdrop-blur-sm bg-card/80 border-primary/20 animate-fade-in">
             <CardHeader>
               <div className="flex justify-between items-center">
                 <div>
@@ -1066,7 +1076,7 @@ const CreateRelease = () => {
 
         {/* Step 4: Metadata Details */}
         {currentStep === 4 && (
-          <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+          <Card className="backdrop-blur-sm bg-card/80 border-primary/20 animate-fade-in">
             <CardHeader>
               <CardTitle>Metadata Details</CardTitle>
               <CardDescription>Additional release information</CardDescription>
@@ -1211,7 +1221,7 @@ const CreateRelease = () => {
 
         {/* Step 5: Contributors */}
         {currentStep === 5 && (
-          <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+          <Card className="backdrop-blur-sm bg-card/80 border-primary/20 animate-fade-in">
             <CardHeader>
               <CardTitle>Contributors</CardTitle>
               <CardDescription>Add all contributors to this release</CardDescription>
@@ -1428,7 +1438,7 @@ const CreateRelease = () => {
 
         {/* Step 6: Additional Notes */}
         {currentStep === 6 && (
-          <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+          <Card className="backdrop-blur-sm bg-card/80 border-primary/20 animate-fade-in">
             <CardHeader>
               <CardTitle>Additional Notes</CardTitle>
               <CardDescription>
