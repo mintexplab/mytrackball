@@ -574,6 +574,7 @@ export type Database = {
           account_manager_name: string | null
           account_manager_phone: string | null
           account_manager_timezone: string | null
+          active_label_id: string | null
           artist_name: string | null
           avatar_url: string | null
           ban_reason: string | null
@@ -599,6 +600,7 @@ export type Database = {
           account_manager_name?: string | null
           account_manager_phone?: string | null
           account_manager_timezone?: string | null
+          active_label_id?: string | null
           artist_name?: string | null
           avatar_url?: string | null
           ban_reason?: string | null
@@ -624,6 +626,7 @@ export type Database = {
           account_manager_name?: string | null
           account_manager_phone?: string | null
           account_manager_timezone?: string | null
+          active_label_id?: string | null
           artist_name?: string | null
           avatar_url?: string | null
           ban_reason?: string | null
@@ -645,6 +648,13 @@ export type Database = {
           user_timezone?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_active_label_id_fkey"
+            columns: ["active_label_id"]
+            isOneToOne: false
+            referencedRelation: "labels"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_label_id_fkey"
             columns: ["label_id"]
@@ -1054,6 +1064,48 @@ export type Database = {
             columns: ["announcement_id"]
             isOneToOne: false
             referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_label_memberships: {
+        Row: {
+          id: string
+          joined_at: string
+          label_id: string
+          label_name: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          label_id: string
+          label_name: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          label_id?: string
+          label_name?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_label_memberships_label_id_fkey"
+            columns: ["label_id"]
+            isOneToOne: false
+            referencedRelation: "labels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_label_memberships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
