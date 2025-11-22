@@ -21,15 +21,38 @@ export const TrackballBeads = () => {
   ];
 
   const getRandomPosition = () => {
-    const positions = [
-      { x: 2, y: 5 },      // Top left
-      { x: 70, y: 5 },     // Top right
-      { x: 2, y: 80 },     // Bottom left
-      { x: 70, y: 80 },    // Bottom right
-      { x: 2, y: 15 },     // Upper left
-      { x: 75, y: 15 },    // Upper right
-    ];
-    return positions[Math.floor(Math.random() * positions.length)];
+    // Check if position would overlap with existing phrases
+    const maxAttempts = 20;
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      const positions = [
+        { x: 2, y: 5 },      // Top left
+        { x: 70, y: 5 },     // Top right
+        { x: 2, y: 80 },     // Bottom left
+        { x: 70, y: 80 },    // Bottom right
+        { x: 2, y: 15 },     // Upper left
+        { x: 75, y: 15 },    // Upper right
+      ];
+      
+      const newPos = positions[Math.floor(Math.random() * positions.length)];
+      
+      // Check distance from all existing phrases
+      const hasOverlap = phrases.some(p => {
+        const dx = Math.abs(p.position.x - newPos.x);
+        const dy = Math.abs(p.position.y - newPos.y);
+        return dx < 20 && dy < 20; // Minimum 20% separation
+      });
+      
+      if (!hasOverlap) {
+        return newPos;
+      }
+      
+      attempts++;
+    }
+    
+    // Fallback to a default position if all attempts fail
+    return { x: 5, y: 5 };
   };
 
   const createNewPhrase = (id: number) => {
