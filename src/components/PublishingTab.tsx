@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Trash2, Music, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Plus, Trash2, Music, CheckCircle2, XCircle, Clock, Sparkles } from "lucide-react";
 import { z } from "zod";
 
 const publishingSchema = z.object({
@@ -56,9 +57,115 @@ const PublishingTab = ({ userId }: PublishingTabProps) => {
   const [shareholders, setShareholders] = useState<any[]>([{ name: "", role: "Composer/Author (CA)", perf_share: 0 }]);
   const [publishers, setPublishers] = useState<any[]>([{ name: "", role: "Publisher (E)", perf_share: 0, pro: "", ipi: "" }]);
 
+  // Prefill dialog state
+  const [showPrefillDialog, setShowPrefillDialog] = useState(false);
+  const [matchedTrack, setMatchedTrack] = useState<any>(null);
+
   useEffect(() => {
     fetchSubmissions();
   }, [userId]);
+
+  useEffect(() => {
+    // Debounce the track search to avoid too many queries
+    const timer = setTimeout(() => {
+      if (songTitle.trim().length > 2) {
+        checkForMatchingTrack();
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [songTitle]);
+
+  const checkForMatchingTrack = async () => {
+    if (!songTitle.trim()) return;
+
+    try {
+      // First get all releases for this user
+      const { data: releases, error: releasesError } = await supabase
+        .from("releases")
+        .select("id")
+        .eq("user_id", userId);
+
+      if (releasesError || !releases || releases.length === 0) return;
+
+      const releaseIds = releases.map(r => r.id);
+
+      // Then search for matching tracks in those releases
+      const { data: tracks, error: tracksError } = await supabase
+        .from("tracks")
+        .select("*")
+        .in("release_id", releaseIds)
+        .ilike("title", songTitle.trim());
+
+      if (tracksError || !tracks || tracks.length === 0) return;
+
+      // Found a match - show the prefill dialog
+      setMatchedTrack(tracks[0]);
+      setShowPrefillDialog(true);
+    } catch (error) {
+      console.error("Error checking for matching track:", error);
+    }
+  };
+
+  const handlePrefillFromTrack = () => {
+    if (!matchedTrack) return;
+
+    // Prefill ISRCs
+    if (matchedTrack.isrc) {
+      setIsrcs([matchedTrack.isrc]);
+    }
+
+    // Prefill performers from featured artists
+    if (matchedTrack.featured_artists && Array.isArray(matchedTrack.featured_artists)) {
+      const validPerformers = matchedTrack.featured_artists.filter((p: string) => p && p.trim());
+      if (validPerformers.length > 0) {
+        setPerformers(validPerformers);
+      }
+    }
+
+    // Prefill shareholders from composer/writer/contributor
+    const newShareholders: any[] = [];
+    if (matchedTrack.composer) {
+      newShareholders.push({
+        name: matchedTrack.composer,
+        role: "Composer (C)",
+        perf_share: 0,
+      });
+    }
+    if (matchedTrack.writer) {
+      newShareholders.push({
+        name: matchedTrack.writer,
+        role: "Composer/Author (CA)",
+        perf_share: 0,
+      });
+    }
+    if (matchedTrack.contributor && matchedTrack.contributor !== matchedTrack.composer && matchedTrack.contributor !== matchedTrack.writer) {
+      newShareholders.push({
+        name: matchedTrack.contributor,
+        role: "Composer/Author (CA)",
+        perf_share: 0,
+      });
+    }
+
+    if (newShareholders.length > 0) {
+      setShareholders(newShareholders);
+    }
+
+    // Prefill publisher info
+    if (matchedTrack.publisher) {
+      setPublishers([{
+        name: matchedTrack.publisher,
+        role: "Publisher (E)",
+        perf_share: 0,
+        pro: "",
+        ipi: matchedTrack.publisher_ipi || "",
+      }]);
+    }
+
+    setShowPrefillDialog(false);
+    setMatchedTrack(null);
+    toast.success("Form prefilled with track information");
+  };
 
   const fetchSubmissions = async () => {
     const { data, error } = await supabase
@@ -178,6 +285,57 @@ const PublishingTab = ({ userId }: PublishingTabProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Prefill Dialog */}
+      <Dialog open={showPrefillDialog} onOpenChange={setShowPrefillDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Match Found!
+            </DialogTitle>
+            <DialogDescription className="text-left">
+              We found a track that matches this name in your releases. Would you like to prefill information from it?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {matchedTrack && (
+              <div className="p-4 bg-muted/30 rounded-lg space-y-2">
+                <p className="text-sm font-medium">Track: {matchedTrack.title}</p>
+                {matchedTrack.isrc && (
+                  <p className="text-xs text-muted-foreground">ISRC: {matchedTrack.isrc}</p>
+                )}
+                {matchedTrack.composer && (
+                  <p className="text-xs text-muted-foreground">Composer: {matchedTrack.composer}</p>
+                )}
+                {matchedTrack.writer && (
+                  <p className="text-xs text-muted-foreground">Writer: {matchedTrack.writer}</p>
+                )}
+                {matchedTrack.publisher && (
+                  <p className="text-xs text-muted-foreground">Publisher: {matchedTrack.publisher}</p>
+                )}
+              </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPrefillDialog(false);
+                  setMatchedTrack(null);
+                }}
+              >
+                No, Continue Manually
+              </Button>
+              <Button
+                onClick={handlePrefillFromTrack}
+                className="bg-gradient-primary"
+              >
+                Yes, Prefill Information
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
         <CardHeader>
           <div className="flex justify-between items-start">
