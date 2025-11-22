@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { MfaVerification } from "@/components/MfaVerification";
 import { TrackballBeads } from "@/components/TrackballBeads";
 import trackballLogo from "@/assets/trackball-logo.png";
 const Auth = () => {
@@ -15,7 +14,6 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showMfaVerification, setShowMfaVerification] = useState(false);
   const [isZooming, setIsZooming] = useState(false);
   const navigate = useNavigate();
   const handleAuth = async (e: React.FormEvent) => {
@@ -39,48 +37,6 @@ const Auth = () => {
           error
         });
         if (error) throw error;
-
-        // Check if MFA is required
-        const {
-          data: {
-            currentLevel,
-            nextLevel
-          }
-        } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (nextLevel === 'aal2' && currentLevel !== 'aal2') {
-          // Check if device is trusted
-          const trustedDevice = localStorage.getItem('mfa_trusted_device');
-          if (trustedDevice) {
-            try {
-              const { userId, expires } = JSON.parse(trustedDevice);
-              const expirationDate = new Date(expires);
-              const now = new Date();
-              
-              // Check if trusted device is valid and not expired
-              if (userId === data.user.id && expirationDate > now) {
-                // Device is trusted, skip MFA
-                console.log("Trusted device found, skipping MFA");
-              } else {
-                // Expired or wrong user, remove and show MFA
-                localStorage.removeItem('mfa_trusted_device');
-                setShowMfaVerification(true);
-                setLoading(false);
-                return;
-              }
-            } catch {
-              // Invalid data, remove and show MFA
-              localStorage.removeItem('mfa_trusted_device');
-              setShowMfaVerification(true);
-              setLoading(false);
-              return;
-            }
-          } else {
-            // No trusted device, show MFA verification
-            setShowMfaVerification(true);
-            setLoading(false);
-            return;
-          }
-        }
 
         // Check if user is locked
         if (data.user) {
@@ -133,7 +89,37 @@ const Auth = () => {
             return;
           }
         }
+        
         toast.success("Welcome back!");
+        
+        // Trigger zoom animation
+        setIsZooming(true);
+        setLoading(false);
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        
+        // Fade to black and show loading
+        const fadeOverlay = document.createElement('div');
+        fadeOverlay.className = 'fixed inset-0 bg-black z-50 flex flex-col items-center justify-center gap-4';
+        fadeOverlay.style.opacity = '0';
+        fadeOverlay.style.transition = 'opacity 1s ease-in-out';
+        fadeOverlay.innerHTML = `
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p class="text-muted-foreground animate-pulse">Loading your dashboard...</p>
+        `;
+        document.body.appendChild(fadeOverlay);
+        
+        // Trigger fade in
+        setTimeout(() => {
+          fadeOverlay.style.opacity = '1';
+        }, 50);
+        
+        const loadingDuration = 5000 + Math.random() * 3000; // 5-8 seconds
+        await new Promise(resolve => setTimeout(resolve, loadingDuration));
+        
+        // Clean up overlay before navigation
+        fadeOverlay.remove();
+        navigate("/dashboard");
+        return;
       } else {
         const {
           error
@@ -161,49 +147,7 @@ const Auth = () => {
       setLoading(false);
     }
   };
-  if (showMfaVerification) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
-        <div className="absolute inset-0">
-          <TrackballBeads />
-        </div>
-        <MfaVerification onVerified={async () => {
-          setShowMfaVerification(false);
-          
-          // Trigger zoom animation
-          setIsZooming(true);
-          await new Promise(resolve => setTimeout(resolve, 1200));
-          
-          // Fade to black and show loading
-          const fadeOverlay = document.createElement('div');
-          fadeOverlay.className = 'fixed inset-0 bg-black z-50 flex flex-col items-center justify-center gap-4';
-          fadeOverlay.style.opacity = '0';
-          fadeOverlay.style.transition = 'opacity 1s ease-in-out';
-          fadeOverlay.innerHTML = `
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            <p class="text-muted-foreground animate-pulse">Loading your dashboard...</p>
-          `;
-          document.body.appendChild(fadeOverlay);
-          
-          // Trigger fade in
-          setTimeout(() => {
-            fadeOverlay.style.opacity = '1';
-          }, 50);
-          
-          const loadingDuration = 5000 + Math.random() * 3000; // 5-8 seconds
-          await new Promise(resolve => setTimeout(resolve, loadingDuration));
-          
-          // Clean up overlay before navigation
-          fadeOverlay.remove();
-          navigate("/dashboard");
-        }} onCancel={async () => {
-          await supabase.auth.signOut();
-          setShowMfaVerification(false);
-          setLoading(false);
-        }} />
-      </div>
-    );
-  }
+  
   return <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
       <div className="absolute inset-0">
         <TrackballBeads />
