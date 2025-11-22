@@ -44,8 +44,8 @@ const AccountManagerCard = ({
   return (
     <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
       <CardHeader className="pb-3">
-        <CardTitle className="text-xl font-bold">Account Manager</CardTitle>
-        <CardDescription>Your dedicated support contact</CardDescription>
+        <CardTitle className="text-xl font-bold text-left">Account Manager</CardTitle>
+        <CardDescription className="text-left">Your dedicated support contact</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {managerName && (

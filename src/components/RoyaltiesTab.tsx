@@ -157,7 +157,7 @@ const RoyaltiesTab = ({ userId }: RoyaltiesTabProps) => {
     <div className="space-y-6">
       <Card className="backdrop-blur-sm bg-gradient-primary/10 border-primary/30">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold flex items-center gap-3">
+          <CardTitle className="text-3xl font-bold flex items-center gap-3 text-left">
             <DollarSign className="w-8 h-8 text-primary" />
             Total Earnings
           </CardTitle>
@@ -171,8 +171,8 @@ const RoyaltiesTab = ({ userId }: RoyaltiesTabProps) => {
 
       <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Payment History</CardTitle>
-          <CardDescription>Your royalty payment records</CardDescription>
+          <CardTitle className="text-2xl font-bold text-left">Payment History</CardTitle>
+          <CardDescription className="text-left">Your royalty payment records</CardDescription>
         </CardHeader>
         <CardContent>
           {royalties.length === 0 ? (
@@ -222,8 +222,8 @@ const RoyaltiesTab = ({ userId }: RoyaltiesTabProps) => {
 
       <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Request Payout</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold text-left">Request Payout</CardTitle>
+          <CardDescription className="text-left">
             Submit a request to withdraw your earnings
           </CardDescription>
         </CardHeader>
