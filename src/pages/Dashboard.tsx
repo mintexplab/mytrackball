@@ -155,8 +155,8 @@ const Dashboard = () => {
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex justify-between items-center gap-2">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0 p-1">
-                <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-contain" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
               </div>
               <div className="min-w-0">
                 <h1 className="text-base sm:text-xl bg-gradient-primary bg-clip-text text-transparent truncate font-medium">
