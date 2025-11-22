@@ -16,6 +16,45 @@ interface AdvancedCatalogManagementProps {
   onFloatingPlayer?: (src: string, title: string, artist: string) => void;
 }
 
+// Helper function to get status display info
+const getStatusDisplay = (status: string) => {
+  const statusMap: Record<string, { label: string; className: string }> = {
+    pending: { 
+      label: "Pending", 
+      className: "bg-yellow-500/20 border-yellow-500/30 text-yellow-300" 
+    },
+    approved: { 
+      label: "Approved", 
+      className: "bg-green-500/20 border-green-500/30 text-green-300" 
+    },
+    delivering: { 
+      label: "Delivering", 
+      className: "bg-blue-500/20 border-blue-500/30 text-blue-300" 
+    },
+    rejected: { 
+      label: "Rejected", 
+      className: "bg-red-500/20 border-red-500/30 text-red-300" 
+    },
+    "taken down": { 
+      label: "Taken Down", 
+      className: "bg-red-600/20 border-red-600/30 text-red-400" 
+    },
+    "on hold": { 
+      label: "On Hold", 
+      className: "bg-orange-500/20 border-orange-500/30 text-orange-300" 
+    },
+    striked: { 
+      label: "Striked", 
+      className: "bg-purple-500/20 border-purple-500/30 text-purple-300" 
+    },
+  };
+
+  return statusMap[status?.toLowerCase()] || { 
+    label: status?.charAt(0).toUpperCase() + status?.slice(1) || "Unknown", 
+    className: "bg-muted/30 border-border text-muted-foreground" 
+  };
+};
+
 export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatingPlayer }: AdvancedCatalogManagementProps) => {
   const [releases, setReleases] = useState<any[]>([]);
   const [filteredReleases, setFilteredReleases] = useState<any[]>([]);
@@ -399,6 +438,8 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
                 <SelectItem value="rejected">Rejected</SelectItem>
                 <SelectItem value="delivering">Delivering</SelectItem>
                 <SelectItem value="taken down">Taken Down</SelectItem>
+                <SelectItem value="on hold">On Hold</SelectItem>
+                <SelectItem value="striked">Striked</SelectItem>
               </SelectContent>
             </Select>
 
@@ -505,8 +546,11 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
                       
                       <div className="flex flex-wrap gap-2 mt-2">
                         {release.status && (
-                          <Badge variant="outline" className="text-xs">
-                            {release.status}
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${getStatusDisplay(release.status).className}`}
+                          >
+                            {getStatusDisplay(release.status).label}
                           </Badge>
                         )}
                         {release.takedown_requested && (
