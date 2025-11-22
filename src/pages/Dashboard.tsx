@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic } from "lucide-react";
+import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Upload } from "lucide-react";
 import { toast } from "sonner";
 import trackballLogo from "@/assets/trackball-logo.png";
 import AdminPortal from "@/components/AdminPortal";
@@ -24,6 +24,7 @@ import PublishingTab from "@/components/PublishingTab";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { MaintenanceDialog } from "@/components/MaintenanceDialog";
 import { TerminatedAccountDialog } from "@/components/TerminatedAccountDialog";
+import BulkUploadTab from "@/components/BulkUploadTab";
 
 const QuickStatsGrid = ({ userId }: { userId?: string }) => {
   const [releases, setReleases] = useState<any[]>([]);
@@ -383,6 +384,10 @@ const Dashboard = () => {
               <Package className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Catalog</span>
             </TabsTrigger>
+            <TabsTrigger value="bulk-upload" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
+              <Upload className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Bulk Upload</span>
+            </TabsTrigger>
             {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && <TabsTrigger value="clients" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground flex-1 text-xs sm:text-sm py-2 transition-all">
                 <Users className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Clients</span>
@@ -543,6 +548,10 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="bulk-upload" className="animate-fade-in">
+            {user && <BulkUploadTab userId={user.id} />}
           </TabsContent>
 
           {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && <TabsContent value="clients" className="animate-fade-in">

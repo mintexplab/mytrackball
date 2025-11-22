@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Info, Music, Calendar, Tag, User, Building2, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { AudioPlayer } from "./AudioPlayer";
 
 interface ReleaseInfoDialogProps {
   releaseId: string;
@@ -111,6 +112,21 @@ const ReleaseInfoDialog = ({ releaseId }: ReleaseInfoDialogProps) => {
                   </div>
                 </div>
               </div>
+
+              {/* Audio Player */}
+              {release.audio_file_url && (
+                <>
+                  <Separator />
+                  <div className="space-y-3">
+                    <h4 className="font-bold text-lg">AUDIO PREVIEW</h4>
+                    <AudioPlayer
+                      src={release.audio_file_url}
+                      title={release.title}
+                      artist={release.artist_name}
+                    />
+                  </div>
+                </>
+              )}
 
               <Separator />
 
