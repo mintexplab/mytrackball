@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Download, Music, Calendar, Tag } from "lucide-react";
+import { Search, Filter, Download, Music, Calendar, Tag, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ReleaseInfoDialog from "./ReleaseInfoDialog";
 
@@ -99,6 +99,34 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
     toast.success("Catalog exported successfully");
   };
 
+  const handleDeleteRelease = async (releaseId: string, releaseStatus?: string | null) => {
+    if (releaseStatus === "pending") {
+      toast.error("Cannot delete releases with pending status");
+      return;
+    }
+
+    const deliveredStatuses = ["approved", "delivering"];
+    if (releaseStatus && deliveredStatuses.includes(releaseStatus)) {
+      toast.error(
+        "Live releases must be taken down before deletion. Please request takedown from the release details page."
+      );
+      return;
+    }
+
+    if (!confirm("Are you sure you want to delete this release? This action cannot be undone.")) {
+      return;
+    }
+
+    const { error } = await supabase.from("releases").delete().eq("id", releaseId);
+
+    if (error) {
+      toast.error("Failed to delete release");
+      return;
+    }
+
+    toast.success("Release deleted successfully");
+    fetchReleases();
+  };
   const uniqueGenres = Array.from(new Set(releases.map((r) => r.genre).filter(Boolean)));
 
   useEffect(() => {
@@ -236,7 +264,18 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
                       </div>
                     </div>
 
-                    <ReleaseInfoDialog releaseId={release.id} onFloatingPlayer={onFloatingPlayer} />
+                    <div className="flex flex-col gap-2 items-end">
+                      <ReleaseInfoDialog releaseId={release.id} onFloatingPlayer={onFloatingPlayer} />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-red-500/30 hover:bg-red-500/20 text-red-300"
+                        onClick={() => handleDeleteRelease(release.id, release.status)}
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
