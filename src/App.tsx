@@ -10,6 +10,7 @@ import CreateRelease from "./pages/CreateRelease";
 import AccountSettings from "./pages/AccountSettings";
 import SubscriptionManagement from "./pages/SubscriptionManagement";
 import AcceptInvitation from "./pages/AcceptInvitation";
+import AcceptLabelInvitation from "./pages/AcceptLabelInvitation";
 import ReleaseDetails from "./pages/ReleaseDetails";
 import NotFound from "./pages/NotFound";
 import Footer from "./components/Footer";
@@ -29,6 +30,7 @@ const App = () => {
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/accept-invitation" element={<AcceptInvitation />} />
+                <Route path="/accept-label-invitation" element={<AcceptLabelInvitation />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/create-release" element={<CreateRelease />} />
                 <Route path="/release/:id" element={<ReleaseDetails />} />
