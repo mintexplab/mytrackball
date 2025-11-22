@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music } from "lucide-react";
+import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music, Settings, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import UserManagement from "./UserManagement";
 import ReleasesList from "./ReleasesList";
 import { AnnouncementManagement } from "./AnnouncementManagement";
@@ -41,50 +42,106 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
             </div>
           </div>
           
-          <div className="flex items-center gap-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-              <TabsList className="bg-muted/50 h-auto p-1 hidden md:flex">
-                <TabsTrigger value="users" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-                  <Users className="w-4 h-4 mr-2" />
-                  Users
-                </TabsTrigger>
-                <TabsTrigger value="managers" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-                  <Users className="w-4 h-4 mr-2" />
-                  Managers
-                </TabsTrigger>
-                <TabsTrigger value="releases" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-                  <FileMusic className="w-4 h-4 mr-2" />
-                  Releases
-                </TabsTrigger>
-                <TabsTrigger value="labels" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-                  <Building2 className="w-4 h-4 mr-2" />
-                  Labels
-                </TabsTrigger>
-                <TabsTrigger value="invite-artists" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Invite Artists
-                </TabsTrigger>
-                <TabsTrigger value="announcements" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-                  <Megaphone className="w-4 h-4 mr-2" />
-                  Announcements
-                </TabsTrigger>
-                <TabsTrigger value="royalties" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Royalties
-                </TabsTrigger>
-                <TabsTrigger value="payouts" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-                  <Wallet className="w-4 h-4 mr-2" />
-                  Payouts
-                </TabsTrigger>
-                <TabsTrigger value="publishing" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-                  <Music className="w-4 h-4 mr-2" />
-                  Publishing
-                </TabsTrigger>
-                <TabsTrigger value="version" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-                  Version
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <div className="flex items-center gap-4">
+            {/* Main Navigation */}
+            <div className="hidden md:flex items-center gap-2">
+              <Button 
+                variant={activeTab === "users" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setActiveTab("users")}
+                className={activeTab === "users" ? "bg-gradient-primary text-primary-foreground" : ""}
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Users
+              </Button>
+
+              <Button 
+                variant={activeTab === "releases" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setActiveTab("releases")}
+                className={activeTab === "releases" ? "bg-gradient-primary text-primary-foreground" : ""}
+              >
+                <FileMusic className="w-4 h-4 mr-2" />
+                Releases
+              </Button>
+
+              {/* Content Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-1">
+                    <FileMusic className="w-4 h-4" />
+                    Content
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-card border-border">
+                  <DropdownMenuLabel>Content Management</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setActiveTab("publishing")} className="cursor-pointer">
+                    <Music className="w-4 h-4 mr-2" />
+                    Publishing
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab("announcements")} className="cursor-pointer">
+                    <Megaphone className="w-4 h-4 mr-2" />
+                    Announcements
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Financial Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-1">
+                    <DollarSign className="w-4 h-4" />
+                    Financial
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-card border-border">
+                  <DropdownMenuLabel>Financial Management</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setActiveTab("royalties")} className="cursor-pointer">
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Royalties
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab("payouts")} className="cursor-pointer">
+                    <Wallet className="w-4 h-4 mr-2" />
+                    Payout Requests
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Settings Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-1">
+                    <Settings className="w-4 h-4" />
+                    Settings
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-card border-border">
+                  <DropdownMenuLabel>System Settings</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setActiveTab("managers")} className="cursor-pointer">
+                    <Users className="w-4 h-4 mr-2" />
+                    Account Managers
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab("labels")} className="cursor-pointer">
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Label Accounts
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab("invite-artists")} className="cursor-pointer">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Invite Artists
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setActiveTab("version")} className="cursor-pointer">
+                    Version Manager
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
             
             <Button
               variant="outline"
@@ -101,47 +158,45 @@ const AdminPortal = ({ onSignOut }: AdminPortalProps) => {
 
       <main className="container mx-auto px-4 py-8 relative">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="flex flex-col md:hidden w-full bg-muted/50 h-auto">
-            <TabsTrigger value="users" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
+          {/* Mobile Navigation - Simplified */}
+          <div className="flex md:hidden gap-2 mb-6 flex-wrap">
+            <Button 
+              variant={activeTab === "users" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveTab("users")}
+              className={activeTab === "users" ? "bg-gradient-primary" : ""}
+            >
               <Users className="w-4 h-4 mr-2" />
               Users
-            </TabsTrigger>
-            <TabsTrigger value="managers" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
-              <Users className="w-4 h-4 mr-2" />
-              Managers
-            </TabsTrigger>
-            <TabsTrigger value="releases" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
+            </Button>
+            <Button 
+              variant={activeTab === "releases" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveTab("releases")}
+              className={activeTab === "releases" ? "bg-gradient-primary" : ""}
+            >
               <FileMusic className="w-4 h-4 mr-2" />
               Releases
-            </TabsTrigger>
-            <TabsTrigger value="labels" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
-              <Building2 className="w-4 h-4 mr-2" />
-              Labels
-            </TabsTrigger>
-            <TabsTrigger value="invite-artists" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
-              <UserPlus className="w-4 h-4 mr-2" />
-              Invite Artists
-            </TabsTrigger>
-            <TabsTrigger value="announcements" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
-              <Megaphone className="w-4 h-4 mr-2" />
-              Announcements
-            </TabsTrigger>
-            <TabsTrigger value="royalties" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
-              <DollarSign className="w-4 h-4 mr-2" />
-              Royalties
-            </TabsTrigger>
-            <TabsTrigger value="payouts" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
-              <Wallet className="w-4 h-4 mr-2" />
-              Payouts
-            </TabsTrigger>
-            <TabsTrigger value="publishing" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
-              <Music className="w-4 h-4 mr-2" />
-              Publishing
-            </TabsTrigger>
-            <TabsTrigger value="version" className="data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground w-full justify-start">
-              Version
-            </TabsTrigger>
-          </TabsList>
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  More
+                  <ChevronDown className="w-3 h-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-card border-border">
+                <DropdownMenuItem onClick={() => setActiveTab("managers")}>Managers</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("labels")}>Labels</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("invite-artists")}>Invite Artists</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("announcements")}>Announcements</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("royalties")}>Royalties</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("payouts")}>Payouts</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("publishing")}>Publishing</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("version")}>Version</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
           <TabsContent value="users">
             <UserManagement />
