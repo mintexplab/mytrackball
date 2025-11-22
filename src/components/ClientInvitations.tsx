@@ -232,8 +232,8 @@ const ClientInvitations = () => {
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-2xl font-bold">Client Invitations</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-2xl font-bold text-left">Client Invitations</CardTitle>
+            <CardDescription className="text-left">
               Invite users with specific permissions to access your platform
             </CardDescription>
           </div>

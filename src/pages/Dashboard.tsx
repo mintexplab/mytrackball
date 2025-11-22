@@ -20,6 +20,52 @@ import ClientInvitations from "@/components/ClientInvitations";
 import ClientInvitationAcceptance from "@/components/ClientInvitationAcceptance";
 import AccountManagerCard from "@/components/AccountManagerCard";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
+const QuickStatsGrid = ({ userId }: { userId?: string }) => {
+  const [releases, setReleases] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const fetchReleases = async () => {
+      if (!userId) return;
+      
+      const { data } = await supabase
+        .from("releases")
+        .select("*")
+        .eq("user_id", userId);
+      
+      setReleases(data || []);
+    };
+    
+    fetchReleases();
+  }, [userId]);
+  
+  const delivered = releases.filter(r => r.status === "delivering").length;
+  const drafts = releases.filter(r => !r.status || r.status === "rejected").length;
+  const takenDown = releases.filter(r => r.status === "taken down").length;
+  const processing = releases.filter(r => r.status === "pending" || r.status === "approved").length;
+  
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
+        <p className="text-xs sm:text-sm text-muted-foreground text-left">Delivered</p>
+        <p className="text-xl sm:text-2xl font-bold text-foreground text-left">{delivered}</p>
+      </div>
+      <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
+        <p className="text-xs sm:text-sm text-muted-foreground text-left">Drafts</p>
+        <p className="text-xl sm:text-2xl font-bold text-foreground text-left">{drafts}</p>
+      </div>
+      <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
+        <p className="text-xs sm:text-sm text-muted-foreground text-left">Taken Down</p>
+        <p className="text-xl sm:text-2xl font-bold text-foreground text-left">{takenDown}</p>
+      </div>
+      <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
+        <p className="text-xs sm:text-sm text-muted-foreground text-left">Processing</p>
+        <p className="text-xl sm:text-2xl font-bold text-foreground text-left">{processing}</p>
+      </div>
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -209,22 +255,13 @@ const Dashboard = () => {
               <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
                 <CollapsibleTrigger className="w-full">
                   <CardHeader className="pb-3 sm:pb-6 cursor-pointer hover:bg-muted/30 transition-colors">
-                    <CardTitle className="text-lg sm:text-2xl font-bold">Quick Stats</CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">Your distribution overview</CardDescription>
+                    <CardTitle className="text-lg sm:text-2xl font-bold text-left">Quick Stats</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm text-left">Your distribution overview</CardDescription>
                   </CardHeader>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <CardContent className="space-y-3 sm:space-y-4">
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                      <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
-                        <p className="text-xs sm:text-sm text-muted-foreground">Total Releases</p>
-                        <p className="text-xl sm:text-2xl font-bold text-foreground">{releaseCount}</p>
-                      </div>
-                      <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
-                        <p className="text-xs sm:text-sm text-muted-foreground">Active</p>
-                        <p className="text-xl sm:text-2xl font-bold text-accent">{releaseCount}</p>
-                      </div>
-                    </div>
+                    <QuickStatsGrid userId={user?.id} />
                   </CardContent>
                 </CollapsibleContent>
               </Card>
@@ -236,8 +273,8 @@ const Dashboard = () => {
                   <CardHeader className="pb-3 sm:pb-6 cursor-pointer hover:bg-muted/30 transition-colors">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                       <div className="min-w-0">
-                        <CardTitle className="text-lg sm:text-2xl font-bold">Your Releases</CardTitle>
-                        <CardDescription className="text-xs sm:text-sm">Manage your music distribution</CardDescription>
+                        <CardTitle className="text-lg sm:text-2xl font-bold text-left">Your Releases</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm text-left">Manage your music distribution</CardDescription>
                       </div>
                       <Button onClick={(e) => { e.stopPropagation(); navigate("/create-release"); }} className="bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow w-full sm:w-auto text-sm">
                         <Plus className="w-4 h-4 mr-2" />
@@ -266,8 +303,8 @@ const Dashboard = () => {
                   <CardHeader className="pb-3 sm:pb-6 cursor-pointer hover:bg-muted/30 transition-colors">
                     <div className="flex justify-between items-start gap-3">
                       <div className="min-w-0">
-                        <CardTitle className="text-lg sm:text-2xl font-bold">Your Plan</CardTitle>
-                        <CardDescription className="text-xs sm:text-sm">Current distribution plan</CardDescription>
+                        <CardTitle className="text-lg sm:text-2xl font-bold text-left">Your Plan</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm text-left">Current distribution plan</CardDescription>
                       </div>
                       <Package className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
                     </div>
@@ -313,11 +350,11 @@ const Dashboard = () => {
           <TabsContent value="help" className="animate-fade-in">
             <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
               <CardHeader>
-                <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                <CardTitle className="text-2xl font-bold flex items-center gap-2 text-left">
                   <HelpCircle className="w-6 h-6 text-primary" />
                   Help & Support
                 </CardTitle>
-                <CardDescription>Get assistance with your account</CardDescription>
+                <CardDescription className="text-left">Get assistance with your account</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">

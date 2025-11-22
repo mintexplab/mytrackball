@@ -218,8 +218,8 @@ export const CollaboratorsManagement = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Add Collaborator</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-left">Add Collaborator</CardTitle>
+          <CardDescription className="text-left">
             Create a new collaborator to split royalties with
           </CardDescription>
         </CardHeader>
@@ -257,8 +257,8 @@ export const CollaboratorsManagement = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Assign Collaborator to Release</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-left">Assign Collaborator to Release</CardTitle>
+          <CardDescription className="text-left">
             Add a collaborator to a release with their royalty percentage
           </CardDescription>
         </CardHeader>
@@ -325,8 +325,8 @@ export const CollaboratorsManagement = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Release Collaborators</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-left">Release Collaborators</CardTitle>
+          <CardDescription className="text-left">
             View and manage collaborators assigned to your releases
           </CardDescription>
         </CardHeader>
