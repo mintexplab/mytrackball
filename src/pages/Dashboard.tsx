@@ -74,6 +74,7 @@ const Dashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userPlan, setUserPlan] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [parentAccount, setParentAccount] = useState<any>(null);
   const [releaseCount, setReleaseCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showLoader, setShowLoader] = useState(false);
@@ -154,6 +155,16 @@ const Dashboard = () => {
       data: profileData
     } = await supabase.from("profiles").select("*").eq("id", userId).single();
     setProfile(profileData);
+
+    // If user has a parent account, fetch parent account details
+    if (profileData?.parent_account_id) {
+      const { data: parentData } = await supabase
+        .from("profiles")
+        .select("label_name, display_name, artist_name, user_id")
+        .eq("id", profileData.parent_account_id)
+        .single();
+      setParentAccount(parentData);
+    }
   };
 
   // Refresh profile data periodically to catch admin updates
@@ -215,6 +226,13 @@ const Dashboard = () => {
                 </h1>
                 {profile?.artist_name && <p className="text-xs text-muted-foreground truncate">{profile.artist_name}</p>}
                 {profile?.user_id && <p className="text-xs text-muted-foreground/70">ID:{profile.user_id}</p>}
+                {parentAccount && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <Badge variant="outline" className="text-xs border-primary/30 bg-primary/10">
+                      Subaccount of {parentAccount.label_name || parentAccount.display_name || parentAccount.artist_name}
+                    </Badge>
+                  </div>
+                )}
               </div>
             </div>
             
