@@ -29,6 +29,17 @@ const Dashboard = () => {
 
       setUserId(session.user.id);
 
+      // Check subscription status first (this updates the database if needed)
+      try {
+        await supabase.functions.invoke("check-subscription", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+      } catch (error) {
+        console.error("Error checking subscription:", error);
+      }
+
       // Fetch user profile
       const { data: profileData } = await supabase
         .from("profiles")
