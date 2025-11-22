@@ -168,7 +168,7 @@ const Auth = () => {
           <div>
             <CardTitle className="text-3xl bg-gradient-primary bg-clip-text text-transparent font-normal font-sans text-center">Trackball Distribution</CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
-              {isLogin ? "Sign in to your account" : "Create your artist account"}
+              {isLogin ? "Sign in to My Trackball using your Google or Trackball account" : "Create your artist account"}
             </CardDescription>
           </div>
         </CardHeader>
