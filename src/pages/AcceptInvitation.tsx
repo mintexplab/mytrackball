@@ -127,7 +127,25 @@ const AcceptInvitation = () => {
         if (permError) throw permError;
       }
 
-      toast.success(`Account created! You're now a client of ${invitation.inviter.label_name || invitation.inviter.display_name}!`);
+      // Update profile with parent account and label info
+      const { data: inviterProfile } = await supabase
+        .from("profiles")
+        .select("label_name, id")
+        .eq("id", invitation.inviter_id)
+        .single();
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          parent_account_id: invitation.inviter_id,
+          label_name: inviterProfile?.label_name || null,
+          artist_name: validatedData.fullName,
+        })
+        .eq("id", authData.user.id);
+
+      if (profileError) throw profileError;
+
+      toast.success(`Account created! You're now part of ${inviterProfile?.label_name || "the label"}!`);
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Error:", error);
