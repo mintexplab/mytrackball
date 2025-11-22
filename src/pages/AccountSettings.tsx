@@ -238,6 +238,9 @@ const AccountSettings = () => {
         ...formData,
         avatar_url: publicUrl
       });
+
+      // Refresh profile to update UI
+      await fetchProfile();
       
       toast.success('Profile picture updated successfully!');
     } catch (error: any) {
@@ -265,6 +268,9 @@ const AccountSettings = () => {
         ...formData,
         avatar_url: ""
       });
+
+      // Refresh profile to update UI
+      await fetchProfile();
       
       toast.success('Profile picture removed');
     } catch (error: any) {
