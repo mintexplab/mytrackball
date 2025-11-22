@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { MfaVerification } from "@/components/MfaVerification";
 import { TrackballBeads } from "@/components/TrackballBeads";
+import { SparkleBeads } from "@/components/SparkleBeads";
 import trackballLogo from "@/assets/trackball-logo.png";
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -148,8 +149,8 @@ const Auth = () => {
   }
   return <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
       <div className="absolute inset-0">
-        <div className="absolute w-64 h-64 bg-red-500/40 rounded-full blur-3xl animate-[ps2-ripple_25s_ease-in-out_infinite]" />
         <TrackballBeads />
+        <SparkleBeads />
       </div>
       
       <Card className="w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20">
