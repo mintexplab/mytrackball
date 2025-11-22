@@ -232,7 +232,7 @@ const ClientInvitations = () => {
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-2xl font-bold text-left">Client Invitations</CardTitle>
+            <CardTitle className="text-2xl font-bold text-left">User Invitations</CardTitle>
             <CardDescription className="text-left">
               Invite users with specific permissions to access your platform
             </CardDescription>
@@ -241,12 +241,12 @@ const ClientInvitations = () => {
             <DialogTrigger asChild>
               <Button className="bg-gradient-primary hover:opacity-90">
                 <UserPlus className="w-4 h-4 mr-2" />
-                Invite Client
+                Invite User
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-card border-border max-w-md">
               <DialogHeader>
-                <DialogTitle className="font-bold">Invite Client Account</DialogTitle>
+                <DialogTitle className="font-bold">Invite User Account</DialogTitle>
                 <DialogDescription>
                   Send an invitation with specific permissions
                 </DialogDescription>
@@ -306,7 +306,7 @@ const ClientInvitations = () => {
       <CardContent>
         {invitations.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No invitations sent yet. Invite clients to get started.
+            No invitations sent yet. Invite users to get started.
           </div>
         ) : (
           <Table>
