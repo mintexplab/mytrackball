@@ -9,14 +9,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Mail } from "lucide-react";
+import { AlertTriangle, Mail, LogOut } from "lucide-react";
 import { format } from "date-fns";
 
 interface MaintenanceDialogProps {
   userId: string;
+  onSignOut: () => void;
 }
 
-export const MaintenanceDialog = ({ userId }: MaintenanceDialogProps) => {
+export const MaintenanceDialog = ({ userId, onSignOut }: MaintenanceDialogProps) => {
   const [maintenanceSettings, setMaintenanceSettings] = useState<any>(null);
   const [showDialog, setShowDialog] = useState(false);
 
@@ -109,13 +110,21 @@ export const MaintenanceDialog = ({ userId }: MaintenanceDialogProps) => {
             </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
+        <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
           <Button
             onClick={handleContactSupport}
             className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
           >
             <Mail className="w-4 h-4 mr-2" />
             Contact Support
+          </Button>
+          <Button
+            onClick={onSignOut}
+            variant="outline"
+            className="w-full border-border hover:bg-muted"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

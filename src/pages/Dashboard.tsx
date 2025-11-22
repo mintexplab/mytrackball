@@ -108,6 +108,9 @@ const Dashboard = () => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        // Check maintenance mode FIRST, before loader
+        checkMaintenanceMode(session.user.id);
+        
         // Check if loader has been shown this session
         const loaderShown = sessionStorage.getItem('loginLoaderShown');
         if (!loaderShown) {
@@ -117,14 +120,7 @@ const Dashboard = () => {
           setTimeout(() => {
             setShowLoader(false);
             sessionStorage.setItem('loginLoaderShown', 'true');
-            // Check maintenance mode after loader completes
-            setTimeout(() => {
-              checkMaintenanceMode(session.user.id);
-            }, 300);
           }, randomDelay);
-        } else {
-          // If loader already shown, check maintenance immediately
-          checkMaintenanceMode(session.user.id);
         }
         checkAdminStatus(session.user.id);
         fetchUserPlan(session.user.id);
@@ -271,11 +267,11 @@ const Dashboard = () => {
     return <AdminPortal onSignOut={handleSignOut} />;
   }
 
-  // Show maintenance dialog if maintenance mode is active
-  if (maintenanceMode && showMaintenanceDialog) {
+  // Show maintenance dialog if maintenance mode is active (before loader)
+  if (maintenanceMode && showMaintenanceDialog && user) {
     return (
       <div className="min-h-screen bg-background relative">
-        {user && <MaintenanceDialog userId={user.id} />}
+        <MaintenanceDialog userId={user.id} onSignOut={handleSignOut} />
       </div>
     );
   }
