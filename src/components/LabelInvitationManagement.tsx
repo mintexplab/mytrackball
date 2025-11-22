@@ -19,6 +19,7 @@ const labelInvitationSchema = z.object({
   subscription_tier: z.enum(["Trackball Signature", "Trackball Prestige", "Trackball Partner"]),
   service_access: z.array(z.string()).min(1, "Select at least one service"),
   custom_royalty_split: z.number().min(0).max(100).optional(),
+  invited_role: z.enum(['owner', 'sublabel_admin', 'member']),
 });
 
 const LabelInvitationManagement = () => {
@@ -38,7 +39,8 @@ const LabelInvitationManagement = () => {
   const [formData, setFormData] = useState({
     label_name: "",
     master_account_email: "",
-    subscription_tier: "Trackball Signature"
+    subscription_tier: "Trackball Signature",
+    invited_role: "member" as 'owner' | 'sublabel_admin' | 'member',
   });
 
   useEffect(() => {
@@ -132,7 +134,8 @@ const LabelInvitationManagement = () => {
       const validatedData = labelInvitationSchema.parse({
         ...formData,
         service_access: serviceAccess,
-        custom_royalty_split: formData.subscription_tier === "Trackball Partner" ? customRoyaltySplit : undefined
+        custom_royalty_split: formData.subscription_tier === "Trackball Partner" ? customRoyaltySplit : undefined,
+        invited_role: formData.invited_role,
       });
 
       // Check if master account already exists
@@ -161,6 +164,7 @@ const LabelInvitationManagement = () => {
           subscription_tier: validatedData.subscription_tier,
           service_access: validatedData.service_access,
           custom_royalty_split: validatedData.custom_royalty_split || null,
+          invited_role: validatedData.invited_role,
           invited_by: user.id,
           status: "pending"
         })
@@ -178,7 +182,8 @@ const LabelInvitationManagement = () => {
           subscription_tier: validatedData.subscription_tier,
           invitation_id: invitation.id,
           service_access: validatedData.service_access,
-          custom_royalty_split: validatedData.custom_royalty_split
+          custom_royalty_split: validatedData.custom_royalty_split,
+          invited_role: validatedData.invited_role,
         }
       });
 
@@ -193,7 +198,8 @@ const LabelInvitationManagement = () => {
       setFormData({
         label_name: "",
         master_account_email: "",
-        subscription_tier: "Trackball Signature"
+        subscription_tier: "Trackball Signature",
+        invited_role: "member",
       });
       setServiceAccess(["catalog", "royalties", "announcements", "support", "settings"]);
       setCustomRoyaltySplit(70);
@@ -280,6 +286,28 @@ const LabelInvitationManagement = () => {
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="role">Invited User Role *</Label>
+                  <Select
+                    value={formData.invited_role}
+                    onValueChange={(value: 'owner' | 'sublabel_admin' | 'member') => 
+                      setFormData({ ...formData, invited_role: value })
+                    }
+                  >
+                    <SelectTrigger id="role" className="bg-background border-border">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      <SelectItem value="owner">Master Account Owner</SelectItem>
+                      <SelectItem value="sublabel_admin">Sublabel Admin</SelectItem>
+                      <SelectItem value="member">Team Member</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Role determines access level and permissions within the label
+                  </p>
                 </div>
 
                 {formData.subscription_tier === "Trackball Partner" && (

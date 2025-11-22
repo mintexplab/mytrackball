@@ -1,30 +1,28 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Building2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Loader2, Building2 } from "lucide-react";
 import { z } from "zod";
-import { TrackballBeads } from "@/components/TrackballBeads";
-import trackballLogo from "@/assets/trackball-logo.png";
-import { ExistingUserLabelInvitation } from "@/components/ExistingUserLabelInvitation";
 
 const signupSchema = z.object({
-  fullName: z.string().trim().min(1, "Name is required").max(100),
+  fullName: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
   email: z.string().email("Invalid email address").max(255),
-  password: z.string().min(8, "Password must be at least 8 characters").max(100),
+  password: z.string().min(8, "Password must be at least 8 characters").max(72),
 });
 
-const AcceptLabelInvitation = () => {
-  const [searchParams] = useSearchParams();
+export default function AcceptLabelInvitation() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const invitationId = searchParams.get("id");
+
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [invitation, setInvitation] = useState<any>(null);
-  const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -32,31 +30,13 @@ const AcceptLabelInvitation = () => {
   });
 
   useEffect(() => {
-    checkIfExistingUser();
-  }, [searchParams, navigate]);
-
-  const checkIfExistingUser = async () => {
-    const invitationId = searchParams.get("id");
     if (!invitationId) {
       toast.error("Invalid invitation link");
       navigate("/auth");
       return;
     }
-
-    // Check if user is already logged in
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (user) {
-      // User is logged in, show existing user flow
-      setIsExistingUser(true);
-    } else {
-      // User is not logged in, show signup flow
-      setIsExistingUser(false);
-      fetchInvitation(invitationId);
-    }
-  };
-
-  const fetchInvitation = async (invitationId: string) => {
+    fetchInvitation();
+  }, [invitationId]);
     try {
       const { data, error } = await supabase
         .from("label_invitations")
@@ -95,44 +75,52 @@ const AcceptLabelInvitation = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
+    
     try {
-      const validatedData = signupSchema.parse(formData);
+      setSubmitting(true);
+
+      // Validate form data
+      const validated = signupSchema.parse(formData);
 
       // Check if email matches invitation
-      if (validatedData.email !== invitation.master_account_email && 
-          !invitation.additional_users?.includes(validatedData.email)) {
-        toast.error("Email does not match invitation");
-        setLoading(false);
+      const isValidEmail = 
+        validated.email === invitation.master_account_email ||
+        invitation.additional_users?.includes(validated.email);
+
+      if (!isValidEmail) {
+        toast.error("This email doesn't match the invitation");
         return;
       }
 
       // Create auth account
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: validatedData.email,
-        password: validatedData.password,
+        email: validated.email,
+        password: validated.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
-            full_name: validatedData.fullName,
-          },
-        },
+            full_name: validated.fullName,
+          }
+        }
       });
 
       if (signUpError) throw signUpError;
       if (!authData.user) throw new Error("Failed to create account");
 
-      // Get the plan ID for the subscription tier
-      const { data: planData, error: planError } = await supabase
-        .from("plans")
-        .select("id, name")
-        .eq("name", invitation.subscription_tier)
-        .single();
+      // Create profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .insert({
+          id: authData.user.id,
+          user_id: authData.user.id,
+          email: validated.email,
+          full_name: validated.fullName,
+        });
 
-      if (planError) throw planError;
+      if (profileError) throw profileError;
 
-      // Create or get label
-      const { data: labelData, error: labelError } = await supabase
+      // Get or create label
+      let { data: labelData } = await supabase
         .from("labels")
         .select("id")
         .eq("name", invitation.label_name)
@@ -141,7 +129,6 @@ const AcceptLabelInvitation = () => {
       let labelId = labelData?.id;
 
       if (!labelId) {
-        // Create new label
         const { data: newLabel, error: createLabelError } = await supabase
           .from("labels")
           .insert({
@@ -155,150 +142,168 @@ const AcceptLabelInvitation = () => {
         labelId = newLabel.id;
       }
 
-      // Update profile with label info
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          label_name: invitation.label_name,
-          label_id: labelId,
-          active_label_id: labelId, // Set this label as active
-        })
-        .eq("id", authData.user.id);
-
-      if (profileError) throw profileError;
-
-      // Create label membership record
-      const isOwner = validatedData.email === invitation.master_account_email;
+      // Create label membership
+      const isOwner = validated.email === invitation.master_account_email;
       const { error: membershipError } = await supabase
         .from("user_label_memberships")
         .insert({
           user_id: authData.user.id,
           label_id: labelId,
           label_name: invitation.label_name,
-          role: isOwner ? "owner" : "member",
+          role: invitation.invited_role || (isOwner ? 'owner' : 'member'),
         });
 
-      if (membershipError) {
-        console.error("Error creating membership:", membershipError);
-        // Don't fail the signup if this fails
-      }
+      if (membershipError) throw membershipError;
 
-      // Assign plan
-      const { error: planAssignError } = await supabase
-        .from("user_plans")
-        .insert({
-          user_id: authData.user.id,
-          plan_id: planData.id,
-          plan_name: planData.name,
-          status: "active",
-        });
+      // Update profile with label info
+      await supabase
+        .from("profiles")
+        .update({
+          label_id: labelId,
+          label_name: invitation.label_name,
+          active_label_id: labelId,
+        })
+        .eq("id", authData.user.id);
 
-      if (planAssignError) throw planAssignError;
+      // If owner of partner tier, assign plan and royalty split
+      if (isOwner && invitation.subscription_tier === "Trackball Partner") {
+        const { data: planData } = await supabase
+          .from("plans")
+          .select("id, name")
+          .eq("name", "Trackball Partner")
+          .single();
 
-      // If partner tier with custom royalty split, store it
-      if (invitation.subscription_tier === "Trackball Partner" && invitation.custom_royalty_split) {
-        const { error: splitError } = await supabase
-          .from("partner_royalty_splits")
-          .insert({
-            user_id: authData.user.id,
-            royalty_split_percentage: invitation.custom_royalty_split
-          });
+        if (planData) {
+          await supabase
+            .from("user_plans")
+            .insert({
+              user_id: authData.user.id,
+              plan_id: planData.id,
+              plan_name: planData.name,
+              status: "active",
+            });
+        }
 
-        if (splitError) {
-          console.error("Error storing royalty split:", splitError);
-          // Don't fail the signup if this fails, just log it
+        if (invitation.custom_royalty_split) {
+          await supabase
+            .from("partner_royalty_splits")
+            .insert({
+              user_id: authData.user.id,
+              royalty_split_percentage: invitation.custom_royalty_split,
+            });
+        }
+      } else if (isOwner) {
+        // Assign the subscription tier plan for non-partner tiers
+        const { data: planData } = await supabase
+          .from("plans")
+          .select("id, name")
+          .eq("name", invitation.subscription_tier)
+          .single();
+
+        if (planData) {
+          await supabase
+            .from("user_plans")
+            .insert({
+              user_id: authData.user.id,
+              plan_id: planData.id,
+              plan_name: planData.name,
+              status: "active",
+            });
         }
       }
 
       // Mark invitation as accepted
-      const { error: updateInviteError } = await supabase
+      await supabase
         .from("label_invitations")
         .update({
           status: "accepted",
           accepted_at: new Date().toISOString(),
         })
-        .eq("id", invitation.id);
+        .eq("id", invitationId);
 
-      if (updateInviteError) throw updateInviteError;
+      toast.success(`Welcome to ${invitation.label_name}!`);
+      
+      // Sign in the user
+      await supabase.auth.signInWithPassword({
+        email: validated.email,
+        password: validated.password,
+      });
 
-      toast.success("Account created successfully! Welcome to Trackball!");
-      navigate("/dashboard");
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
+
     } catch (error: any) {
-      console.error("Error accepting invitation:", error);
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
       } else {
+        console.error("Error accepting invitation:", error);
         toast.error(error.message || "Failed to create account");
       }
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  if (!invitation && isExistingUser === false) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  // If user is logged in, show existing user flow
-  if (isExistingUser) {
-    return <ExistingUserLabelInvitation />;
+  if (!invitation) {
+    return null;
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
-      <div className="absolute inset-0">
-        <TrackballBeads />
-      </div>
-      
-      <Card 
-        className="w-full max-w-md relative backdrop-blur-sm bg-black border-primary/30"
-        style={{
-          boxShadow: '0 0 40px rgba(239, 68, 68, 0.3), 0 0 80px rgba(239, 68, 68, 0.15)'
-        }}
-      >
-        <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-glow overflow-hidden">
-            <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md border-border bg-card">
+        <CardHeader className="text-center space-y-2">
+          <div className="mx-auto w-16 h-16 rounded-full bg-gradient-primary flex items-center justify-center mb-2">
+            <Building2 className="w-8 h-8 text-white" />
           </div>
-          <div>
-            <CardTitle className="text-3xl bg-gradient-primary bg-clip-text text-transparent font-normal font-sans text-center">
-              Join {invitation.label_name}
-            </CardTitle>
-            <CardDescription className="text-muted-foreground mt-2">
-              You've been invited to join as a label member
-            </CardDescription>
-          </div>
-          <div className="flex justify-center gap-2">
-            <Badge className="bg-gradient-primary text-white">
-              {invitation.subscription_tier}
-            </Badge>
-            {formData.email === invitation.master_account_email && (
-              <Badge variant="outline" className="border-primary/30">
-                Master Account
-              </Badge>
-            )}
-          </div>
+          <CardTitle className="text-2xl text-foreground">
+            Join {invitation.label_name}
+          </CardTitle>
+          <CardDescription>
+            You've been invited to join {invitation.label_name} on Trackball Distribution
+          </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="bg-muted/50 rounded-lg p-4 mb-6 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Label</span>
+              <span className="text-foreground font-medium">{invitation.label_name}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Subscription</span>
+              <span className="text-primary font-medium">{invitation.subscription_tier}</span>
+            </div>
+            {invitation.custom_royalty_split && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Royalty Split</span>
+                <span className="text-foreground font-medium">{invitation.custom_royalty_split}%</span>
+              </div>
+            )}
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName">Full Name *</Label>
               <Input
                 id="fullName"
                 placeholder="John Doe"
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                 required
-                className="bg-background/50 border-border"
+                disabled={submitting}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email Address *</Label>
               <Input
                 id="email"
                 type="email"
@@ -306,13 +311,12 @@ const AcceptLabelInvitation = () => {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                className="bg-background/50 border-border"
-                readOnly={formData.email === invitation.master_account_email}
+                disabled={submitting}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password *</Label>
               <Input
                 id="password"
                 type="password"
@@ -320,32 +324,34 @@ const AcceptLabelInvitation = () => {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
-                className="bg-background/50 border-border"
+                disabled={submitting}
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
-              disabled={loading}
+              className="w-full bg-gradient-primary hover:opacity-90"
+              disabled={submitting}
             >
-              {loading ? "Creating Account..." : "Accept Invitation & Join"}
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Account...
+                </>
+              ) : (
+                "Accept & Create Account"
+              )}
             </Button>
-
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => navigate("/auth")}
-                className="text-primary hover:text-primary/80 transition-all duration-300 hover:scale-105"
-              >
-                Already have an account? Sign in
-              </button>
-            </div>
           </form>
+
+          <p className="text-center text-sm text-muted-foreground mt-6">
+            Already have an account?{" "}
+            <a href="/auth" className="text-primary hover:underline">
+              Sign in here
+            </a>
+          </p>
         </CardContent>
       </Card>
     </div>
   );
-};
-
-export default AcceptLabelInvitation;
+}
