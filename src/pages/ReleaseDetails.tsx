@@ -171,6 +171,15 @@ const ReleaseDetails = () => {
                       </div>
                     </div>
                   )}
+                  {release?.catalog_number && (
+                    <div className="flex items-center gap-3">
+                      <Hash className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Catalog #</p>
+                        <p className="font-medium">{release.catalog_number}</p>
+                      </div>
+                    </div>
+                  )}
                   {release?.distributor && (
                     <div className="flex items-center gap-3">
                       <Building2 className="w-5 h-5 text-muted-foreground" />

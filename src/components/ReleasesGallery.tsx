@@ -6,9 +6,10 @@ import { Music } from "lucide-react";
 
 interface ReleasesGalleryProps {
   userId?: string;
+  onReleaseClick?: (releaseId: string) => void;
 }
 
-const ReleasesGallery = ({ userId }: ReleasesGalleryProps) => {
+const ReleasesGallery = ({ userId, onReleaseClick }: ReleasesGalleryProps) => {
   const [releases, setReleases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -59,7 +60,13 @@ const ReleasesGallery = ({ userId }: ReleasesGalleryProps) => {
       {releases.map((release) => (
         <div
           key={release.id}
-          onClick={() => navigate(`/release/${release.id}`)}
+          onClick={() => {
+            if (onReleaseClick) {
+              onReleaseClick(release.id);
+            } else {
+              navigate(`/release/${release.id}`);
+            }
+          }}
           className="group cursor-pointer"
         >
           <div className="relative aspect-square rounded-lg overflow-hidden bg-muted mb-3 shadow-md transition-all duration-300 group-hover:shadow-xl group-hover:scale-105">

@@ -178,6 +178,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
             {isAdmin && <TableHead>User</TableHead>}
             <TableHead>Release Date</TableHead>
             <TableHead>Genre</TableHead>
+            <TableHead>Catalog #</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -196,6 +197,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
                 {release.release_date ? new Date(release.release_date).toLocaleDateString() : "TBA"}
               </TableCell>
               <TableCell className="text-muted-foreground">{release.genre || "—"}</TableCell>
+              <TableCell className="text-muted-foreground">{release.catalog_number || "—"}</TableCell>
               <TableCell>{getStatusBadge(release.status)}</TableCell>
               <TableCell>
                 <div className="flex gap-2 flex-wrap">

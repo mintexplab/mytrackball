@@ -469,6 +469,7 @@ export type Database = {
           artist_name: string
           artwork_url: string | null
           audio_file_url: string | null
+          catalog_number: string | null
           copyright_line: string | null
           courtesy_line: string | null
           created_at: string | null
@@ -501,6 +502,7 @@ export type Database = {
           artist_name: string
           artwork_url?: string | null
           audio_file_url?: string | null
+          catalog_number?: string | null
           copyright_line?: string | null
           courtesy_line?: string | null
           created_at?: string | null
@@ -533,6 +535,7 @@ export type Database = {
           artist_name?: string
           artwork_url?: string | null
           audio_file_url?: string | null
+          catalog_number?: string | null
           copyright_line?: string | null
           courtesy_line?: string | null
           created_at?: string | null
