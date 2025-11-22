@@ -179,9 +179,9 @@ const Auth = () => {
       </div>
       
       <Card 
-        className={`w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20 ${isZooming ? 'scale-[3] opacity-0' : 'scale-100 opacity-100'}`}
+        className={`w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20 transition-all duration-300 ${isZooming ? 'scale-[3] opacity-0' : 'scale-100 opacity-100'}`}
         style={{
-          transition: 'all 1.2s ease-in-out'
+          transition: isZooming ? 'all 1.2s ease-in-out' : 'all 0.3s ease-in-out'
         }}
       >
         <CardHeader className="space-y-4 text-center">
@@ -198,7 +198,7 @@ const Auth = () => {
         
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
-            {!isLogin && <div className="space-y-2">
+            {!isLogin && <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
                 <Label htmlFor="fullName">Full Name</Label>
                 <Input id="fullName" type="text" placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value)} required={!isLogin} className="bg-background/50 border-border focus:border-primary transition-colors" />
               </div>}
