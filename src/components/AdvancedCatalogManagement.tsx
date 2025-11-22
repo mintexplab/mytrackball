@@ -558,6 +558,18 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
                             Takedown Requested
                           </Badge>
                         )}
+                        {release.isrc && (
+                          <Badge variant="outline" className="text-xs gap-1 bg-blue-500/10 border-blue-500/20">
+                            <Tag className="w-3 h-3" />
+                            ISRC: {release.isrc}
+                          </Badge>
+                        )}
+                        {release.upc && (
+                          <Badge variant="outline" className="text-xs gap-1 bg-purple-500/10 border-purple-500/20">
+                            <Tag className="w-3 h-3" />
+                            UPC: {release.upc}
+                          </Badge>
+                        )}
                         {release.genre && (
                           <Badge variant="outline" className="text-xs gap-1">
                             <Tag className="w-3 h-3" />
