@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Music2 } from "lucide-react";
+import { MfaVerification } from "@/components/MfaVerification";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,6 +15,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showMfaVerification, setShowMfaVerification] = useState(false);
   const navigate = useNavigate();
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -29,6 +31,16 @@ const Auth = () => {
         });
         console.log("signInWithPassword result", { data, error });
         if (error) throw error;
+
+        // Check if MFA is required
+        const { data: { currentLevel, nextLevel } } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        
+        if (nextLevel === 'aal2' && currentLevel !== 'aal2') {
+          // User has MFA enabled, show verification screen
+          setShowMfaVerification(true);
+          setLoading(false);
+          return;
+        }
 
         // Check if user is banned or locked
         if (data.user) {
@@ -113,6 +125,22 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  if (showMfaVerification) {
+    return (
+      <MfaVerification
+        onVerified={() => {
+          setShowMfaVerification(false);
+          navigate("/dashboard");
+        }}
+        onCancel={async () => {
+          await supabase.auth.signOut();
+          setShowMfaVerification(false);
+          setLoading(false);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">

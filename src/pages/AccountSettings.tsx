@@ -9,6 +9,7 @@ import { ArrowLeft, User, Mail, Lock, Upload, X, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TwoFactorAuth } from "@/components/TwoFactorAuth";
 
 const TIMEZONES = [
   { value: "America/New_York", label: "Eastern Time (ET)" },
@@ -487,6 +488,8 @@ const AccountSettings = () => {
             </Button>
           </CardContent>
         </Card>
+
+        <TwoFactorAuth />
 
         <Card className="border-border">
           <CardHeader>
