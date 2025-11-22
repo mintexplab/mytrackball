@@ -112,24 +112,22 @@ const Auth = () => {
         
         // Trigger zoom animation
         setIsZooming(true);
-        await new Promise(resolve => setTimeout(resolve, 400));
+        await new Promise(resolve => setTimeout(resolve, 800));
         
         // Fade to black and show loading
         const fadeOverlay = document.createElement('div');
-        fadeOverlay.className = 'fixed inset-0 bg-black z-50 flex items-center justify-center';
+        fadeOverlay.className = 'fixed inset-0 bg-black z-50 flex flex-col items-center justify-center gap-4';
         fadeOverlay.innerHTML = `
-          <div class="text-center space-y-8">
-            <p class="text-2xl text-foreground animate-pulse">Loading your dashboard</p>
-            <div class="relative w-16 h-16 mx-auto">
-              <div class="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
-              <div class="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin"></div>
-            </div>
-          </div>
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p class="text-muted-foreground animate-pulse">Loading your dashboard...</p>
         `;
         document.body.appendChild(fadeOverlay);
         
         const loadingDuration = 5000 + Math.random() * 3000; // 5-8 seconds
         await new Promise(resolve => setTimeout(resolve, loadingDuration));
+        
+        // Clean up overlay before navigation
+        fadeOverlay.remove();
         navigate("/dashboard");
       } else {
         const {
@@ -173,7 +171,7 @@ const Auth = () => {
         <TrackballBeads />
       </div>
       
-      <Card className={`w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20 transition-all duration-400 ${isZooming ? 'scale-[3] opacity-0' : 'scale-100 opacity-100'}`}>
+      <Card className={`w-full max-w-md relative backdrop-blur-sm bg-card/80 border-primary/20 transition-all duration-800 ${isZooming ? 'scale-[3] opacity-0' : 'scale-100 opacity-100'}`}>
         <CardHeader className="space-y-4 text-center">
           <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-glow overflow-hidden">
             <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
@@ -237,7 +235,7 @@ const Auth = () => {
             </Button>
             
             <div className="text-center text-sm">
-              <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-primary hover:text-primary/80 transition-colors">
+              <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-primary hover:text-primary/80 transition-all duration-300 hover:scale-105">
                 {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
               </button>
             </div>
