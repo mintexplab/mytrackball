@@ -151,16 +151,28 @@ const AccountSettings = () => {
     }
   };
   const updateEmail = async () => {
+    if (!formData.email) {
+      toast.error("Please enter a new email");
+      return;
+    }
+    
     setLoading(true);
     try {
-      const {
-        error
-      } = await supabase.auth.updateUser({
-        email: formData.email
+      const { data, error } = await supabase.functions.invoke('update-admin-email', {
+        body: { newEmail: formData.email }
       });
+
       if (error) throw error;
-      toast.success("Email update initiated - check your inbox");
+      
+      toast.success("Email updated successfully! Please log in again with your new email.");
+      
+      // Sign out after a short delay
+      setTimeout(async () => {
+        await supabase.auth.signOut();
+        navigate("/auth");
+      }, 2000);
     } catch (error: any) {
+      console.error('Error updating email:', error);
       toast.error(error.message);
     } finally {
       setLoading(false);
