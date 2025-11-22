@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, CreditCard, ArrowUp } from "lucide-react";
+import { LogOut, Settings, CreditCard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ProfileDropdownProps {
@@ -43,13 +43,6 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, onSignOut }: ProfileDrop
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-border" />
-        <DropdownMenuItem
-          onClick={() => window.open("https://trackball.cc/pricing", "_blank")}
-          className="cursor-pointer"
-        >
-          <ArrowUp className="mr-2 h-4 w-4" />
-          <span>Upgrade</span>
-        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => navigate("/subscription")}
           className="cursor-pointer"

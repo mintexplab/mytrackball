@@ -213,59 +213,26 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 sm:space-y-6 animate-fade-in">
+            <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="text-lg sm:text-2xl font-bold">Quick Stats</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Your distribution overview</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
+                    <p className="text-xs sm:text-sm text-muted-foreground">Total Releases</p>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground">{releaseCount}</p>
+                  </div>
+                  <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
+                    <p className="text-xs sm:text-sm text-muted-foreground">Active</p>
+                    <p className="text-xl sm:text-2xl font-bold text-accent">{releaseCount}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {userPlan?.plan.name === "Trackball Prestige" && <AccountManagerCard managerName={profile?.account_manager_name} managerEmail={profile?.account_manager_email} managerPhone={profile?.account_manager_phone} managerTimezone={profile?.account_manager_timezone} userTimezone={profile?.user_timezone || "America/New_York"} />}
-
-            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-              <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-                <CardHeader className="pb-3 sm:pb-6">
-                  <div className="flex justify-between items-start gap-3">
-                    <div className="min-w-0">
-                      <CardTitle className="text-lg sm:text-2xl font-bold">Your Plan</CardTitle>
-                      <CardDescription className="text-xs sm:text-sm">Current distribution plan</CardDescription>
-                    </div>
-                    <Package className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3 sm:space-y-4">
-                  <div>
-                    <Badge className="bg-gradient-primary text-white px-2 sm:px-3 py-1 text-xs sm:text-sm">
-                      {userPlan?.plan.name || "Trackball Free"}
-                    </Badge>
-                  </div>
-                  {userPlan ? <>
-                      <p className="text-sm sm:text-base text-muted-foreground">{userPlan.plan.description}</p>
-                      <div className="pt-3 sm:pt-4 border-t border-border">
-                        <p className="text-xs sm:text-sm font-medium mb-2">Plan Features:</p>
-                        <ul className="space-y-1 text-xs sm:text-sm text-muted-foreground">
-                          {userPlan.plan.features?.map((feature: string, index: number) => <li key={index} className="flex items-start gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 flex-shrink-0" />
-                              <span className="flex-1">{feature}</span>
-                            </li>)}
-                        </ul>
-                      </div>
-                    </> : <p className="text-sm sm:text-base text-muted-foreground">Basic distribution plan with essential features</p>}
-                </CardContent>
-              </Card>
-
-              <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-                <CardHeader className="pb-3 sm:pb-6">
-                  <CardTitle className="text-lg sm:text-2xl font-bold">Quick Stats</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">Your distribution overview</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 sm:space-y-4">
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                    <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
-                      <p className="text-xs sm:text-sm text-muted-foreground">Total Releases</p>
-                      <p className="text-xl sm:text-2xl font-bold text-foreground">{releaseCount}</p>
-                    </div>
-                    <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
-                      <p className="text-xs sm:text-sm text-muted-foreground">Active</p>
-                      <p className="text-xl sm:text-2xl font-bold text-accent">{releaseCount}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
 
             <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
               <CardHeader className="pb-3 sm:pb-6">
@@ -282,6 +249,37 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <ReleasesList userId={user?.id} isAdmin={false} />
+              </CardContent>
+            </Card>
+
+            <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+              <CardHeader className="pb-3 sm:pb-6">
+                <div className="flex justify-between items-start gap-3">
+                  <div className="min-w-0">
+                    <CardTitle className="text-lg sm:text-2xl font-bold">Your Plan</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">Current distribution plan</CardDescription>
+                  </div>
+                  <Package className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0" />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3 sm:space-y-4">
+                <div>
+                  <Badge className="bg-gradient-primary text-white px-2 sm:px-3 py-1 text-xs sm:text-sm">
+                    {userPlan?.plan.name || "Trackball Free"}
+                  </Badge>
+                </div>
+                {userPlan ? <>
+                    <p className="text-sm sm:text-base text-muted-foreground">{userPlan.plan.description}</p>
+                    <div className="pt-3 sm:pt-4 border-t border-border">
+                      <p className="text-xs sm:text-sm font-medium mb-2">Plan Features:</p>
+                      <ul className="space-y-1 text-xs sm:text-sm text-muted-foreground">
+                        {userPlan.plan.features?.map((feature: string, index: number) => <li key={index} className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 flex-shrink-0" />
+                            <span className="flex-1">{feature}</span>
+                          </li>)}
+                      </ul>
+                    </div>
+                  </> : <p className="text-sm sm:text-base text-muted-foreground">Basic distribution plan with essential features</p>}
               </CardContent>
             </Card>
           </TabsContent>
