@@ -10,9 +10,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { MessageSquare, Send, Clock, CheckCircle2, AlertTriangle } from "lucide-react";
+import { MessageSquare, Send, Clock, CheckCircle2, AlertTriangle, Search, User, Headphones } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { z } from "zod";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const replySchema = z.object({
   message: z.string().min(1, "Reply cannot be empty").max(2000),
@@ -26,6 +28,7 @@ interface Ticket {
   description: string;
   status: string;
   priority: string;
+  category: string;
   escalation_email: string | null;
   created_at: string;
   updated_at: string;
@@ -56,6 +59,9 @@ export const AdminTicketManagement = () => {
   const [escalationEmail, setEscalationEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("open");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterPriority, setFilterPriority] = useState("all");
+  const [filterCategory, setFilterCategory] = useState("all");
 
   useEffect(() => {
     fetchTickets();
@@ -236,9 +242,44 @@ export const AdminTicketManagement = () => {
     return colors[priority] || colors.medium;
   };
 
+  const getCategoryBadge = (category: string) => {
+    const colors: Record<string, string> = {
+      general: "bg-gray-500",
+      technical: "bg-blue-500",
+      billing: "bg-green-500",
+      account: "bg-purple-500",
+      content: "bg-orange-500"
+    };
+    return (
+      <Badge className={`${colors[category] || colors.general} text-white border-0`}>
+        {category}
+      </Badge>
+    );
+  };
+
   const filteredTickets = tickets.filter(ticket => {
-    if (activeTab === "all") return true;
-    return ticket.status === activeTab;
+    // Status filter
+    if (activeTab !== "all" && ticket.status !== activeTab) return false;
+    
+    // Priority filter
+    if (filterPriority !== "all" && ticket.priority !== filterPriority) return false;
+    
+    // Category filter
+    if (filterCategory !== "all" && ticket.category !== filterCategory) return false;
+    
+    // Search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        ticket.subject.toLowerCase().includes(query) ||
+        ticket.description.toLowerCase().includes(query) ||
+        ticket.profiles?.email.toLowerCase().includes(query) ||
+        ticket.profiles?.display_name?.toLowerCase().includes(query) ||
+        ticket.profiles?.full_name?.toLowerCase().includes(query)
+      );
+    }
+    
+    return true;
   });
 
   return (
@@ -246,6 +287,43 @@ export const AdminTicketManagement = () => {
       <div>
         <h2 className="text-2xl font-bold">Support Tickets</h2>
         <p className="text-muted-foreground">Manage and respond to user support requests</p>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by subject, description, or user..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={filterPriority} onValueChange={setFilterPriority}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Priority" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Priorities</SelectItem>
+            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="general">General</SelectItem>
+            <SelectItem value="technical">Technical</SelectItem>
+            <SelectItem value="billing">Billing</SelectItem>
+            <SelectItem value="account">Account</SelectItem>
+            <SelectItem value="content">Content</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -264,7 +342,7 @@ export const AdminTicketManagement = () => {
             <Card className="bg-card/50 border-border">
               <CardContent className="py-8 text-center">
                 <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">No {activeTab !== "all" ? activeTab : ""} tickets</p>
+                <p className="text-muted-foreground">No tickets found</p>
               </CardContent>
             </Card>
           ) : (
@@ -291,6 +369,7 @@ export const AdminTicketManagement = () => {
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         {getStatusBadge(ticket.status)}
+                        {getCategoryBadge(ticket.category)}
                         <span className={`text-xs font-medium ${getPriorityColor(ticket.priority)}`}>
                           {ticket.priority.toUpperCase()}
                         </span>
@@ -310,43 +389,81 @@ export const AdminTicketManagement = () => {
       </Tabs>
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="bg-card border-border max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="bg-card border-border max-w-4xl max-h-[85vh] overflow-y-auto">
           {selectedTicket && (
             <>
               <DialogHeader>
                 <div className="flex items-start justify-between">
                   <div className="space-y-1 flex-1">
                     <DialogTitle>{selectedTicket.subject}</DialogTitle>
-                    <DialogDescription>{selectedTicket.description}</DialogDescription>
+                    <div className="flex items-center gap-2 mt-2">
+                      {getStatusBadge(selectedTicket.status)}
+                      {getCategoryBadge(selectedTicket.category)}
+                      <Badge variant="outline" className={getPriorityColor(selectedTicket.priority)}>
+                        {selectedTicket.priority} Priority
+                      </Badge>
+                    </div>
                     <div className="text-sm text-muted-foreground mt-2">
                       From: {selectedTicket.profiles?.display_name || selectedTicket.profiles?.full_name} ({selectedTicket.profiles?.email})
                     </div>
                   </div>
-                  {getStatusBadge(selectedTicket.status)}
                 </div>
               </DialogHeader>
               
-              <div className="space-y-4 mt-4">
-                <div className="space-y-3 max-h-[300px] overflow-y-auto p-2 border border-border rounded-lg">
-                  {messages.map((msg) => (
-                    <div 
-                      key={msg.id} 
-                      className={`p-3 rounded-lg ${msg.is_admin_reply ? "bg-primary/10 border border-primary/20" : "bg-muted"}`}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <span className="text-xs font-medium">
-                          {msg.is_admin_reply ? "You (Support)" : "User"}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
-                        </span>
+              <Separator className="my-4" />
+              
+              <div className="space-y-4">
+                <div className="space-y-4 max-h-[400px] overflow-y-auto px-1">
+                  {/* Initial message */}
+                  <div className="flex gap-3 flex-row">
+                    <Avatar className="h-8 w-8 shrink-0 bg-muted">
+                      <AvatarFallback className="text-xs">
+                        <User className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 mr-8">
+                      <div className="rounded-lg p-4 bg-muted">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold">User</span>
+                            <Badge variant="secondary" className="text-xs">INITIAL MESSAGE</Badge>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(selectedTicket.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{selectedTicket.description}</p>
                       </div>
-                      <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                    </div>
+                  </div>
+                  
+                  {messages.map((msg) => (
+                    <div key={msg.id} className={`flex gap-3 ${msg.is_admin_reply ? 'flex-row' : 'flex-row-reverse'}`}>
+                      <Avatar className={`h-8 w-8 shrink-0 ${msg.is_admin_reply ? 'bg-gradient-primary' : 'bg-muted'}`}>
+                        <AvatarFallback className="text-xs">
+                          {msg.is_admin_reply ? <Headphones className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className={`flex-1 ${msg.is_admin_reply ? 'mr-8' : 'ml-8'}`}>
+                        <div className={`rounded-lg p-4 ${msg.is_admin_reply ? 'bg-primary/10 border border-primary/20' : 'bg-muted'}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-semibold">
+                              {msg.is_admin_reply ? "You (Support)" : "User"}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
+                            </span>
+                          </div>
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.message}</p>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="space-y-4 border-t pt-4">
+                <Separator className="my-4" />
+
+                <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Update Status</Label>
