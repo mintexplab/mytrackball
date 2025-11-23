@@ -41,6 +41,8 @@ import { AccountManagerBlock } from "@/components/dashboard/AccountManagerBlock"
 import { ReleasesAndDraftsBlock } from "@/components/dashboard/ReleasesAndDraftsBlock";
 import { PlanAndLabelsBlock } from "@/components/dashboard/PlanAndLabelsBlock";
 import LabelManagementTab from "@/components/LabelManagementTab";
+import LabelDesignationWelcomeDialog from "@/components/LabelDesignationWelcomeDialog";
+import SubscriptionWelcomeDialog from "@/components/SubscriptionWelcomeDialog";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -67,6 +69,11 @@ const Dashboard = () => {
   const [viewAsArtist, setViewAsArtist] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [showLabelDesignationWelcome, setShowLabelDesignationWelcome] = useState(false);
+  const [labelDesignationType, setLabelDesignationType] = useState<"partner_label" | "signature_label" | "prestige_label" | null>(null);
+  const [showSubscriptionWelcome, setShowSubscriptionWelcome] = useState(false);
+  const [welcomePlanName, setWelcomePlanName] = useState("");
+  const [welcomePlanFeatures, setWelcomePlanFeatures] = useState<string[]>([]);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   useEffect(() => {
@@ -281,6 +288,32 @@ const Dashboard = () => {
       data: profileData
     } = await supabase.from("profiles").select("*").eq("id", userId).single();
     setProfile(profileData);
+
+    // Check if this is a newly assigned plan (plan_welcome_shown not set or false)
+    if (data?.plan && !sessionStorage.getItem(`plan_welcome_shown_${userId}`)) {
+      const planFeatures = Array.isArray(data.plan.features) 
+        ? (data.plan.features as string[]) 
+        : [];
+      setWelcomePlanName(data.plan.name);
+      setWelcomePlanFeatures(planFeatures);
+      setShowSubscriptionWelcome(true);
+      sessionStorage.setItem(`plan_welcome_shown_${userId}`, 'true');
+    }
+
+    // Check if label designation welcome should be shown
+    const hasLabelDesignation = profileData?.label_type && 
+      ['partner_label', 'signature_label', 'prestige_label'].includes(profileData.label_type);
+    
+    if (hasLabelDesignation && !profileData?.label_designation_welcome_shown) {
+      setLabelDesignationType(profileData.label_type as "partner_label" | "signature_label" | "prestige_label");
+      setShowLabelDesignationWelcome(true);
+      
+      // Mark as shown in database
+      await supabase
+        .from("profiles")
+        .update({ label_designation_welcome_shown: true })
+        .eq("id", userId);
+    }
 
     // Check if onboarding should be shown (only for non-admin, first-time users)
     const { data: isAdminData } = await supabase.rpc('has_role', {
@@ -737,6 +770,31 @@ const Dashboard = () => {
         <OnboardingTutorial
           onComplete={() => setShowOnboarding(false)}
           onSkip={() => setShowOnboarding(false)}
+        />
+      )}
+
+      {/* Subscription Welcome Dialog - Shows first */}
+      {showSubscriptionWelcome && (
+        <SubscriptionWelcomeDialog
+          open={showSubscriptionWelcome}
+          onClose={() => {
+            setShowSubscriptionWelcome(false);
+            // After subscription welcome, check if label designation welcome should show
+            if (labelDesignationType && !profile?.label_designation_welcome_shown) {
+              setShowLabelDesignationWelcome(true);
+            }
+          }}
+          planName={welcomePlanName}
+          planFeatures={welcomePlanFeatures}
+        />
+      )}
+
+      {/* Label Designation Welcome Dialog - Shows after subscription welcome */}
+      {showLabelDesignationWelcome && labelDesignationType && !showSubscriptionWelcome && (
+        <LabelDesignationWelcomeDialog
+          open={showLabelDesignationWelcome}
+          onClose={() => setShowLabelDesignationWelcome(false)}
+          labelType={labelDesignationType}
         />
       )}
     </div>;

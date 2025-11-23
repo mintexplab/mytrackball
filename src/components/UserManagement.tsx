@@ -443,6 +443,9 @@ const UserManagement = () => {
               {masterAccounts.map((masterUser) => {
                 const subaccounts = users.filter(u => u.parent_account_id === masterUser.id);
                 const masterLabel = masterUser.user_labels?.[0];
+                const hasLabelDesignation = masterUser.label_type && 
+                  ['partner_label', 'signature_label', 'prestige_label'].includes(masterUser.label_type);
+                const isLabelUnconfigured = hasLabelDesignation && !masterLabel;
                 
                 return (
                   <div key={masterUser.id} className="space-y-4">
@@ -450,7 +453,11 @@ const UserManagement = () => {
                       <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary">
                         Label Account
                       </Badge>
-                      {masterLabel && (
+                      {isLabelUnconfigured ? (
+                        <span className="text-sm text-yellow-500 font-semibold">
+                          Label unconfigured
+                        </span>
+                      ) : masterLabel ? (
                         <>
                           <span className="text-sm font-semibold text-foreground">
                             {masterLabel.label_name}
@@ -459,7 +466,7 @@ const UserManagement = () => {
                             ID: <span className="font-mono text-foreground">{masterLabel.label_id_code}</span>
                           </span>
                         </>
-                      )}
+                      ) : null}
                       <span className="text-xs text-muted-foreground">
                         {subaccounts.length} subaccount{subaccounts.length !== 1 ? 's' : ''}
                       </span>
