@@ -668,7 +668,8 @@ const Dashboard = () => {
             {user && <BulkUploadTab userId={user.id} />}
           </TabsContent>
 
-          {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && (
+          {((userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") ||
+            (profile?.label_type && ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type))) && (
             <>
               <TabsContent value="clients" className="animate-fade-in">
                 <ClientInvitations />
