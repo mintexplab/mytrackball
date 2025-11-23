@@ -1051,6 +1051,7 @@ export type Database = {
       }
       support_tickets: {
         Row: {
+          category: string | null
           created_at: string | null
           description: string
           escalation_email: string | null
@@ -1062,6 +1063,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string | null
           description: string
           escalation_email?: string | null
@@ -1073,6 +1075,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string | null
           description?: string
           escalation_email?: string | null

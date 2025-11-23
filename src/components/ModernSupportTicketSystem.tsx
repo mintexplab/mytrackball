@@ -18,7 +18,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 const ticketSchema = z.object({
   subject: z.string().min(3, "Subject must be at least 3 characters").max(200),
   description: z.string().min(10, "Description must be at least 10 characters").max(2000),
-  priority: z.enum(["low", "medium", "high"])
+  priority: z.enum(["low", "medium", "high"]),
+  category: z.enum(["general", "technical", "billing", "account", "content"])
 });
 
 const messageSchema = z.object({
@@ -31,6 +32,7 @@ interface Ticket {
   description: string;
   status: string;
   priority: string;
+  category: string;
   created_at: string;
   updated_at: string;
 }
@@ -55,6 +57,7 @@ export const ModernSupportTicketSystem = () => {
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("medium");
+  const [category, setCategory] = useState("general");
   const [newMessage, setNewMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -107,7 +110,7 @@ export const ModernSupportTicketSystem = () => {
 
   const createTicket = async () => {
     try {
-      const validated = ticketSchema.parse({ subject, description, priority });
+      const validated = ticketSchema.parse({ subject, description, priority, category });
       setSubmitting(true);
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -120,6 +123,7 @@ export const ModernSupportTicketSystem = () => {
           subject: validated.subject,
           description: validated.description,
           priority: validated.priority,
+          category: validated.category,
           status: "open"
         });
 
@@ -130,6 +134,7 @@ export const ModernSupportTicketSystem = () => {
       setSubject("");
       setDescription("");
       setPriority("medium");
+      setCategory("general");
       fetchTickets();
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -198,6 +203,21 @@ export const ModernSupportTicketSystem = () => {
     return configs[priority] || configs.medium;
   };
 
+  const getCategoryBadge = (category: string) => {
+    const colors: Record<string, string> = {
+      general: "bg-gray-500",
+      technical: "bg-blue-500",
+      billing: "bg-green-500",
+      account: "bg-purple-500",
+      content: "bg-orange-500"
+    };
+    return (
+      <Badge className={`${colors[category] || colors.general} text-white border-0 text-xs`}>
+        {category}
+      </Badge>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -227,18 +247,35 @@ export const ModernSupportTicketSystem = () => {
                   className="bg-background border-border"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
-                <Select value={priority} onValueChange={setPriority}>
-                  <SelectTrigger className="bg-background border-border">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
-                    <SelectItem value="low">Low - General inquiry</SelectItem>
-                    <SelectItem value="medium">Medium - Need assistance</SelectItem>
-                    <SelectItem value="high">High - Urgent issue</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger className="bg-background border-border">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="technical">Technical</SelectItem>
+                      <SelectItem value="billing">Billing</SelectItem>
+                      <SelectItem value="account">Account</SelectItem>
+                      <SelectItem value="content">Content</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="priority">Priority</Label>
+                  <Select value={priority} onValueChange={setPriority}>
+                    <SelectTrigger className="bg-background border-border">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      <SelectItem value="low">Low - General inquiry</SelectItem>
+                      <SelectItem value="medium">Medium - Need assistance</SelectItem>
+                      <SelectItem value="high">High - Urgent issue</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
@@ -289,9 +326,9 @@ export const ModernSupportTicketSystem = () => {
                 }}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <h3 className="font-semibold text-lg truncate group-hover:text-primary transition-colors">
                           {ticket.subject}
                         </h3>
@@ -299,6 +336,7 @@ export const ModernSupportTicketSystem = () => {
                           <StatusIcon className="h-3 w-3" />
                           {statusConfig.label}
                         </Badge>
+                        {getCategoryBadge(ticket.category)}
                       </div>
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                         {ticket.description}
@@ -329,7 +367,7 @@ export const ModernSupportTicketSystem = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <DialogTitle className="text-2xl mb-2">{selectedTicket.subject}</DialogTitle>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       {(() => {
                         const statusConfig = getStatusConfig(selectedTicket.status);
                         const StatusIcon = statusConfig.icon;
@@ -340,6 +378,7 @@ export const ModernSupportTicketSystem = () => {
                           </Badge>
                         );
                       })()}
+                      {getCategoryBadge(selectedTicket.category)}
                       <Badge variant="outline" className={getPriorityConfig(selectedTicket.priority).color}>
                         {getPriorityConfig(selectedTicket.priority).label} Priority
                       </Badge>
