@@ -577,6 +577,7 @@ export type Database = {
           account_manager_name: string | null
           account_manager_phone: string | null
           account_manager_timezone: string | null
+          account_type: string | null
           active_label_id: string | null
           artist_name: string | null
           avatar_url: string | null
@@ -590,6 +591,7 @@ export type Database = {
           is_locked: boolean | null
           label_id: string | null
           label_name: string | null
+          label_type: string | null
           mfa_setup_completed: boolean | null
           onboarding_completed: boolean | null
           parent_account_id: string | null
@@ -603,6 +605,7 @@ export type Database = {
           account_manager_name?: string | null
           account_manager_phone?: string | null
           account_manager_timezone?: string | null
+          account_type?: string | null
           active_label_id?: string | null
           artist_name?: string | null
           avatar_url?: string | null
@@ -616,6 +619,7 @@ export type Database = {
           is_locked?: boolean | null
           label_id?: string | null
           label_name?: string | null
+          label_type?: string | null
           mfa_setup_completed?: boolean | null
           onboarding_completed?: boolean | null
           parent_account_id?: string | null
@@ -629,6 +633,7 @@ export type Database = {
           account_manager_name?: string | null
           account_manager_phone?: string | null
           account_manager_timezone?: string | null
+          account_type?: string | null
           active_label_id?: string | null
           artist_name?: string | null
           avatar_url?: string | null
@@ -642,6 +647,7 @@ export type Database = {
           is_locked?: boolean | null
           label_id?: string | null
           label_name?: string | null
+          label_type?: string | null
           mfa_setup_completed?: boolean | null
           onboarding_completed?: boolean | null
           parent_account_id?: string | null

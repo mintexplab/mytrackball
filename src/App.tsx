@@ -10,9 +10,7 @@ import CreateRelease from "./pages/CreateRelease";
 import AccountSettings from "./pages/AccountSettings";
 import SubscriptionManagement from "./pages/SubscriptionManagement";
 import AcceptInvitation from "./pages/AcceptInvitation";
-import AcceptLabelInvitation from "./pages/AcceptLabelInvitation";
 import LabelManagement from "./pages/LabelManagement";
-import PendingLabelInvitations from "./pages/PendingLabelInvitations";
 import ReleaseDetails from "./pages/ReleaseDetails";
 import SetupTwoFactor from "./pages/SetupTwoFactor";
 import NotFound from "./pages/NotFound";
@@ -34,9 +32,7 @@ const App = () => {
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/setup-2fa" element={<SetupTwoFactor />} />
                 <Route path="/accept-invitation" element={<AcceptInvitation />} />
-                <Route path="/accept-label-invitation" element={<AcceptLabelInvitation />} />
                 <Route path="/label-management" element={<LabelManagement />} />
-                <Route path="/label-invitations" element={<PendingLabelInvitations />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/create-release" element={<CreateRelease />} />
                 <Route path="/release/:id" element={<ReleaseDetails />} />

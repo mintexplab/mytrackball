@@ -17,7 +17,7 @@ import { PayoutRequestsManagement } from "./PayoutRequestsManagement";
 import VersionManagement from "./VersionManagement";
 import ArtistInvitationManagement from "./ArtistInvitationManagement";
 import PublishingManagement from "./PublishingManagement";
-import LabelInvitationManagement from "./LabelInvitationManagement";
+import LabelDesignationManagement from "./LabelDesignationManagement";
 import MaintenanceManagement from "./MaintenanceManagement";
 import AccountAppealsManagement from "./AccountAppealsManagement";
 import { ProfileDropdown } from "./ProfileDropdown";
@@ -194,9 +194,9 @@ const AdminPortal = ({
                 <UserPlus className="w-4 h-4 mr-2" />
                 Invite Artists
               </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab("invite-labels")} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => setActiveTab("label-designations")} className="cursor-pointer">
                     <Building2 className="w-4 h-4 mr-2" />
-                    Invite Labels
+                    Label Designations
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActiveTab("partner-permissions")} className="cursor-pointer">
                     <ShieldAlert className="w-4 h-4 mr-2" />
@@ -251,7 +251,7 @@ const AdminPortal = ({
               <DropdownMenuContent className="bg-card border-border">
                 <DropdownMenuItem onClick={() => setActiveTab("managers")}>Managers</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("invite-artists")}>Invite Artists</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab("invite-labels")}>Invite Labels</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("label-designations")}>Label Designations</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("partner-permissions")}>Partner Permissions</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("takedowns")}>Takedowns</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("announcements")}>Announcements</DropdownMenuItem>
@@ -293,8 +293,8 @@ const AdminPortal = ({
             <ArtistInvitationManagement />
           </TabsContent>
 
-          <TabsContent value="invite-labels">
-            <LabelInvitationManagement />
+          <TabsContent value="label-designations">
+            <LabelDesignationManagement />
           </TabsContent>
 
           <TabsContent value="partner-permissions">
