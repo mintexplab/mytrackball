@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { XCircle, Mail, LogOut, FileText } from "lucide-react";
 import { AppealDialog } from "./AppealDialog";
+import { playErrorSound } from "@/hooks/useErrorSound";
 
 interface TerminatedAccountDialogProps {
   userId: string;
@@ -86,6 +87,7 @@ export const TerminatedAccountDialog = ({ userId, onSignOut }: TerminatedAccount
     if (data?.is_banned) {
       setIsTerminated(true);
       setShowDialog(true);
+      playErrorSound(); // Play error sound when account is terminated
     } else {
       setIsTerminated(false);
       setShowDialog(false);
