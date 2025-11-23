@@ -68,10 +68,11 @@ serve(async (req) => {
     const subscription = subscriptions.data.length > 0 ? subscriptions.data[0] : null;
     logStep("Fetched subscription", { hasSubscription: !!subscription });
 
-    // Fetch invoices (last 10)
+    // Fetch invoices (last 10, exclude drafts)
     const invoices = await stripe.invoices.list({
       customer: customerId,
       limit: 10,
+      status: 'paid', // Only fetch paid invoices, exclude drafts
     });
     logStep("Fetched invoices", { count: invoices.data.length });
 
