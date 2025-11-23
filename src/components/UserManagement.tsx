@@ -468,10 +468,26 @@ const UserManagement = () => {
       <CardContent>
         {/* Group users by label accounts */}
         {(() => {
-          // Separate admin accounts, master accounts, and independent users
+          // Separate admin accounts, label accounts, and independent users
           const adminAccounts = users.filter(u => u.roles?.includes('admin'));
-          const masterAccounts = users.filter(u => u.is_master_account && !u.roles?.includes('admin'));
-          const independentUsers = users.filter(u => !u.is_master_account && !u.parent_account_id && !u.roles?.includes('admin'));
+          
+          // Label accounts: users with label designation OR users who have created labels
+          const labelAccounts = users.filter(u => {
+            if (u.roles?.includes('admin')) return false;
+            const hasLabelDesignation = u.label_type && 
+              ['partner_label', 'signature_label', 'prestige_label'].includes(u.label_type);
+            const hasCreatedLabels = u.user_labels && u.user_labels.length > 0;
+            return hasLabelDesignation || hasCreatedLabels || u.is_master_account;
+          });
+          
+          const independentUsers = users.filter(u => {
+            if (u.roles?.includes('admin')) return false;
+            if (u.parent_account_id) return false; // Skip subaccounts
+            const hasLabelDesignation = u.label_type && 
+              ['partner_label', 'signature_label', 'prestige_label'].includes(u.label_type);
+            const hasCreatedLabels = u.user_labels && u.user_labels.length > 0;
+            return !hasLabelDesignation && !hasCreatedLabels && !u.is_master_account;
+          });
           
           return (
             <div className="space-y-8">
@@ -531,8 +547,8 @@ const UserManagement = () => {
                   </div>
                 </div>
               )}
-              {/* Master Label Accounts */}
-              {masterAccounts.map((masterUser) => {
+              {/* Label Accounts */}
+              {labelAccounts.map((masterUser) => {
                 const subaccounts = users.filter(u => u.parent_account_id === masterUser.id);
                 const masterLabel = masterUser.user_labels?.[0];
                 const hasLabelDesignation = masterUser.label_type && 
