@@ -514,54 +514,108 @@ const Dashboard = () => {
 
           <TabsContent value="overview" className="space-y-4 sm:space-y-6 animate-fade-in">
             <DraggableDashboardBlocks
-              blocks={[
-                {
-                  id: "quick-stats",
-                  component: <QuickStatsBlock userId={user?.id} />,
-                  visible: true,
-                },
-                {
-                  id: "your-releases",
-                  component: (
-                    <YourReleasesBlock
-                      userId={user?.id}
-                      onReleaseClick={(id) => {
-                        setSelectedCatalogReleaseId(id);
-                        setActiveTab("catalog");
-                        const el = document.getElementById("catalog-tab-content");
-                        if (el) {
-                          el.scrollIntoView({ behavior: "smooth", block: "start" });
-                        }
-                      }}
-                    />
-                  ),
-                  visible: true,
-                },
-                {
-                  id: "drafts",
-                  component: (
-                    <Collapsible defaultOpen>
-                      <DraftManagement />
-                    </Collapsible>
-                  ),
-                  visible: true,
-                },
-                {
-                  id: "account-manager",
-                  component: <AccountManagerBlock profile={profile} />,
-                  visible: !!(userPlan?.plan.name === "Trackball Prestige" && profile?.account_manager_name),
-                },
-                {
-                  id: "label-designation",
-                  component: <LabelDesignationBlock labelType={profile?.label_type} labelName={profile?.label_name} />,
-                  visible: !!(profile?.label_type && ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type)),
-                },
-                {
-                  id: "your-plan",
-                  component: <YourPlanBlock userPlan={userPlan} />,
-                  visible: true,
-                },
-              ]}
+              useGrid={!!(profile?.label_type && ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type))}
+              blocks={
+                profile?.label_type && ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type)
+                  ? [
+                      // Label accounts: Label Designation and Quick Stats first
+                      {
+                        id: "label-designation",
+                        component: <LabelDesignationBlock labelType={profile?.label_type} labelName={profile?.label_name} />,
+                        visible: true,
+                      },
+                      {
+                        id: "quick-stats",
+                        component: <QuickStatsBlock userId={user?.id} />,
+                        visible: true,
+                      },
+                      {
+                        id: "your-releases",
+                        component: (
+                          <YourReleasesBlock
+                            userId={user?.id}
+                            onReleaseClick={(id) => {
+                              setSelectedCatalogReleaseId(id);
+                              setActiveTab("catalog");
+                              const el = document.getElementById("catalog-tab-content");
+                              if (el) {
+                                el.scrollIntoView({ behavior: "smooth", block: "start" });
+                              }
+                            }}
+                          />
+                        ),
+                        visible: true,
+                      },
+                      {
+                        id: "drafts",
+                        component: (
+                          <Collapsible defaultOpen>
+                            <DraftManagement />
+                          </Collapsible>
+                        ),
+                        visible: true,
+                      },
+                      {
+                        id: "account-manager",
+                        component: <AccountManagerBlock profile={profile} />,
+                        visible: !!(userPlan?.plan.name === "Trackball Prestige" && profile?.account_manager_name),
+                      },
+                      {
+                        id: "your-plan",
+                        component: <YourPlanBlock userPlan={userPlan} />,
+                        visible: true,
+                      },
+                    ]
+                  : [
+                      // Regular accounts: existing order
+                      {
+                        id: "quick-stats",
+                        component: <QuickStatsBlock userId={user?.id} />,
+                        visible: true,
+                      },
+                      {
+                        id: "your-releases",
+                        component: (
+                          <YourReleasesBlock
+                            userId={user?.id}
+                            onReleaseClick={(id) => {
+                              setSelectedCatalogReleaseId(id);
+                              setActiveTab("catalog");
+                              const el = document.getElementById("catalog-tab-content");
+                              if (el) {
+                                el.scrollIntoView({ behavior: "smooth", block: "start" });
+                              }
+                            }}
+                          />
+                        ),
+                        visible: true,
+                      },
+                      {
+                        id: "drafts",
+                        component: (
+                          <Collapsible defaultOpen>
+                            <DraftManagement />
+                          </Collapsible>
+                        ),
+                        visible: true,
+                      },
+                      {
+                        id: "account-manager",
+                        component: <AccountManagerBlock profile={profile} />,
+                        visible: !!(userPlan?.plan.name === "Trackball Prestige" && profile?.account_manager_name),
+                      },
+                      {
+                        id: "label-designation",
+                        component: <LabelDesignationBlock labelType={profile?.label_type} labelName={profile?.label_name} />,
+                        visible: false,
+                      },
+                      {
+                        id: "your-plan",
+                        component: <YourPlanBlock userPlan={userPlan} />,
+                        visible: true,
+                      },
+                    ]
+              }
             />
           </TabsContent>
 

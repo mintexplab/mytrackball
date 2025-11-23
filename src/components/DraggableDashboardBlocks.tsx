@@ -13,7 +13,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
@@ -74,9 +74,10 @@ interface DraggableDashboardBlocksProps {
     visible: boolean;
   }[];
   onLayoutChange?: (newOrder: string[]) => void;
+  useGrid?: boolean;
 }
 
-export const DraggableDashboardBlocks = ({ blocks, onLayoutChange }: DraggableDashboardBlocksProps) => {
+export const DraggableDashboardBlocks = ({ blocks, onLayoutChange, useGrid = false }: DraggableDashboardBlocksProps) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [items, setItems] = useState(() => {
     // Try to load saved order from localStorage
@@ -168,9 +169,11 @@ export const DraggableDashboardBlocks = ({ blocks, onLayoutChange }: DraggableDa
       >
         <SortableContext
           items={visibleItems.map(item => item.id)}
-          strategy={verticalListSortingStrategy}
+          strategy={rectSortingStrategy}
         >
-          <div className="space-y-4">
+          <div className={cn(
+            useGrid ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-4"
+          )}>
             {visibleItems.map((item) => (
               <DraggableBlock key={item.id} id={item.id} isEditMode={isEditMode}>
                 {item.component}
