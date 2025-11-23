@@ -43,7 +43,7 @@ serve(async (req) => {
       throw new Error('User ID is required');
     }
 
-    // Check if requesting user is admin or deleting their own account
+    // Check if requesting user is admin, deleting their own account, or deleting a subaccount
     const { data: roles } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -52,8 +52,17 @@ serve(async (req) => {
     const isAdmin = roles?.some(r => r.role === 'admin');
     const isSelfDelete = requestingUser.id === userId;
 
-    if (!isAdmin && !isSelfDelete) {
-      throw new Error('Unauthorized: Only admins can delete other users');
+    // Check if the target user is a subaccount of the requesting user
+    const { data: targetProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('parent_account_id')
+      .eq('id', userId)
+      .single();
+
+    const isMasterAccount = targetProfile?.parent_account_id === requestingUser.id;
+
+    if (!isAdmin && !isSelfDelete && !isMasterAccount) {
+      throw new Error('Unauthorized: Only admins or master accounts can delete subaccounts');
     }
 
     // Delete the user using admin client

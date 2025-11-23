@@ -296,6 +296,35 @@ const ClientInvitations = () => {
     fetchActiveUsers();
   };
 
+  const deleteUser = async (userId: string, email: string) => {
+    if (!confirm(`Are you sure you want to delete this user account (${email})? This action cannot be undone and will remove all their data.`)) {
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Not authenticated");
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke("delete-user", {
+        body: { userId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("User account deleted successfully");
+      fetchActiveUsers();
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      toast.error(error.message || "Failed to delete user");
+    }
+  };
+
   const togglePermission = (permissionId: string) => {
     setSelectedPermissions(prev =>
       prev.includes(permissionId)
@@ -513,6 +542,7 @@ const ClientInvitations = () => {
                     <TableHead>User</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Permissions</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -522,7 +552,7 @@ const ClientInvitations = () => {
                         {user.display_name || user.full_name || "User"}
                       </TableCell>
                       <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                      <TableCell>
+                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {user.permissions.length === 0 ? (
                             <span className="text-sm text-muted-foreground">No permissions</span>
@@ -544,6 +574,16 @@ const ClientInvitations = () => {
                             ))
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteUser(user.id, user.email)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <UserX className="w-4 h-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
