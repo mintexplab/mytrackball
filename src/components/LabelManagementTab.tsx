@@ -65,7 +65,7 @@ const LabelManagementTab = ({
     try {
       const canEditLabel = userPlan?.plan?.name === "Trackball Signature" || userPlan?.plan?.name === "Trackball Prestige";
       if (!canEditLabel) {
-        toast.error("Label name is only available for Signature and Prestige members");
+        toast.error("Label creation is only available for Signature and Prestige members");
         return;
       }
       if (!labelName.trim()) {
@@ -73,38 +73,37 @@ const LabelManagementTab = ({
         return;
       }
 
-      // Check if label already exists
+      // Create new label
       const {
-        data: existingLabel
-      } = await supabase.from("labels").select("id").eq("user_id", userId).maybeSingle();
-      if (existingLabel) {
-        // Update existing label
-        await supabase.from("labels").update({
-          name: labelName
-        }).eq("id", existingLabel.id);
-        await supabase.from("profiles").update({
-          label_name: labelName,
-          label_id: existingLabel.id
-        }).eq("id", userId);
-      } else {
-        // Create new label
-        const {
-          data: newLabel,
-          error: labelError
-        } = await supabase.from("labels").insert({
-          name: labelName,
-          user_id: userId
-        }).select().single();
-        if (labelError) throw labelError;
-        await supabase.from("profiles").update({
-          label_name: labelName,
-          label_id: newLabel.id
-        }).eq("id", userId);
-      }
-      toast.success("Label name saved successfully");
+        data: newLabel,
+        error: labelError
+      } = await supabase.from("labels").insert({
+        name: labelName,
+        user_id: userId
+      }).select().single();
+      
+      if (labelError) throw labelError;
+
+      // Create membership for this label
+      await supabase.from("user_label_memberships").insert({
+        user_id: userId,
+        label_id: newLabel.id,
+        label_name: labelName,
+        role: "owner"
+      });
+
+      // Set as active label and update profile
+      await supabase.from("profiles").update({
+        active_label_id: newLabel.id,
+        label_name: labelName,
+        label_id: newLabel.id
+      }).eq("id", userId);
+
+      toast.success("Label created successfully");
+      setLabelName("");
       fetchLabelData();
     } catch (error: any) {
-      toast.error(error.message || "Failed to save label name");
+      toast.error(error.message || "Failed to create label");
     } finally {
       setSaving(false);
     }
@@ -164,24 +163,35 @@ const LabelManagementTab = ({
   }
   const canEditLabel = userPlan?.plan?.name === "Trackball Signature" || userPlan?.plan?.name === "Trackball Prestige";
   return <div className="space-y-6">
-      {/* Label Name Section */}
+      {/* Create New Label Section */}
       <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
         <CardHeader>
           <CardTitle className="text-2xl font-bold flex items-center gap-2">
             <Building2 className="w-6 h-6" />
-            YOUR LABEL NAME
+            CREATE NEW LABEL
           </CardTitle>
           <CardDescription>
-            {canEditLabel ? "Set your label name for Signature and Prestige members" : "Label name is only available for Signature and Prestige members"}
+            {canEditLabel ? "Create and manage multiple labels for your distribution" : "Label creation is only available for Signature and Prestige members"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="label_name">Label Name</Label>
-            <Input id="label_name" placeholder="Your Label" value={labelName} onChange={e => setLabelName(e.target.value)} className="bg-background/50 border-border" disabled={!canEditLabel || saving} />
+            <Label htmlFor="new_label_name">New Label Name</Label>
+            <Input 
+              id="new_label_name" 
+              placeholder="Enter label name" 
+              value={labelName} 
+              onChange={e => setLabelName(e.target.value)} 
+              className="bg-background/50 border-border" 
+              disabled={!canEditLabel || saving} 
+            />
           </div>
-          <Button onClick={saveLabelName} disabled={!canEditLabel || saving || !labelName.trim()} className="bg-gradient-primary hover:opacity-90">
-            {saving ? "Saving..." : "Save Label Name"}
+          <Button 
+            onClick={saveLabelName} 
+            disabled={!canEditLabel || saving || !labelName.trim()} 
+            className="bg-gradient-primary hover:opacity-90"
+          >
+            {saving ? "Creating..." : "Create Label"}
           </Button>
         </CardContent>
       </Card>

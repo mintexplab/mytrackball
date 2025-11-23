@@ -40,6 +40,7 @@ import { QuickStatsBlock } from "@/components/dashboard/QuickStatsBlock";
 import { YourReleasesBlock } from "@/components/dashboard/YourReleasesBlock";
 import { YourPlanBlock } from "@/components/dashboard/YourPlanBlock";
 import { AccountManagerBlock } from "@/components/dashboard/AccountManagerBlock";
+import { LabelDesignationBlock } from "@/components/dashboard/LabelDesignationBlock";
 import LabelManagementTab from "@/components/LabelManagementTab";
 
 const Dashboard = () => {
@@ -549,6 +550,11 @@ const Dashboard = () => {
                   id: "account-manager",
                   component: <AccountManagerBlock profile={profile} />,
                   visible: !!(userPlan?.plan.name === "Trackball Prestige" && profile?.account_manager_name),
+                },
+                {
+                  id: "label-designation",
+                  component: <LabelDesignationBlock labelType={profile?.label_type} labelName={profile?.label_name} />,
+                  visible: !!(profile?.label_type && ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type)),
                 },
                 {
                   id: "your-plan",
