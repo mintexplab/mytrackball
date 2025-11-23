@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.handle-ticket-email-reply]
 verify_jwt = false
+
+[functions.generate-smartlink]
+verify_jwt = false
