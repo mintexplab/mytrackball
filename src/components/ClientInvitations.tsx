@@ -113,12 +113,92 @@ const ClientInvitations = () => {
       // Check if user already exists
       const { data: existingProfile } = await supabase
         .from("profiles")
-        .select("id")
+        .select("id, display_name, full_name")
         .eq("email", validatedData.email)
         .maybeSingle();
 
       if (existingProfile) {
-        toast.error("A user with this email already exists");
+        // User exists - check if already a member of this label
+        const { data: existingMembership } = await supabase
+          .from("user_label_memberships")
+          .select("id")
+          .eq("user_id", existingProfile.id)
+          .eq("label_id", validatedData.labelId)
+          .maybeSingle();
+
+        if (existingMembership) {
+          toast.error("This user is already a member of this label");
+          setSending(false);
+          return;
+        }
+
+        // Automatically add them to the label
+        const selectedLabel = labels.find(l => l.label_id === validatedData.labelId);
+        
+        const { error: membershipError } = await supabase
+          .from("user_label_memberships")
+          .insert({
+            user_id: existingProfile.id,
+            label_id: validatedData.labelId,
+            label_name: selectedLabel?.label_name || "Label",
+            role: "member"
+          });
+
+        if (membershipError) throw membershipError;
+
+        // Grant permissions to the user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (validatedData.permissions && validatedData.permissions.length > 0) {
+          const permissionsToInsert = validatedData.permissions.map((permission: string) => ({
+            user_id: existingProfile.id,
+            permission: permission,
+            granted_by: user?.id,
+          }));
+
+          const { error: permError } = await supabase
+            .from("user_permissions")
+            .insert(permissionsToInsert);
+
+          if (permError) throw permError;
+        }
+
+        // Create a notification for the user
+        const { error: notificationError } = await supabase
+          .from("notifications")
+          .insert({
+            user_id: existingProfile.id,
+            title: "You've been added to a label",
+            message: `You have been added to ${selectedLabel?.label_name || "a label"} with access to: ${validatedData.permissions.join(", ")}`,
+            type: "info"
+          });
+
+        if (notificationError) console.error("Notification error:", notificationError);
+
+        // Send email notification
+        const { data: userProfile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user?.id)
+          .single();
+
+        await supabase.functions.invoke("send-client-invitation", {
+          body: {
+            inviterName: userProfile?.display_name || userProfile?.full_name || "Trackball User",
+            inviterEmail: userProfile?.email,
+            inviteeEmail: validatedData.email,
+            labelName: selectedLabel?.label_name || "My Trackball",
+            permissions: validatedData.permissions,
+            appUrl: window.location.origin,
+            existingUser: true
+          },
+        });
+
+        toast.success("User added to label successfully!");
+        setDialogOpen(false);
+        setInviteEmail("");
+        setSelectedLabelId("");
+        setSelectedPermissions([]);
+        fetchActiveUsers();
         setSending(false);
         return;
       }
