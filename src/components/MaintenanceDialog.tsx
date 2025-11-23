@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Mail, LogOut, ShieldAlert } from "lucide-react";
 import { format } from "date-fns";
+import { playErrorSound } from "@/hooks/useErrorSound";
 
 interface MaintenanceDialogProps {
   userId: string;
@@ -57,6 +58,7 @@ export const MaintenanceDialog = ({ userId, onSignOut }: MaintenanceDialogProps)
     if (data) {
       setMaintenanceSettings(data);
       setShowDialog(true);
+      playErrorSound(); // Play error sound when maintenance mode is active
     } else {
       setShowDialog(false);
     }
