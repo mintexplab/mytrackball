@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music, Settings, ChevronDown, AlertTriangle, FileText, ShieldAlert } from "lucide-react";
+import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music, Settings, ChevronDown, AlertTriangle, FileText, ShieldAlert, MessageSquare } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
 import UserManagement from "./UserManagement";
@@ -30,6 +30,7 @@ import { PartnerPermissionsBreakdown } from "./PartnerPermissionsBreakdown";
 import { InvoiceDraftsManagement } from "./InvoiceDraftsManagement";
 import LabelDesignationWelcomeDialog from "./LabelDesignationWelcomeDialog";
 import { OnboardingTutorial } from "./OnboardingTutorial";
+import { AdminTicketManagement } from "./AdminTicketManagement";
 import { Bug, GraduationCap, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -241,6 +242,11 @@ const AdminPortal = ({
                 Takedowns
               </Button>
 
+              <Button variant={activeTab === "tickets" ? "default" : "ghost"} size="sm" onClick={() => setActiveTab("tickets")} className={activeTab === "tickets" ? "bg-gradient-primary text-primary-foreground" : ""}>
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Tickets
+              </Button>
+
               {/* Content Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -411,6 +417,10 @@ const AdminPortal = ({
 
           <TabsContent value="takedowns">
             <TakedownRequestsManagement />
+          </TabsContent>
+
+          <TabsContent value="tickets">
+            <AdminTicketManagement />
           </TabsContent>
 
           <TabsContent value="invite-artists">

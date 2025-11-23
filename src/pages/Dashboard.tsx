@@ -43,6 +43,7 @@ import { PlanAndLabelsBlock } from "@/components/dashboard/PlanAndLabelsBlock";
 import LabelManagementTab from "@/components/LabelManagementTab";
 import LabelDesignationWelcomeDialog from "@/components/LabelDesignationWelcomeDialog";
 import SubscriptionWelcomeDialog from "@/components/SubscriptionWelcomeDialog";
+import { SupportTicketSystem } from "@/components/SupportTicketSystem";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -717,6 +718,9 @@ const Dashboard = () => {
                 </Card>
               ) : (
                 <>
+                  {/* Support Tickets Section */}
+                  <SupportTicketSystem />
+
                   {/* Documentation Section */}
                   <DocumentationSection />
 
