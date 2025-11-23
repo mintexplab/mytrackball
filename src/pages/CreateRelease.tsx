@@ -369,24 +369,12 @@ const CreateRelease = () => {
 
   const generateISRC = async () => {
     try {
-      const { data: counter, error } = await supabase
-        .from("isrc_counter")
-        .select("*")
-        .single();
+      // Use secure database function to generate ISRC
+      const { data, error } = await supabase.rpc('generate_next_isrc');
 
       if (error) throw error;
 
-      const year = new Date().getFullYear().toString().slice(-2);
-      const prefix = `CBGNR${year}`;
-      const nextNumber = (counter.last_number + 1).toString().padStart(5, "0");
-      const newIsrc = `${prefix}${nextNumber}`;
-
-      await supabase
-        .from("isrc_counter")
-        .update({ last_number: counter.last_number + 1 })
-        .eq("id", counter.id);
-
-      return newIsrc;
+      return data;
     } catch (error) {
       console.error("Error generating ISRC:", error);
       throw new Error("Failed to generate ISRC");

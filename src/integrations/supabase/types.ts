@@ -1254,6 +1254,7 @@ export type Database = {
     }
     Functions: {
       generate_label_id: { Args: never; Returns: string }
+      generate_next_isrc: { Args: never; Returns: string }
       generate_user_id: { Args: never; Returns: string }
       has_role: {
         Args: {
