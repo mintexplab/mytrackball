@@ -85,24 +85,31 @@ const LabelManagementTab = ({
       if (labelError) throw labelError;
 
       // Create membership for this label
-      await supabase.from("user_label_memberships").insert({
+      const { error: membershipError } = await supabase.from("user_label_memberships").insert({
         user_id: userId,
         label_id: newLabel.id,
         label_name: labelName,
         role: "owner"
       });
 
+      if (membershipError) throw membershipError;
+
       // Set as active label and update profile
-      await supabase.from("profiles").update({
+      const { error: profileError } = await supabase.from("profiles").update({
         active_label_id: newLabel.id,
         label_name: labelName,
         label_id: newLabel.id
       }).eq("id", userId);
 
+      if (profileError) throw profileError;
+
       toast.success("Label created successfully");
       setLabelName("");
-      fetchLabelData();
+      
+      // Reload label data to show the new label in memberships
+      await fetchLabelData();
     } catch (error: any) {
+      console.error("Error creating label:", error);
       toast.error(error.message || "Failed to create label");
     } finally {
       setSaving(false);
