@@ -194,7 +194,7 @@ const LabelManagementTab = ({
             LABEL MEMBERSHIPS
           </CardTitle>
           <CardDescription>
-            {memberships.length === 0 ? "You are not a member of any labels yet" : `You are a member of ${memberships.length} label${memberships.length > 1 ? 's' : ''}`}
+            The label or labels you are affiliated with
           </CardDescription>
         </CardHeader>
         <CardContent>
