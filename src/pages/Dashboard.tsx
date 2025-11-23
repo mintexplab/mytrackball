@@ -389,11 +389,6 @@ const Dashboard = () => {
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                 <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
               </div>
-              <div className="min-w-0 hidden sm:block">
-                <h1 className="text-base sm:text-xl bg-gradient-primary bg-clip-text text-transparent truncate font-medium">
-                  {profile?.label_name || "Trackball Distribution"}
-                </h1>
-              </div>
             </div>
             
             <div className="flex items-center gap-2 flex-shrink-0 overflow-x-auto">
