@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { UserPlus, Mail, Trash2, Clock, CheckCircle, XCircle } from "lucide-react";
+import { UserPlus, Mail, Trash2, Clock, CheckCircle, XCircle, UserX, Settings } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,7 @@ const PERMISSIONS = [
 
 const ClientInvitations = () => {
   const [invitations, setInvitations] = useState<any[]>([]);
+  const [activeUsers, setActiveUsers] = useState<any[]>([]);
   const [labels, setLabels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -53,6 +55,7 @@ const ClientInvitations = () => {
   useEffect(() => {
     fetchInvitations();
     fetchLabels();
+    fetchActiveUsers();
   }, []);
 
   const fetchLabels = async () => {
@@ -210,6 +213,44 @@ const ClientInvitations = () => {
     }
   };
 
+  const fetchActiveUsers = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // Get users who have this account as parent
+    const { data: profiles, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, email, display_name, full_name")
+      .eq("parent_account_id", user?.id);
+
+    if (profileError) {
+      console.error("Error fetching active users:", profileError);
+      return;
+    }
+
+    if (!profiles || profiles.length === 0) {
+      setActiveUsers([]);
+      return;
+    }
+
+    // Get permissions for each user
+    const usersWithPermissions = await Promise.all(
+      profiles.map(async (profile) => {
+        const { data: permissions } = await supabase
+          .from("user_permissions")
+          .select("permission, id")
+          .eq("user_id", profile.id)
+          .eq("granted_by", user?.id);
+
+        return {
+          ...profile,
+          permissions: permissions || []
+        };
+      })
+    );
+
+    setActiveUsers(usersWithPermissions);
+  };
+
   const cancelInvitation = async (invitationId: string) => {
     const { error } = await supabase
       .from("sublabel_invitations")
@@ -223,6 +264,36 @@ const ClientInvitations = () => {
 
     toast.success("Invitation cancelled");
     fetchInvitations();
+  };
+
+  const deleteInvitation = async (invitationId: string) => {
+    const { error } = await supabase
+      .from("sublabel_invitations")
+      .delete()
+      .eq("id", invitationId);
+
+    if (error) {
+      toast.error("Failed to delete invitation");
+      return;
+    }
+
+    toast.success("Invitation deleted");
+    fetchInvitations();
+  };
+
+  const revokePermission = async (userId: string, permissionId: string) => {
+    const { error } = await supabase
+      .from("user_permissions")
+      .delete()
+      .eq("id", permissionId);
+
+    if (error) {
+      toast.error("Failed to revoke permission");
+      return;
+    }
+
+    toast.success("Permission revoked");
+    fetchActiveUsers();
   };
 
   const togglePermission = (permissionId: string) => {
@@ -265,9 +336,9 @@ const ClientInvitations = () => {
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-2xl font-bold text-left">User Invitations</CardTitle>
+            <CardTitle className="text-2xl font-bold text-left">User Management</CardTitle>
             <CardDescription className="text-left">
-              Invite users with specific permissions to access your platform
+              Manage invitations and active users with permissions
             </CardDescription>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -356,59 +427,141 @@ const ClientInvitations = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {invitations.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No invitations sent yet. Invite users to get started.
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Permissions</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Sent</TableHead>
-                <TableHead>Expires</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {invitations.map((invite) => (
-                <TableRow key={invite.id}>
-                  <TableCell className="font-medium">{invite.invitee_email}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {invite.permissions?.map((perm: string) => (
-                        <Badge key={perm} variant="outline" className="text-xs">
-                          {PERMISSIONS.find(p => p.id === perm)?.label}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(invite.status)}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {new Date(invite.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {new Date(invite.expires_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    {invite.status === "pending" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => cancelInvitation(invite.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+        <Tabs defaultValue="invitations" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="invitations">Invitations</TabsTrigger>
+            <TabsTrigger value="active">Active Users</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="invitations">
+            {invitations.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No invitations sent yet. Invite users to get started.
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Permissions</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Sent</TableHead>
+                    <TableHead>Expires</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invitations.map((invite) => (
+                    <TableRow key={invite.id}>
+                      <TableCell className="font-medium">{invite.invitee_email}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {invite.permissions?.map((perm: string) => (
+                            <Badge key={perm} variant="outline" className="text-xs">
+                              {PERMISSIONS.find(p => p.id === perm)?.label}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(invite.status)}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {new Date(invite.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {new Date(invite.expires_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          {invite.status === "pending" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => cancelInvitation(invite.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {(invite.status === "expired" || invite.status === "declined") && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteInvitation(invite.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </TabsContent>
+
+          <TabsContent value="active">
+            {activeUsers.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No active users yet. Invited users will appear here when they accept.
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Permissions</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {activeUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">
+                        {user.display_name || user.full_name || "User"}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {user.permissions.length === 0 ? (
+                            <span className="text-sm text-muted-foreground">No permissions</span>
+                          ) : (
+                            user.permissions.map((perm: any) => (
+                              <Badge 
+                                key={perm.id} 
+                                variant="outline" 
+                                className="text-xs flex items-center gap-1"
+                              >
+                                {PERMISSIONS.find(p => p.id === perm.permission)?.label}
+                                <button
+                                  onClick={() => revokePermission(user.id, perm.id)}
+                                  className="ml-1 hover:text-destructive"
+                                >
+                                  <XCircle className="w-3 h-3" />
+                                </button>
+                              </Badge>
+                            ))
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <Settings className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
