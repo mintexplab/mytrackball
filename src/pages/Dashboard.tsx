@@ -47,10 +47,13 @@ const Dashboard = () => {
         .eq("id", session.user.id)
         .single();
 
-      // Fetch user plan
+      // Fetch user plan with plan details
       const { data: userPlanData } = await supabase
         .from("user_plans")
-        .select("*")
+        .select(`
+          *,
+          plan:plans(*)
+        `)
         .eq("user_id", session.user.id)
         .maybeSingle();
 
