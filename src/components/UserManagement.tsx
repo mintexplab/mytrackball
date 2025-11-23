@@ -608,7 +608,7 @@ const UserManagement = () => {
                               Reset Tutorial
                             </Button>
 
-                            <div className="flex justify-center pt-1">
+                            <div className="flex justify-center">
                               <SendNotificationDialog 
                                 userId={masterUser.id} 
                                 userName={masterUser.full_name || masterUser.email} 
@@ -619,7 +619,7 @@ const UserManagement = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => deleteUser(masterUser.id, masterUser.email)}
-                              className="w-full justify-start gap-2 h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                              className="w-full justify-start gap-2 h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 className="w-3 h-3" />
                               Delete User
@@ -716,7 +716,7 @@ const UserManagement = () => {
                                 )}
                               </Button>
 
-                              <div className="flex justify-center pt-1">
+                              <div className="flex justify-center">
                                 <SendNotificationDialog 
                                   userId={subUser.id} 
                                   userName={subUser.full_name || subUser.email} 
@@ -727,7 +727,7 @@ const UserManagement = () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => deleteUser(subUser.id, subUser.email)}
-                                className="w-full justify-start gap-2 h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                                className="w-full justify-start gap-2 h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                               >
                                 <Trash2 className="w-3 h-3" />
                                 Delete User
@@ -889,7 +889,7 @@ const UserManagement = () => {
                               Reset Tutorial
                             </Button>
 
-                            <div className="flex justify-center pt-1">
+                            <div className="flex justify-center">
                               <SendNotificationDialog 
                                 userId={user.id} 
                                 userName={user.full_name || user.email} 
@@ -900,7 +900,7 @@ const UserManagement = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => deleteUser(user.id, user.email)}
-                              className="w-full justify-start gap-2 h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                              className="w-full justify-start gap-2 h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 className="w-3 h-3" />
                               Delete User
