@@ -83,11 +83,27 @@ const LabelManagementTab = ({
       
       if (!canEditLabel) {
         toast.error("Label creation is only available for Partner, Signature and Prestige members");
+        setSaving(false);
         return;
       }
       if (!labelName.trim()) {
         toast.error("Please enter a label name");
         return;
+      }
+
+      // Check if Signature Label user has 2+ labels already
+      if (profile?.label_type === 'signature_label') {
+        const { data: existingLabels } = await supabase
+          .from("user_label_memberships")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("role", "owner");
+
+        if (existingLabels && existingLabels.length >= 2) {
+          toast.error("Signature Label users are limited to 2 labels. Upgrade to Prestige for unlimited labels.");
+          setSaving(false);
+          return;
+        }
       }
 
       // Create new label
