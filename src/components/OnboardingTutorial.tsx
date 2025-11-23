@@ -55,9 +55,9 @@ const tutorialSteps = [
   },
   {
     title: "Notifications - Stay Updated",
-    description: "Never miss important updates! Check here for announcements, plan changes, release status updates, and system notifications. Your communication hub for everything happening with your account and releases.",
+    description: "Never miss important updates! Click the bell icon to view announcements, plan changes, release status updates, and system notifications. Your communication hub for everything happening with your account and releases.",
     position: "top-right",
-    highlightElement: "[data-tutorial='notifications-tab']",
+    highlightElement: "[data-tutorial='notifications-icon']",
   },
   {
     title: "Help & Documentation",
