@@ -54,10 +54,10 @@ const LabelDesignationWelcomeDialog = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
-            Welcome to {getLabelTypeName()}!
+            You are now a {getLabelTypeName()}
           </DialogTitle>
           <DialogDescription>
-            Step {step} of 3 - Let's get you started
+            Step {step} of 3 - Let&apos;s get you started
           </DialogDescription>
         </DialogHeader>
 
