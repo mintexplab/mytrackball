@@ -393,15 +393,6 @@ const Dashboard = () => {
                 <h1 className="text-base sm:text-xl bg-gradient-primary bg-clip-text text-transparent truncate font-medium">
                   {profile?.label_name || "Trackball Distribution"}
                 </h1>
-                {profile?.artist_name && <p className="text-xs text-muted-foreground truncate">{profile.artist_name}</p>}
-                {profile?.user_id && <p className="text-xs text-muted-foreground/70">ID:{profile.user_id}</p>}
-                {parentAccount && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <Badge variant="outline" className="text-xs border-primary/30 bg-primary/10">
-                      Subaccount of {parentAccount.label_name || parentAccount.display_name || parentAccount.artist_name}
-                    </Badge>
-                  </div>
-                )}
               </div>
             </div>
             
@@ -529,6 +520,22 @@ const Dashboard = () => {
               >
                 <Plus className="w-4 h-4" />
               </Button>
+
+              {/* User Info Display */}
+              <div className="hidden lg:flex flex-col items-end text-right mr-3">
+                <p className="text-sm font-medium text-foreground">
+                  {profile?.full_name || profile?.display_name || profile?.artist_name || "User"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {profile?.label_name && <span>{profile.label_name} </span>}
+                  {profile?.user_id && <span>ID: {profile.user_id}</span>}
+                </p>
+                {parentAccount && (
+                  <Badge variant="outline" className="text-xs border-primary/30 bg-primary/10 mt-1">
+                    Subaccount of {parentAccount.label_name || parentAccount.display_name || parentAccount.artist_name}
+                  </Badge>
+                )}
+              </div>
 
               {/* Notifications Dropdown */}
               <div className="flex items-center gap-2" data-tutorial="notifications-icon">
