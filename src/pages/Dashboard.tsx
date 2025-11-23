@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Upload } from "lucide-react";
+import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Upload, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
@@ -40,6 +40,7 @@ import { QuickStatsBlock } from "@/components/dashboard/QuickStatsBlock";
 import { YourReleasesBlock } from "@/components/dashboard/YourReleasesBlock";
 import { YourPlanBlock } from "@/components/dashboard/YourPlanBlock";
 import { AccountManagerBlock } from "@/components/dashboard/AccountManagerBlock";
+import LabelManagementTab from "@/components/LabelManagementTab";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -396,15 +397,27 @@ const Dashboard = () => {
               </DropdownMenu>
 
               {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && (
-                <Button 
-                  variant={activeTab === "clients" ? "default" : "ghost"} 
-                  size="sm" 
-                  onClick={() => setActiveTab("clients")}
-                  className={activeTab === "clients" ? "bg-gradient-primary text-primary-foreground" : ""}
-                >
-                  <Users className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Users</span>
-                </Button>
+                <>
+                  <Button 
+                    variant={activeTab === "clients" ? "default" : "ghost"} 
+                    size="sm" 
+                    onClick={() => setActiveTab("clients")}
+                    className={activeTab === "clients" ? "bg-gradient-primary text-primary-foreground" : ""}
+                  >
+                    <Users className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Users</span>
+                  </Button>
+
+                  <Button 
+                    variant={activeTab === "labels" ? "default" : "ghost"} 
+                    size="sm" 
+                    onClick={() => setActiveTab("labels")}
+                    className={activeTab === "labels" ? "bg-gradient-primary text-primary-foreground" : ""}
+                  >
+                    <Building2 className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Labels</span>
+                  </Button>
+                </>
               )}
 
               <Button 
@@ -560,9 +573,17 @@ const Dashboard = () => {
             {user && <BulkUploadTab userId={user.id} />}
           </TabsContent>
 
-          {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && <TabsContent value="clients" className="animate-fade-in">
-              <ClientInvitations />
-            </TabsContent>}
+          {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && (
+            <>
+              <TabsContent value="clients" className="animate-fade-in">
+                <ClientInvitations />
+              </TabsContent>
+
+              <TabsContent value="labels" className="animate-fade-in">
+                {user && <LabelManagementTab userId={user.id} userPlan={userPlan} />}
+              </TabsContent>
+            </>
+          )}
 
           <TabsContent value="notifications" className="animate-fade-in">
             {user && <NotificationsTab userId={user.id} />}

@@ -10,7 +10,6 @@ import CreateRelease from "./pages/CreateRelease";
 import AccountSettings from "./pages/AccountSettings";
 import SubscriptionManagement from "./pages/SubscriptionManagement";
 import AcceptInvitation from "./pages/AcceptInvitation";
-import LabelManagement from "./pages/LabelManagement";
 import ReleaseDetails from "./pages/ReleaseDetails";
 import SetupTwoFactor from "./pages/SetupTwoFactor";
 import NotFound from "./pages/NotFound";
@@ -32,7 +31,6 @@ const App = () => {
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/setup-2fa" element={<SetupTwoFactor />} />
                 <Route path="/accept-invitation" element={<AcceptInvitation />} />
-                <Route path="/label-management" element={<LabelManagement />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/create-release" element={<CreateRelease />} />
                 <Route path="/release/:id" element={<ReleaseDetails />} />
