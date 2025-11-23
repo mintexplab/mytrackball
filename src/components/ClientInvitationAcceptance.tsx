@@ -67,6 +67,33 @@ const ClientInvitationAcceptance = ({ userId }: ClientInvitationAcceptanceProps)
 
       if (inviteError) throw inviteError;
 
+      // Get label details
+      let labelName = invitation.inviter.label_name;
+      if (invitation.label_id) {
+        const { data: labelData } = await supabase
+          .from("labels")
+          .select("name")
+          .eq("id", invitation.label_id)
+          .single();
+        
+        if (labelData) {
+          labelName = labelData.name;
+        }
+      }
+
+      // Update user's profile with label information
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          active_label_id: invitation.label_id,
+          label_id: invitation.label_id,
+          label_name: labelName,
+          parent_account_id: invitation.inviter_id,
+        })
+        .eq("id", userId);
+
+      if (profileError) throw profileError;
+
       // Grant permissions to the user
       if (invitation.permissions && invitation.permissions.length > 0) {
         const permissionsToInsert = invitation.permissions.map((permission: string) => ({
@@ -82,7 +109,7 @@ const ClientInvitationAcceptance = ({ userId }: ClientInvitationAcceptanceProps)
         if (permError) throw permError;
       }
 
-      toast.success(`You're now a client of ${invitation.inviter.label_name || invitation.inviter.display_name}!`);
+      toast.success(`You're now a client of ${labelName || invitation.inviter.display_name}!`);
       
       // Remove accepted invitation from list
       setPendingInvitations(prev => prev.filter(inv => inv.id !== invitation.id));
@@ -92,7 +119,7 @@ const ClientInvitationAcceptance = ({ userId }: ClientInvitationAcceptanceProps)
         setShowDialog(false);
       }
 
-      // Refresh page to show new permissions
+      // Refresh page to show new permissions and label
       setTimeout(() => window.location.reload(), 1500);
     } catch (error) {
       console.error("Error accepting invitation:", error);

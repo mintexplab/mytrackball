@@ -17,11 +17,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { z } from "zod";
 
 const inviteSchema = z.object({
   email: z.string().email("Invalid email address").max(255),
   permissions: z.array(z.string()).min(1, "Select at least one permission"),
+  labelId: z.string().min(1, "Select a label"),
 });
 
 const PERMISSIONS = [
@@ -34,15 +42,34 @@ const PERMISSIONS = [
 
 const ClientInvitations = () => {
   const [invitations, setInvitations] = useState<any[]>([]);
+  const [labels, setLabels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [selectedLabelId, setSelectedLabelId] = useState("");
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
     fetchInvitations();
+    fetchLabels();
   }, []);
+
+  const fetchLabels = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    const { data, error } = await supabase
+      .from("user_label_memberships")
+      .select("*")
+      .eq("user_id", user?.id)
+      .order("joined_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching labels:", error);
+    } else {
+      setLabels(data || []);
+    }
+  };
 
   const fetchInvitations = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -67,7 +94,8 @@ const ClientInvitations = () => {
     try {
       const validatedData = inviteSchema.parse({ 
         email: inviteEmail,
-        permissions: selectedPermissions 
+        permissions: selectedPermissions,
+        labelId: selectedLabelId
       });
       setSending(true);
 
@@ -125,6 +153,9 @@ const ClientInvitations = () => {
         .eq("id", user?.id)
         .single();
 
+      // Get selected label details
+      const selectedLabel = labels.find(l => l.label_id === validatedData.labelId);
+
       // Create invitation record
       const { data: invitation, error: inviteError } = await supabase
         .from("sublabel_invitations")
@@ -134,6 +165,7 @@ const ClientInvitations = () => {
           status: "pending",
           invitation_type: "client",
           permissions: validatedData.permissions,
+          label_id: validatedData.labelId,
         })
         .select()
         .single();
@@ -146,11 +178,11 @@ const ClientInvitations = () => {
           inviterName: userProfile?.display_name || userProfile?.full_name || "Trackball User",
           inviterEmail: userProfile?.email,
           inviteeEmail: validatedData.email,
-          labelName: userProfile?.label_name || "My Trackball",
+          labelName: selectedLabel?.label_name || "My Trackball",
           invitationId: invitation.id,
           invitationType: "client",
           permissions: validatedData.permissions,
-          appUrl: window.location.origin, // Pass current app URL
+          appUrl: window.location.origin,
         },
       });
 
@@ -163,6 +195,7 @@ const ClientInvitations = () => {
 
       setDialogOpen(false);
       setInviteEmail("");
+      setSelectedLabelId("");
       setSelectedPermissions([]);
       fetchInvitations();
     } catch (error) {
@@ -263,6 +296,25 @@ const ClientInvitations = () => {
                     className="bg-background border-border"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="labelSelect">Assign to Label</Label>
+                  <Select value={selectedLabelId} onValueChange={setSelectedLabelId}>
+                    <SelectTrigger className="bg-background border-border">
+                      <SelectValue placeholder="Select a label" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      {labels.map((label) => (
+                        <SelectItem key={label.label_id} value={label.label_id}>
+                          {label.label_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    The user will be assigned to this label when they accept
+                  </p>
+                </div>
                 
                 <div className="space-y-3">
                   <Label>Permissions</Label>
@@ -292,7 +344,7 @@ const ClientInvitations = () => {
 
                 <Button
                   onClick={sendInvitation}
-                  disabled={sending || selectedPermissions.length === 0}
+                  disabled={sending || selectedPermissions.length === 0 || !selectedLabelId}
                   className="w-full bg-gradient-primary hover:opacity-90"
                 >
                   <Mail className="w-4 h-4 mr-2" />
