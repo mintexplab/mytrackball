@@ -329,7 +329,6 @@ export const ModernSupportTicketSystem = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <DialogTitle className="text-2xl mb-2">{selectedTicket.subject}</DialogTitle>
-                    <p className="text-sm text-muted-foreground mb-3">{selectedTicket.description}</p>
                     <div className="flex items-center gap-3">
                       {(() => {
                         const statusConfig = getStatusConfig(selectedTicket.status);
@@ -356,6 +355,29 @@ export const ModernSupportTicketSystem = () => {
               
               <div className="space-y-4">
                 <div className="space-y-4 max-h-[400px] overflow-y-auto px-1">
+                  {/* Initial message */}
+                  <div className="flex gap-3 flex-row-reverse">
+                    <Avatar className="h-8 w-8 shrink-0 bg-muted">
+                      <AvatarFallback className="text-xs">
+                        <User className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 ml-8">
+                      <div className="rounded-lg p-4 bg-muted">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold">You</span>
+                            <Badge variant="secondary" className="text-xs">INITIAL MESSAGE</Badge>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(selectedTicket.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{selectedTicket.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
                   {messages.map((msg) => (
                     <div key={msg.id} className={`flex gap-3 ${msg.is_admin_reply ? 'flex-row' : 'flex-row-reverse'}`}>
                       <Avatar className={`h-8 w-8 shrink-0 ${msg.is_admin_reply ? 'bg-gradient-primary' : 'bg-muted'}`}>
