@@ -1,4 +1,4 @@
-import { Menu, X, Home, Package, Users, Bell, DollarSign, HelpCircle, FileMusic, Upload } from "lucide-react";
+import { Menu, X, Home, Package, Users, Bell, DollarSign, HelpCircle, FileMusic, Upload, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -116,12 +116,12 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false 
               </Button>
 
               <Button
-                variant={activeTab === "invite-labels" ? "default" : "ghost"}
+                variant={activeTab === "label-designations" ? "default" : "ghost"}
                 className="w-full justify-start"
-                onClick={() => handleTabChange("invite-labels")}
+                onClick={() => handleTabChange("label-designations")}
               >
-                <Package className="w-4 h-4 mr-2" />
-                Invite Labels
+                <Building2 className="w-4 h-4 mr-2" />
+                Label Designations
               </Button>
 
               <Button
@@ -210,6 +210,15 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false 
                 >
                   <Users className="w-4 h-4 mr-2" />
                   Users
+                </Button>
+
+                <Button
+                  variant={activeTab === "labels" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => handleTabChange("labels")}
+                >
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Labels
                 </Button>
               </>
             )}

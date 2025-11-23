@@ -54,7 +54,6 @@ const AccountSettings = () => {
     email: "",
     avatar_url: "",
     display_name: "",
-    label_name: "",
     user_timezone: "America/New_York",
     current_password: "",
     new_password: ""
@@ -99,7 +98,6 @@ const AccountSettings = () => {
         email: profileData.email,
         avatar_url: profileData.avatar_url || "",
         display_name: profileData.display_name || "",
-        label_name: profileData.label_name || "",
         user_timezone: profileData.user_timezone || "America/New_York",
         current_password: "",
         new_password: ""
@@ -118,7 +116,6 @@ const AccountSettings = () => {
       if (!user) throw new Error("Not authenticated");
 
       // Check if label_name update is allowed
-      const canEditLabel = userPlan?.plan?.name === "Trackball Signature" || userPlan?.plan?.name === "Trackball Prestige";
       const updateData: any = {
         full_name: formData.full_name,
         avatar_url: formData.avatar_url,
@@ -126,31 +123,6 @@ const AccountSettings = () => {
         user_timezone: formData.user_timezone
       };
 
-      // Handle label creation/update if allowed
-      if (canEditLabel && formData.label_name) {
-        // Check if label already exists
-        const {
-          data: existingLabel
-        } = await supabase.from("labels").select("id").eq("user_id", user.id).maybeSingle();
-        if (existingLabel) {
-          // Update existing label
-          await supabase.from("labels").update({
-            name: formData.label_name
-          }).eq("id", existingLabel.id);
-          updateData.label_id = existingLabel.id;
-        } else {
-          // Create new label
-          const {
-            data: newLabel,
-            error: labelError
-          } = await supabase.from("labels").insert({
-            name: formData.label_name,
-            user_id: user.id
-          }).select().single();
-          if (labelError) throw labelError;
-          updateData.label_id = newLabel.id;
-        }
-      }
       const {
         error
       } = await supabase.from("profiles").update(updateData).eq("id", user.id);
@@ -378,16 +350,6 @@ const AccountSettings = () => {
               <p className="text-xs text-muted-foreground">This will be shown in the top bar</p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="label_name">Label Name</Label>
-              <Input id="label_name" placeholder="Your Label" value={formData.label_name} onChange={e => setFormData({
-              ...formData,
-              label_name: e.target.value
-            })} className="bg-background/50 border-border" disabled={!(userPlan?.plan?.name === "Trackball Signature" || userPlan?.plan?.name === "Trackball Prestige")} />
-              <p className="text-xs text-muted-foreground">
-                {userPlan?.plan?.name === "Trackball Signature" || userPlan?.plan?.name === "Trackball Prestige" ? "Available for Signature and Prestige members" : "Only available for Signature and Prestige members"}
-              </p>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="user_timezone" className="flex items-center gap-2">
