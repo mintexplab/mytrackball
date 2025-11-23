@@ -140,6 +140,28 @@ const CreateRelease = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [userLabelName, setUserLabelName] = useState<string>("");
+  
+  // Fetch user's active label name
+  useEffect(() => {
+    const fetchUserLabel = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("label_name, label_type")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.label_name && profile?.label_type) {
+        setUserLabelName(profile.label_name);
+        setFormData(prev => ({ ...prev, label: profile.label_name }));
+      }
+    };
+
+    fetchUserLabel();
+  }, []);
   
   // Trigger confetti when reaching final step
   useEffect(() => {
@@ -810,7 +832,12 @@ const CreateRelease = () => {
                   value={formData.label}
                   onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                   placeholder="Label name"
+                  disabled={true}
+                  className="bg-muted"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Label is locked to your active label
+                </p>
               </div>
 
               <div className="space-y-4">
