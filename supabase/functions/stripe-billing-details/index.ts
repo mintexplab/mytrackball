@@ -68,13 +68,17 @@ serve(async (req) => {
     const subscription = subscriptions.data.length > 0 ? subscriptions.data[0] : null;
     logStep("Fetched subscription", { hasSubscription: !!subscription });
 
-    // Fetch invoices (last 10, exclude drafts)
-    const invoices = await stripe.invoices.list({
+    // Fetch invoices - optionally include drafts
+    const { includeDrafts } = await req.json().catch(() => ({ includeDrafts: false }));
+    const invoiceParams: any = {
       customer: customerId,
       limit: 10,
-      status: 'paid', // Only fetch paid invoices, exclude drafts
-    });
-    logStep("Fetched invoices", { count: invoices.data.length });
+    };
+    if (!includeDrafts) {
+      invoiceParams.status = 'paid'; // Only fetch paid invoices unless drafts requested
+    }
+    const invoices = await stripe.invoices.list(invoiceParams);
+    logStep("Fetched invoices", { count: invoices.data.length, includeDrafts });
 
     // Fetch payment methods
     const paymentMethods = await stripe.paymentMethods.list({

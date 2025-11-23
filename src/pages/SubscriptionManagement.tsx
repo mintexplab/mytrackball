@@ -76,6 +76,7 @@ const SubscriptionManagement = () => {
   const navigate = useNavigate();
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+  const [showDrafts, setShowDrafts] = useState(false);
 
   // Fetch user's current plan from database
   const { data: userPlan } = useQuery({
@@ -115,12 +116,13 @@ const SubscriptionManagement = () => {
 
   // Fetch billing details from Stripe
   const { data: billingDetails, isLoading: billingLoading, refetch: refetchBilling } = useQuery({
-    queryKey: ["billingDetails"],
+    queryKey: ["billingDetails", showDrafts],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return null;
 
       const { data, error } = await supabase.functions.invoke("stripe-billing-details", {
+        body: { includeDrafts: showDrafts },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -334,9 +336,18 @@ const SubscriptionManagement = () => {
             <TabsContent value="billing" className="space-y-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold">Billing History</h2>
-                <Button variant="outline" size="sm" onClick={() => refetchBilling()}>
-                  Refresh
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant={showDrafts ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowDrafts(!showDrafts)}
+                  >
+                    {showDrafts ? "Showing Drafts" : "Show Drafts"}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => refetchBilling()}>
+                    Refresh
+                  </Button>
+                </div>
               </div>
               
               {billingDetails?.invoices && billingDetails.invoices.length > 0 ? (
