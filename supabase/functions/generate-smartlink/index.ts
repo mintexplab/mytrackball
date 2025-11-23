@@ -61,79 +61,32 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Call ToneDen API to create smart link
-    // Based on ToneDen API docs: https://www.toneden.io/api/v1/links
-    const tonedenResponse = await fetch("https://www.toneden.io/api/v1/links", {
-      method: "POST",
-      headers: {
-        "accept": "application/json",
-        "content-type": "application/json",
-        "Authorization": `Bearer ${tonedenApiKey}`, // Try Bearer auth first
-      },
-      body: JSON.stringify({
-        target_type: "music", // Assuming 'music' for Spotify links
-        custom_domain: "stream.trackball.cc",
-        title: `Smart Link for ${spotifyId}`,
-        // Add the Spotify URL as target or in services
-        services: [{
-          name: "Spotify",
-          url: spotifyUrl
-        }]
-      }),
-    });
-
-    if (!tonedenResponse.ok) {
-      const errorData = await tonedenResponse.text();
-      console.error("ToneDen API error status:", tonedenResponse.status);
-      console.error("ToneDen API error response:", errorData);
-      console.error("ToneDen API request body was:", JSON.stringify({
-        target_type: "music",
-        custom_domain: "stream.trackball.cc",
-        title: `Smart Link for ${spotifyId}`,
-        services: [{ name: "Spotify", url: spotifyUrl }]
-      }));
-      
-      // Fallback to placeholder smart link instead of failing the whole request
-      const fallbackLink = `https://stream.trackball.cc/${spotifyId}`;
-      return new Response(JSON.stringify({
-        smartlink: fallbackLink,
-        platforms: [],
-        note: "ToneDen API call failed. Returning fallback smart link. Check logs for details.",
-      }), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders,
-        },
-      });
-    }
-
-    const tonedenData = await tonedenResponse.json();
-    console.log("ToneDen response:", tonedenData);
-
-    // ToneDen returns a smart link URL
-    const smartlink = tonedenData.url || tonedenData.shortened_url || `https://stream.trackball.cc/${spotifyId}`;
-    const tonedenLinkId = tonedenData.id?.toString() || null;
-
-    // Store the smart link in the database
-    const { error: dbError } = await supabase
+    // ToneDen API appears to require session-based auth, not Bearer token
+    // For now, return placeholder until proper auth flow is implemented
+    console.warn("ToneDen API requires proper OAuth2 authentication. Returning placeholder.");
+    const placeholderLink = `https://stream.trackball.cc/${spotifyId}`;
+    
+    // Store placeholder in database
+    const { error: insertError } = await supabase
       .from('smart_links')
       .insert({
         user_id: userId,
         spotify_url: spotifyUrl,
-        smart_link_url: smartlink,
-        toneden_link_id: tonedenLinkId,
-        title: tonedenData.title || `Smart Link ${spotifyId}`,
-        platforms: tonedenData.services || []
+        smart_link_url: placeholderLink,
+        toneden_link_id: null,
+        title: `Smart Link ${spotifyId}`,
+        platforms: []
       });
 
-    if (dbError) {
-      console.error("Error saving smart link to database:", dbError);
+    if (insertError) {
+      console.error("Error saving smart link to database:", insertError);
     }
 
     return new Response(JSON.stringify({ 
-      smartlink,
-      platforms: tonedenData.platforms || tonedenData.services || [],
-      created_at: new Date().toISOString()
+      smartlink: placeholderLink,
+      platforms: [],
+      created_at: new Date().toISOString(),
+      note: "ToneDen integration requires OAuth2 setup. Using placeholder link."
     }), {
       status: 200,
       headers: {

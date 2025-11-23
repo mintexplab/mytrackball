@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Upload, Building2, Link as LinkIcon } from "lucide-react";
+import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Upload, Building2, Link as LinkIcon, Home } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
@@ -57,7 +57,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showLoader, setShowLoader] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("landing");
   const [selectedCatalogReleaseId, setSelectedCatalogReleaseId] = useState<string | null>(null);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [showMaintenanceDialog, setShowMaintenanceDialog] = useState(false);
@@ -448,74 +448,48 @@ const Dashboard = () => {
               {/* Desktop Navigation */}
               <div className="hidden md:flex items-center gap-2">
               <Button 
-                variant={activeTab === "overview" ? "default" : "ghost"} 
+                variant={activeTab === "landing" ? "default" : "ghost"} 
                 size="sm" 
-                onClick={() => setActiveTab("overview")}
-                className={activeTab === "overview" ? "bg-gradient-primary text-primary-foreground" : ""}
-                data-tutorial="overview-tab"
+                onClick={() => setActiveTab("landing")}
+                className={activeTab === "landing" ? "bg-gradient-primary text-primary-foreground" : ""}
+                data-tutorial="landing-tab"
               >
-                <Package className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Overview</span>
+                <Home className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Landing</span>
               </Button>
 
-              {/* Releases Dropdown */}
+              {/* Content Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-1">
                     <FileMusic className="w-4 h-4" />
-                    <span className="hidden sm:inline">Releases</span>
+                    <span className="hidden sm:inline">Content</span>
                     <ChevronDown className="w-3 h-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-card border-border">
-                  <DropdownMenuLabel>Release Management</DropdownMenuLabel>
+                  <DropdownMenuLabel>Content Management</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setActiveTab("catalog")} className="cursor-pointer" data-tutorial="catalog-tab">
                     <Package className="w-4 h-4 mr-2" />
                     Catalog
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab("bulk-upload")} className="cursor-pointer">
+                  <DropdownMenuItem onClick={() => setActiveTab("bulk-upload")} className="cursor-pointer" data-tutorial="bulk-upload">
                     <Upload className="w-4 h-4 mr-2" />
                     Bulk Upload
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab("smartlinks")} className="cursor-pointer">
+                    <LinkIcon className="w-4 h-4 mr-2" />
+                    Smart Links
+                  </DropdownMenuItem>
+                  {profile?.label_type === "prestige_label" && (
+                    <DropdownMenuItem onClick={() => setActiveTab("publishing")} className="cursor-pointer" data-tutorial="publishing-tab">
+                      <FileMusic className="w-4 h-4 mr-2" />
+                      Publishing
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              {((userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") || 
-                (profile?.label_type && ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type))) && (
-                <>
-                  <Button 
-                    variant={activeTab === "clients" ? "default" : "ghost"} 
-                    size="sm" 
-                    onClick={() => setActiveTab("clients")}
-                    className={activeTab === "clients" ? "bg-gradient-primary text-primary-foreground" : ""}
-                  >
-                    <Users className="w-4 h-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Users</span>
-                  </Button>
-
-                  <Button 
-                    variant={activeTab === "labels" ? "default" : "ghost"} 
-                    size="sm" 
-                    onClick={() => setActiveTab("labels")}
-                    className={activeTab === "labels" ? "bg-gradient-primary text-primary-foreground" : ""}
-                  >
-                    <Building2 className="w-4 h-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Labels</span>
-                  </Button>
-                </>
-              )}
-
-              <Button 
-                variant={activeTab === "notifications" ? "default" : "ghost"} 
-                size="sm" 
-                onClick={() => setActiveTab("notifications")}
-                className={activeTab === "notifications" ? "bg-gradient-primary text-primary-foreground" : ""}
-                data-tutorial="notifications-tab"
-              >
-                <Bell className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Notifications</span>
-              </Button>
 
               {/* Financial Dropdown */}
               <DropdownMenu>
@@ -533,33 +507,54 @@ const Dashboard = () => {
                     <DollarSign className="w-4 h-4 mr-2" />
                     Royalties
                   </DropdownMenuItem>
-                  {profile?.label_type === "prestige_label" && (
-                    <DropdownMenuItem onClick={() => setActiveTab("publishing")} className="cursor-pointer">
-                      <FileMusic className="w-4 h-4 mr-2" />
-                      Publishing
-                    </DropdownMenuItem>
-                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {((userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") || 
+                (profile?.label_type && ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type))) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="gap-1">
+                      <Users className="w-4 h-4" />
+                      <span className="hidden sm:inline">Team</span>
+                      <ChevronDown className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 bg-card border-border">
+                    <DropdownMenuLabel>Team Management</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setActiveTab("clients")} className="cursor-pointer" data-tutorial="clients-tab">
+                      <Users className="w-4 h-4 mr-2" />
+                      Users
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setActiveTab("labels")} className="cursor-pointer">
+                      <Building2 className="w-4 h-4 mr-2" />
+                      Labels
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              <Button 
+                variant={activeTab === "notifications" ? "default" : "ghost"} 
+                size="sm" 
+                onClick={() => setActiveTab("notifications")}
+                className={activeTab === "notifications" ? "bg-gradient-primary text-primary-foreground" : ""}
+                data-tutorial="notifications-tab"
+              >
+                <Bell className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Notifications</span>
+              </Button>
 
               <Button 
                 variant={activeTab === "help" ? "default" : "ghost"} 
                 size="sm" 
                 onClick={() => setActiveTab("help")}
                 className={activeTab === "help" ? "bg-gradient-primary text-primary-foreground" : ""}
+                data-tutorial="help-tab"
               >
                 <HelpCircle className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Help</span>
-              </Button>
-
-              <Button 
-                variant={activeTab === "smartlinks" ? "default" : "ghost"} 
-                size="sm" 
-                onClick={() => setActiveTab("smartlinks")}
-                className={activeTab === "smartlinks" ? "bg-gradient-primary text-primary-foreground" : ""}
-              >
-                <LinkIcon className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Smart Links</span>
               </Button>
               </div>
 
@@ -622,7 +617,7 @@ const Dashboard = () => {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
 
-          <TabsContent value="overview" className="space-y-4 sm:space-y-6 animate-fade-in">
+          <TabsContent value="landing" className="space-y-4 sm:space-y-6 animate-fade-in">
             <DraggableDashboardBlocks
               categories={[
                 {

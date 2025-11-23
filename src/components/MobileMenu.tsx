@@ -1,4 +1,4 @@
-import { Menu, X, Home, Package, Users, Bell, DollarSign, HelpCircle, FileMusic, Upload, Building2, Link as LinkIcon } from "lucide-react";
+import { Menu, Home, Package, Users, Bell, DollarSign, HelpCircle, FileMusic, Upload, Building2, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -172,16 +172,16 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false,
         <ScrollArea className="h-[calc(100vh-80px)] mt-6">
           <div className="space-y-2">
             <Button
-              variant={activeTab === "overview" ? "default" : "ghost"}
+              variant={activeTab === "landing" ? "default" : "ghost"}
               className="w-full justify-start"
-              onClick={() => handleTabChange("overview")}
+              onClick={() => handleTabChange("landing")}
             >
               <Home className="w-4 h-4 mr-2" />
-              Overview
+              Landing
             </Button>
 
             <Separator className="my-4" />
-            <p className="text-xs text-muted-foreground px-3 font-medium">Releases</p>
+            <p className="text-xs text-muted-foreground px-3 font-medium">Content</p>
 
             <Button
               variant={activeTab === "catalog" ? "default" : "ghost"}
@@ -201,9 +201,43 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false,
               Bulk Upload
             </Button>
 
+            <Button
+              variant={activeTab === "smartlinks" ? "default" : "ghost"}
+              className="w-full justify-start"
+              onClick={() => handleTabChange("smartlinks")}
+            >
+              <LinkIcon className="w-4 h-4 mr-2" />
+              Smart Links
+            </Button>
+
+            {userPlan?.plan.name === "Trackball Prestige" && (
+              <Button
+                variant={activeTab === "publishing" ? "default" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => handleTabChange("publishing")}
+              >
+                <FileMusic className="w-4 h-4 mr-2" />
+                Publishing
+              </Button>
+            )}
+
+            <Separator className="my-4" />
+            <p className="text-xs text-muted-foreground px-3 font-medium">Financial</p>
+
+            <Button
+              variant={activeTab === "royalties" ? "default" : "ghost"}
+              className="w-full justify-start"
+              onClick={() => handleTabChange("royalties")}
+            >
+              <DollarSign className="w-4 h-4 mr-2" />
+              Royalties
+            </Button>
+
             {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && (
               <>
                 <Separator className="my-4" />
+                <p className="text-xs text-muted-foreground px-3 font-medium">Team</p>
+                
                 <Button
                   variant={activeTab === "clients" ? "default" : "ghost"}
                   className="w-full justify-start"
@@ -242,29 +276,6 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false,
             </Button>
 
             <Separator className="my-4" />
-            <p className="text-xs text-muted-foreground px-3 font-medium">Financial</p>
-
-            <Button
-              variant={activeTab === "royalties" ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => handleTabChange("royalties")}
-            >
-              <DollarSign className="w-4 h-4 mr-2" />
-              Royalties
-            </Button>
-
-            {userPlan?.plan.name === "Trackball Prestige" && (
-              <Button
-                variant={activeTab === "publishing" ? "default" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => handleTabChange("publishing")}
-              >
-                <FileMusic className="w-4 h-4 mr-2" />
-                Publishing
-              </Button>
-            )}
-
-            <Separator className="my-4" />
             <Button
               variant={activeTab === "help" ? "default" : "ghost"}
               className="w-full justify-start"
@@ -272,15 +283,6 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false,
             >
               <HelpCircle className="w-4 h-4 mr-2" />
               Help
-            </Button>
-
-            <Button
-              variant={activeTab === "smartlinks" ? "default" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => handleTabChange("smartlinks")}
-            >
-              <LinkIcon className="w-4 h-4 mr-2" />
-              Smart Links
             </Button>
           </div>
         </ScrollArea>
