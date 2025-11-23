@@ -220,7 +220,7 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, us
         
         <DropdownMenuItem
           onClick={onSignOut}
-          className="cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10"
+          className="cursor-pointer text-destructive focus:text-destructive data-[highlighted]:bg-destructive/10 data-[highlighted]:text-destructive"
         >
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log off {artistName || "Account"}</span>
