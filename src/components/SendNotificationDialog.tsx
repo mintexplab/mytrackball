@@ -70,8 +70,8 @@ const SendNotificationDialog = ({ userId, userName }: SendNotificationDialogProp
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Send className="w-4 h-4" />
+        <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs">
+          <Send className="w-3 h-3" />
           Send Notification
         </Button>
       </DialogTrigger>

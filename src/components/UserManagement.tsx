@@ -608,12 +608,10 @@ const UserManagement = () => {
                               Reset Tutorial
                             </Button>
 
-                            <div className="flex justify-center">
-                              <SendNotificationDialog 
-                                userId={masterUser.id} 
-                                userName={masterUser.full_name || masterUser.email} 
-                              />
-                            </div>
+                            <SendNotificationDialog 
+                              userId={masterUser.id} 
+                              userName={masterUser.full_name || masterUser.email} 
+                            />
 
                             <Button
                               variant="ghost"
@@ -716,12 +714,10 @@ const UserManagement = () => {
                                 )}
                               </Button>
 
-                              <div className="flex justify-center">
-                                <SendNotificationDialog 
-                                  userId={subUser.id} 
-                                  userName={subUser.full_name || subUser.email} 
-                                />
-                              </div>
+                              <SendNotificationDialog 
+                                userId={subUser.id} 
+                                userName={subUser.full_name || subUser.email} 
+                              />
 
                               <Button
                                 variant="ghost"
@@ -889,12 +885,10 @@ const UserManagement = () => {
                               Reset Tutorial
                             </Button>
 
-                            <div className="flex justify-center">
-                              <SendNotificationDialog 
-                                userId={user.id} 
-                                userName={user.full_name || user.email} 
-                              />
-                            </div>
+                            <SendNotificationDialog 
+                              userId={user.id} 
+                              userName={user.full_name || user.email} 
+                            />
 
                             <Button
                               variant="ghost"
