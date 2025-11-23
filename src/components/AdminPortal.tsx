@@ -28,6 +28,8 @@ import { AnnouncementBarManagement } from "./AnnouncementBarManagement";
 import { TakedownRequestsManagement } from "./TakedownRequestsManagement";
 import { PartnerPermissionsBreakdown } from "./PartnerPermissionsBreakdown";
 import { InvoiceDraftsManagement } from "./InvoiceDraftsManagement";
+import LabelDesignationWelcomeDialog from "./LabelDesignationWelcomeDialog";
+import { Bug } from "lucide-react";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -43,6 +45,7 @@ const AdminPortal = ({
   const [adminAvatar, setAdminAvatar] = useState<string>("");
   const [adminArtistName, setAdminArtistName] = useState<string>("");
   const [adminFullName, setAdminFullName] = useState<string>("");
+  const [debugWelcomeDialog, setDebugWelcomeDialog] = useState<{ open: boolean; type: "partner_label" | "signature_label" | "prestige_label" | null }>({ open: false, type: null });
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   useEffect(() => {
@@ -219,6 +222,11 @@ const AdminPortal = ({
                   <DropdownMenuItem onClick={() => setActiveTab("version")} className="cursor-pointer">
                     Version Manager
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setActiveTab("debug")} className="cursor-pointer">
+                    <Bug className="w-4 h-4 mr-2" />
+                    Debug Tools
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -267,6 +275,7 @@ const AdminPortal = ({
                 <DropdownMenuItem onClick={() => setActiveTab("appeals")}>Appeals</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("maintenance")}>Maintenance</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("version")}>Version</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("debug")}>Debug Tools</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -344,8 +353,53 @@ const AdminPortal = ({
           <TabsContent value="invoice-drafts">
             <InvoiceDraftsManagement />
           </TabsContent>
+
+          <TabsContent value="debug">
+            <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-2xl font-bold">DEBUG TOOLS</CardTitle>
+                <CardDescription>Testing and debugging utilities for admin use</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Label Designation Setup Guides</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Trigger welcome dialogs for any label designation to test the onboarding flow
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <Button 
+                      onClick={() => setDebugWelcomeDialog({ open: true, type: "partner_label" })}
+                      variant="outline"
+                    >
+                      Partner Label Guide
+                    </Button>
+                    <Button 
+                      onClick={() => setDebugWelcomeDialog({ open: true, type: "signature_label" })}
+                      variant="outline"
+                    >
+                      Signature Label Guide
+                    </Button>
+                    <Button 
+                      onClick={() => setDebugWelcomeDialog({ open: true, type: "prestige_label" })}
+                      variant="outline"
+                    >
+                      Prestige Label Guide
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </main>
+
+      {debugWelcomeDialog.open && debugWelcomeDialog.type && (
+        <LabelDesignationWelcomeDialog
+          open={debugWelcomeDialog.open}
+          onClose={() => setDebugWelcomeDialog({ open: false, type: null })}
+          labelType={debugWelcomeDialog.type}
+        />
+      )}
     </div>;
 };
 export default AdminPortal;
