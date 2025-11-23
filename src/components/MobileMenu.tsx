@@ -10,9 +10,10 @@ interface MobileMenuProps {
   setActiveTab: (tab: string) => void;
   userPlan?: any;
   isAdmin?: boolean;
+  unreadNotifications?: number;
 }
 
-export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false }: MobileMenuProps) => {
+export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false, unreadNotifications = 0 }: MobileMenuProps) => {
   const [open, setOpen] = useState(false);
 
   const handleTabChange = (tab: string) => {
@@ -229,8 +230,15 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false 
               className="w-full justify-start"
               onClick={() => handleTabChange("notifications")}
             >
-              <Bell className="w-4 h-4 mr-2" />
-              Notifications
+              <div className="flex items-center flex-1">
+                <Bell className="w-4 h-4 mr-2" />
+                Notifications
+                {unreadNotifications > 0 && (
+                  <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  </span>
+                )}
+              </div>
             </Button>
 
             <Separator className="my-4" />
