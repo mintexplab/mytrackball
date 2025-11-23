@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Upload, Building2, Link as LinkIcon, Home } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import trackballLogo from "@/assets/trackball-logo-mono.png";
+import trackballLogo from "@/assets/trackball-logo.png";
 import AdminPortal from "@/components/AdminPortal";
 import ReleasesList from "@/components/ReleasesList";
 import ReleasesGallery from "@/components/ReleasesGallery";
@@ -400,8 +400,11 @@ const Dashboard = () => {
                 setActiveTab={setActiveTab} 
                 userPlan={userPlan}
               />
-              <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center flex-shrink-0">
-                <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-contain" />
+              <div 
+                className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => setActiveTab("landing")}
+              >
+                <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
               </div>
             </div>
             
@@ -508,6 +511,9 @@ const Dashboard = () => {
               </Button>
               </div>
 
+              {/* Divider */}
+              <div className="hidden lg:block w-px h-8 bg-border mx-3"></div>
+
               {/* Admin: Back to Admin Portal Button */}
               {isAdmin && (
                 <Button 
@@ -531,13 +537,17 @@ const Dashboard = () => {
               </Button>
 
               {/* User Info Display */}
-              <div className="hidden lg:flex flex-col items-end text-right mr-3">
+              <div className="hidden lg:flex flex-col items-end text-right">
                 <p className="text-sm font-medium text-foreground">
                   {profile?.full_name || profile?.display_name || profile?.artist_name || "User"}
                 </p>
-                {activeLabelDigitId && (
+                {activeLabelDigitId ? (
                   <p className="text-xs text-muted-foreground">
                     {profile?.label_name} ID: {activeLabelDigitId}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    ID: {profile?.user_id}
                   </p>
                 )}
                 {parentAccount && (
@@ -548,7 +558,7 @@ const Dashboard = () => {
               </div>
 
               {/* Notifications Dropdown */}
-              <div className="flex items-center gap-2" data-tutorial="notifications-icon">
+              <div className="flex items-center gap-3 ml-3" data-tutorial="notifications-icon">
                 <NotificationsDropdown userId={user?.id || ""} />
                 <ProfileDropdown
                   userEmail={user?.email} 
