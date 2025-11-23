@@ -13,6 +13,7 @@ import { LogOut, Settings, CreditCard, Building2, Check, Users2 } from "lucide-r
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import dropdownBanner from "@/assets/dropdown-banner.png";
 
 interface ProfileDropdownProps {
   userEmail?: string;
@@ -138,20 +139,30 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, us
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-card border-border">
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{fullName || "My Account"}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {userEmail}
-            </p>
-            {userId && (
-              <p className="text-xs leading-none text-muted-foreground/70">
-                ID: {userId}
+      <DropdownMenuContent align="end" className="w-56 bg-card border-border p-0 overflow-hidden">
+        {/* Banner Image */}
+        <div className="w-full h-24 overflow-hidden rounded-t-md">
+          <img 
+            src={dropdownBanner} 
+            alt="Banner" 
+            className="w-full h-full object-cover"
+          />
+        </div>
+        
+        <div className="p-1">
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">{fullName || "My Account"}</p>
+              <p className="text-xs leading-none text-muted-foreground">
+                {userEmail}
               </p>
-            )}
-          </div>
-        </DropdownMenuLabel>
+              {userId && (
+                <p className="text-xs leading-none text-muted-foreground/70">
+                  ID: {userId}
+                </p>
+              )}
+            </div>
+          </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-border" />
         <DropdownMenuItem
           onClick={() => navigate("/subscription")}
@@ -225,6 +236,7 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, us
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log off {artistName || "Account"}</span>
         </DropdownMenuItem>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
