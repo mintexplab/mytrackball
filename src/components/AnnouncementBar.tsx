@@ -9,8 +9,14 @@ export const AnnouncementBar = () => {
   const [announcement, setAnnouncement] = useState<any>(null);
   const [dismissed, setDismissed] = useState(false);
   const [isSliding, setIsSliding] = useState(false);
+  const [dismissedId, setDismissedId] = useState<string | null>(null);
 
   useEffect(() => {
+    // Load dismissed announcement ID from localStorage
+    const dismissed = localStorage.getItem('dismissedAnnouncementId');
+    if (dismissed) {
+      setDismissedId(dismissed);
+    }
     fetchAnnouncementBar();
 
     // Subscribe to changes
@@ -58,8 +64,11 @@ export const AnnouncementBar = () => {
 
         if (isWithinDateRange) {
           setAnnouncement(data);
-          setVisible(true);
-          setDismissed(false);
+          // Only show if this announcement hasn't been dismissed
+          if (dismissedId !== data.id) {
+            setVisible(true);
+            setDismissed(false);
+          }
         } else {
           setVisible(false);
         }
@@ -72,6 +81,11 @@ export const AnnouncementBar = () => {
   };
 
   const handleDismiss = () => {
+    if (announcement?.id) {
+      // Store dismissed announcement ID in localStorage
+      localStorage.setItem('dismissedAnnouncementId', announcement.id);
+      setDismissedId(announcement.id);
+    }
     setIsSliding(true);
     setTimeout(() => {
       setDismissed(true);
