@@ -52,7 +52,7 @@ const Dashboard = () => {
         .from("user_plans")
         .select("*")
         .eq("user_id", session.user.id)
-        .single();
+        .maybeSingle();
 
       setProfile(profileData);
       setAccountType(profileData?.account_type || 'pending');
