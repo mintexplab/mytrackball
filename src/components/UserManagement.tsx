@@ -52,6 +52,20 @@ const UserManagement = () => {
       return;
     }
 
+    // Fetch user roles
+    const { data: userRoles } = await supabase
+      .from("user_roles")
+      .select("*");
+
+    // Create role map for quick lookup
+    const roleMap = new Map<string, string[]>();
+    userRoles?.forEach(role => {
+      if (!roleMap.has(role.user_id)) {
+        roleMap.set(role.user_id, []);
+      }
+      roleMap.get(role.user_id)?.push(role.role);
+    });
+
     // Fetch user plans separately
     const { data: plansData } = await supabase
       .from("user_plans")
@@ -109,7 +123,8 @@ const UserManagement = () => {
         sublabel_count: sublabelCountMap[profile.id] || 0,
         is_master_account: (sublabelCountMap[profile.id] || 0) > 0,
         user_labels: enrichedUserLabels,
-        parent_label: parentLabel
+        parent_label: parentLabel,
+        roles: roleMap.get(profile.id) || []
       };
     });
 
@@ -453,12 +468,69 @@ const UserManagement = () => {
       <CardContent>
         {/* Group users by label accounts */}
         {(() => {
-          // Separate master accounts and independent users
-          const masterAccounts = users.filter(u => u.is_master_account);
-          const independentUsers = users.filter(u => !u.is_master_account && !u.parent_account_id);
+          // Separate admin accounts, master accounts, and independent users
+          const adminAccounts = users.filter(u => u.roles?.includes('admin'));
+          const masterAccounts = users.filter(u => u.is_master_account && !u.roles?.includes('admin'));
+          const independentUsers = users.filter(u => !u.is_master_account && !u.parent_account_id && !u.roles?.includes('admin'));
           
           return (
             <div className="space-y-8">
+              {/* Admin Accounts */}
+              {adminAccounts.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 pb-2 border-b border-border">
+                    <Badge variant="outline" className="bg-destructive/10 border-destructive/30 text-destructive">
+                      Admin Accounts
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {adminAccounts.length} account{adminAccounts.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {adminAccounts.map((adminUser) => (
+                      <Card key={adminUser.id} className="bg-card/50 border-border hover:border-destructive/30 transition-all shadow-[0_0_15px_rgba(239,68,68,0.2)] border-destructive/30">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                                <h3 className="font-semibold text-sm truncate">
+                                  {adminUser.full_name || "No name set"}
+                                </h3>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-3 h-3 text-muted-foreground shrink-0" />
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {adminUser.email}
+                                </p>
+                              </div>
+                              {adminUser.user_id && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  ID: {adminUser.user_id}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            <Badge variant="destructive" className="flex items-center gap-1 text-xs">
+                              Admin
+                            </Badge>
+                          </div>
+
+                          <div className="mb-3">
+                            <p className="text-xs text-muted-foreground mb-1">Role</p>
+                            <Badge variant="outline" className="text-xs bg-destructive/10 text-destructive border-destructive/20">
+                              Platform Administrator
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
               {/* Master Label Accounts */}
               {masterAccounts.map((masterUser) => {
                 const subaccounts = users.filter(u => u.parent_account_id === masterUser.id);
