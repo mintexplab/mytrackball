@@ -14,6 +14,7 @@ interface Profile {
   full_name: string | null;
   label_name: string | null;
   label_type: string | null;
+  parent_account_id: string | null;
 }
 
 const LabelDesignationManagement = () => {
@@ -28,7 +29,7 @@ const LabelDesignationManagement = () => {
   const fetchProfiles = async () => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, email, full_name, label_name, label_type")
+      .select("id, email, full_name, label_name, label_type, parent_account_id")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -129,23 +130,30 @@ const LabelDesignationManagement = () => {
                     </TableCell>
                     <TableCell>{getLabelTypeBadge(profile.label_type)}</TableCell>
                     <TableCell>
-                      <Select
-                        value={profile.label_type || "none"}
-                        onValueChange={(value) => 
-                          updateLabelType(profile.id, value === "none" ? null : value)
-                        }
-                        disabled={updatingId === profile.id}
-                      >
-                        <SelectTrigger className="w-[200px] bg-background border-border">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-card border-border">
-                          <SelectItem value="none">No Designation</SelectItem>
-                          <SelectItem value="partner_label">Partner Label</SelectItem>
-                          <SelectItem value="signature_label">Signature Label</SelectItem>
-                          <SelectItem value="prestige_label">Prestige Label</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {profile.parent_account_id ? (
+                        <div className="text-sm text-muted-foreground">
+                          <p className="font-medium">Subaccount</p>
+                          <p className="text-xs">Inherits from parent</p>
+                        </div>
+                      ) : (
+                        <Select
+                          value={profile.label_type || "none"}
+                          onValueChange={(value) => 
+                            updateLabelType(profile.id, value === "none" ? null : value)
+                          }
+                          disabled={updatingId === profile.id}
+                        >
+                          <SelectTrigger className="w-[200px] bg-background border-border">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-card border-border">
+                            <SelectItem value="none">No Designation</SelectItem>
+                            <SelectItem value="partner_label">Partner Label</SelectItem>
+                            <SelectItem value="signature_label">Signature Label</SelectItem>
+                            <SelectItem value="prestige_label">Prestige Label</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
