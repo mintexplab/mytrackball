@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Upload, Building2 } from "lucide-react";
+import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Upload, Building2, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
@@ -43,7 +43,8 @@ import { PlanAndLabelsBlock } from "@/components/dashboard/PlanAndLabelsBlock";
 import LabelManagementTab from "@/components/LabelManagementTab";
 import LabelDesignationWelcomeDialog from "@/components/LabelDesignationWelcomeDialog";
 import SubscriptionWelcomeDialog from "@/components/SubscriptionWelcomeDialog";
-import { SupportTicketSystem } from "@/components/SupportTicketSystem";
+import { ModernSupportTicketSystem } from "@/components/ModernSupportTicketSystem";
+import { SmartLinksTab } from "@/components/SmartLinksTab";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -290,15 +291,26 @@ const Dashboard = () => {
     } = await supabase.from("profiles").select("*").eq("id", userId).single();
     setProfile(profileData);
 
-    // Check if this is a newly assigned plan (plan_welcome_shown not set or false)
-    if (data?.plan && !sessionStorage.getItem(`plan_welcome_shown_${userId}`)) {
-      const planFeatures = Array.isArray(data.plan.features) 
-        ? (data.plan.features as string[]) 
-        : [];
-      setWelcomePlanName(data.plan.name);
-      setWelcomePlanFeatures(planFeatures);
-      setShowSubscriptionWelcome(true);
-      sessionStorage.setItem(`plan_welcome_shown_${userId}`, 'true');
+    // Check if this is a newly assigned plan (subscription_welcome_shown_at is null or old)
+    if (data?.plan && profileData) {
+      const lastShown = profileData.subscription_welcome_shown_at;
+      const planStarted = data.started_at;
+      
+      // Show welcome if never shown OR plan started after last welcome
+      if (!lastShown || (planStarted && new Date(planStarted) > new Date(lastShown))) {
+        const planFeatures = Array.isArray(data.plan.features) 
+          ? (data.plan.features as string[]) 
+          : [];
+        setWelcomePlanName(data.plan.name);
+        setWelcomePlanFeatures(planFeatures);
+        setShowSubscriptionWelcome(true);
+        
+        // Mark as shown in database
+        await supabase
+          .from("profiles")
+          .update({ subscription_welcome_shown_at: new Date().toISOString() })
+          .eq("id", userId);
+      }
     }
 
     // Check if label designation welcome should be shown
@@ -539,6 +551,16 @@ const Dashboard = () => {
                 <HelpCircle className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Help</span>
               </Button>
+
+              <Button 
+                variant={activeTab === "smartlinks" ? "default" : "ghost"} 
+                size="sm" 
+                onClick={() => setActiveTab("smartlinks")}
+                className={activeTab === "smartlinks" ? "bg-gradient-primary text-primary-foreground" : ""}
+              >
+                <LinkIcon className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Smart Links</span>
+              </Button>
               </div>
 
               {/* Admin: Back to Admin Portal Button */}
@@ -719,7 +741,7 @@ const Dashboard = () => {
               ) : (
                 <>
                   {/* Support Tickets Section */}
-                  <SupportTicketSystem />
+                  <ModernSupportTicketSystem />
 
                   {/* Documentation Section */}
                   <DocumentationSection />
@@ -754,11 +776,15 @@ const Dashboard = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+                  </>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="smartlinks">
+              <SmartLinksTab />
+            </TabsContent>
+          </Tabs>
       </main>
 
       {/* Floating Audio Player */}

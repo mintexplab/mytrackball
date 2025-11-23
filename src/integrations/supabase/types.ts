@@ -601,6 +601,7 @@ export type Database = {
           parent_account_id: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          subscription_welcome_shown_at: string | null
           user_id: string
           user_timezone: string | null
         }
@@ -630,6 +631,7 @@ export type Database = {
           parent_account_id?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          subscription_welcome_shown_at?: string | null
           user_id: string
           user_timezone?: string | null
         }
@@ -659,6 +661,7 @@ export type Database = {
           parent_account_id?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          subscription_welcome_shown_at?: string | null
           user_id?: string
           user_timezone?: string | null
         }

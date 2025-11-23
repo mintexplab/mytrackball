@@ -1,4 +1,4 @@
-import { Menu, X, Home, Package, Users, Bell, DollarSign, HelpCircle, FileMusic, Upload, Building2 } from "lucide-react";
+import { Menu, X, Home, Package, Users, Bell, DollarSign, HelpCircle, FileMusic, Upload, Building2, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -272,6 +272,15 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false,
             >
               <HelpCircle className="w-4 h-4 mr-2" />
               Help
+            </Button>
+
+            <Button
+              variant={activeTab === "smartlinks" ? "default" : "ghost"}
+              className="w-full justify-start"
+              onClick={() => handleTabChange("smartlinks")}
+            >
+              <LinkIcon className="w-4 h-4 mr-2" />
+              Smart Links
             </Button>
           </div>
         </ScrollArea>

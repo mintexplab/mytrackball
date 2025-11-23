@@ -126,9 +126,9 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "My Trackball Support <support@trackball.cc>",
+        from: "My Trackball Support <contact@trackball.cc>",
         to: [userEmail],
-        reply_to: "support@trackball.cc",
+        reply_to: "contact@trackball.cc",
         subject: `[Ticket #${ticketId.substring(0, 8)}] ${subject}`,
         html: userEmailHtml,
         headers: {
@@ -188,7 +188,7 @@ const handler = async (req: Request): Promise<Response> => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "My Trackball Support <support@trackball.cc>",
+          from: "My Trackball Support <contact@trackball.cc>",
           to: [escalationEmail],
           subject: `[ESCALATED] Ticket #${ticketId.substring(0, 8)} - ${subject}`,
           html: escalationEmailHtml,
