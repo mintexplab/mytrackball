@@ -37,10 +37,9 @@ import { SparkleBeads } from "@/components/SparkleBeads";
 import { DraggableDashboardBlocks } from "@/components/DraggableDashboardBlocks";
 import { DocumentationSection } from "@/components/DocumentationSection";
 import { QuickStatsBlock } from "@/components/dashboard/QuickStatsBlock";
-import { YourReleasesBlock } from "@/components/dashboard/YourReleasesBlock";
-import { YourPlanBlock } from "@/components/dashboard/YourPlanBlock";
 import { AccountManagerBlock } from "@/components/dashboard/AccountManagerBlock";
-import { LabelDesignationBlock } from "@/components/dashboard/LabelDesignationBlock";
+import { ReleasesAndDraftsBlock } from "@/components/dashboard/ReleasesAndDraftsBlock";
+import { PlanAndLabelsBlock } from "@/components/dashboard/PlanAndLabelsBlock";
 import LabelManagementTab from "@/components/LabelManagementTab";
 
 const Dashboard = () => {
@@ -519,9 +518,9 @@ const Dashboard = () => {
                   title: "Distribution",
                   blocks: [
                     {
-                      id: "your-releases",
+                      id: "releases-drafts",
                       component: (
-                        <YourReleasesBlock
+                        <ReleasesAndDraftsBlock
                           userId={user?.id}
                           onReleaseClick={(id) => {
                             setSelectedCatalogReleaseId(id);
@@ -536,15 +535,6 @@ const Dashboard = () => {
                       visible: true,
                     },
                     {
-                      id: "drafts",
-                      component: (
-                        <Collapsible defaultOpen>
-                          <DraftManagement />
-                        </Collapsible>
-                      ),
-                      visible: true,
-                    },
-                    {
                       id: "quick-stats",
                       component: <QuickStatsBlock userId={user?.id} />,
                       visible: true,
@@ -555,14 +545,15 @@ const Dashboard = () => {
                   title: "Support",
                   blocks: [
                     {
-                      id: "your-plan",
-                      component: <YourPlanBlock userPlan={userPlan} />,
+                      id: "plan-labels",
+                      component: (
+                        <PlanAndLabelsBlock
+                          userPlan={userPlan}
+                          labelType={profile?.label_type}
+                          labelName={profile?.label_name}
+                        />
+                      ),
                       visible: true,
-                    },
-                    {
-                      id: "label-designation",
-                      component: <LabelDesignationBlock labelType={profile?.label_type} labelName={profile?.label_name} />,
-                      visible: !!(profile?.label_type && ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type)),
                     },
                     {
                       id: "account-manager",
