@@ -26,10 +26,11 @@ export const useS3Upload = () => {
         formData.append('oldPath', oldPath);
       }
 
-      // Get the Supabase URL and user token
+      // Get the Supabase URL and anon key from environment
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       
-      if (!supabaseUrl) {
+      if (!supabaseUrl || !supabaseAnonKey) {
         throw new Error('Supabase configuration missing');
       }
 
@@ -110,10 +111,11 @@ export const useS3Upload = () => {
         // Set timeout to 10 minutes for large files
         xhr.timeout = 600000;
 
-        // Send request with user session token
+        // Send request with both apikey and user token
         xhr.open('POST', `${supabaseUrl}/functions/v1/upload-to-s3`);
+        xhr.setRequestHeader('apikey', supabaseAnonKey);
         xhr.setRequestHeader('Authorization', `Bearer ${userToken}`);
-        console.log('Sending upload request...');
+        console.log('Sending upload request with auth...');
         xhr.send(formData);
       });
     } catch (error: any) {
@@ -131,8 +133,9 @@ export const useS3Upload = () => {
     
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       
-      if (!supabaseUrl) {
+      if (!supabaseUrl || !supabaseAnonKey) {
         throw new Error('Supabase configuration missing');
       }
 
@@ -147,6 +150,7 @@ export const useS3Upload = () => {
       const response = await fetch(`${supabaseUrl}/functions/v1/upload-to-s3`, {
         method: 'POST',
         headers: {
+          'apikey': supabaseAnonKey,
           'Authorization': `Bearer ${userToken}`,
           'Content-Type': 'application/json',
         },

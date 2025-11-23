@@ -163,13 +163,7 @@ const CreateRelease = () => {
     fetchUserLabel();
   }, []);
   
-  // Trigger confetti when reaching final step
-  useEffect(() => {
-    if (currentStep === 6 && !showConfetti) {
-      setShowConfetti(true);
-      toast.success("🎉 Almost there! Review and submit your release.");
-    }
-  }, [currentStep, showConfetti]);
+  // Removed confetti trigger from step change - now only triggers on successful submission
   
   const currentYear = new Date().getFullYear();
   
@@ -519,6 +513,10 @@ const CreateRelease = () => {
       if (failedUploads.length > 0) {
         throw new Error("Some audio uploads failed - please try again");
       }
+
+      // Show success confetti after both artwork and audio uploads complete
+      setShowConfetti(true);
+      toast.success("🎉 Uploads complete! Finalizing submission...");
 
       // Create release
       const { data: release, error: releaseError } = await supabase.from("releases").insert({
