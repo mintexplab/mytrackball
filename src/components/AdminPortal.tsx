@@ -95,7 +95,11 @@ const AdminPortal = ({
       const planNames: Record<string, string> = {
         partner_label: "Partner Label",
         signature_label: "Signature Label", 
-        prestige_label: "Prestige Label"
+        prestige_label: "Prestige Label",
+        free: "Trackball Free",
+        lite: "Trackball Lite",
+        signature_artist: "Trackball Signature",
+        prestige_artist: "Trackball Prestige"
       };
 
       const planBenefits: Record<string, string[]> = {
@@ -123,6 +127,35 @@ const AdminPortal = ({
           "XZ1 Music Publishing enrollment",
           "Potential advances",
           "Free mastering"
+        ],
+        free: [
+          "70/30 royalty splits",
+          "Basic support",
+          "Standard distribution",
+          "Powered by Believe Music"
+        ],
+        lite: [
+          "90/10 royalty splits",
+          "Same-day support",
+          "Trackball social promotion",
+          "Priority queue"
+        ],
+        signature_artist: [
+          "100% royalty splits",
+          "Same-day support",
+          "Priority approval",
+          "Discounted licensing",
+          "Social promotion",
+          "XZ1 upgrade opportunities"
+        ],
+        prestige_artist: [
+          "100% distribution splits",
+          "70% publishing splits",
+          "XZ1 Music Publishing enrollment",
+          "Potential advances",
+          "Free mastering",
+          "Choice of distributor",
+          "Releases remain if cancelled"
         ]
       };
 
@@ -500,6 +533,10 @@ const AdminPortal = ({
                         <SelectItem value="partner_label">Partner Label</SelectItem>
                         <SelectItem value="signature_label">Signature Label</SelectItem>
                         <SelectItem value="prestige_label">Prestige Label</SelectItem>
+                        <SelectItem value="free">Trackball Free</SelectItem>
+                        <SelectItem value="lite">Trackball Lite</SelectItem>
+                        <SelectItem value="signature_artist">Trackball Signature (Artist)</SelectItem>
+                        <SelectItem value="prestige_artist">Trackball Prestige (Artist)</SelectItem>
                       </SelectContent>
                     </Select>
                     <Button 
