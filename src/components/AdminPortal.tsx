@@ -27,6 +27,7 @@ import { EmailNotificationDialog } from "./EmailNotificationDialog";
 import { AnnouncementBarManagement } from "./AnnouncementBarManagement";
 import { TakedownRequestsManagement } from "./TakedownRequestsManagement";
 import { PartnerPermissionsBreakdown } from "./PartnerPermissionsBreakdown";
+import { InvoiceDraftsManagement } from "./InvoiceDraftsManagement";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -171,6 +172,10 @@ const AdminPortal = ({
                     <Wallet className="w-4 h-4 mr-2" />
                     Payout Requests
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab("invoice-drafts")} className="cursor-pointer">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Invoice Drafts
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -257,6 +262,7 @@ const AdminPortal = ({
                 <DropdownMenuItem onClick={() => setActiveTab("announcements")}>Announcements</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("royalties")}>Royalties</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("payouts")}>Payouts</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("invoice-drafts")}>Invoice Drafts</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("publishing")}>Publishing</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("appeals")}>Appeals</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("maintenance")}>Maintenance</DropdownMenuItem>
@@ -333,6 +339,10 @@ const AdminPortal = ({
 
           <TabsContent value="version">
             <VersionManagement />
+          </TabsContent>
+
+          <TabsContent value="invoice-drafts">
+            <InvoiceDraftsManagement />
           </TabsContent>
         </Tabs>
       </main>
