@@ -60,6 +60,16 @@ const UserManagement = () => {
         plan:plans(*)
       `);
 
+    // Fetch label memberships
+    const { data: labelMemberships } = await supabase
+      .from("user_label_memberships")
+      .select("*");
+
+    // Fetch labels
+    const { data: labels } = await supabase
+      .from("labels")
+      .select("*");
+
     // Fetch sublabel counts for each user
     const { data: sublabelCounts } = await supabase
       .from("profiles")
@@ -74,13 +84,24 @@ const UserManagement = () => {
       }
     });
 
+    // Create label map for quick lookup
+    const labelMap = new Map(labels?.map(l => [l.id, l]) || []);
+
     // Merge the data
-    const usersWithPlans = profilesData.map(profile => ({
-      ...profile,
-      user_plans: plansData?.filter(p => p.user_id === profile.id) || [],
-      sublabel_count: sublabelCountMap[profile.id] || 0,
-      is_master_account: (sublabelCountMap[profile.id] || 0) > 0
-    }));
+    const usersWithPlans = profilesData.map(profile => {
+      const userLabels = labelMemberships?.filter(lm => lm.user_id === profile.id) || [];
+      const parentLabel = profile.parent_account_id ? 
+        labels?.find(l => l.user_id === profile.parent_account_id) : null;
+      
+      return {
+        ...profile,
+        user_plans: plansData?.filter(p => p.user_id === profile.id) || [],
+        sublabel_count: sublabelCountMap[profile.id] || 0,
+        is_master_account: (sublabelCountMap[profile.id] || 0) > 0,
+        user_labels: userLabels,
+        parent_label: parentLabel
+      };
+    });
 
     setUsers(usersWithPlans);
     setLoading(false);
@@ -400,174 +421,485 @@ const UserManagement = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {users.map((user) => (
-            <Card key={user.id} className="bg-card/50 border-border hover:border-primary/30 transition-all">
-              <CardContent className="p-4">
-                {/* User Header */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <User className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <h3 className="font-semibold text-sm truncate">
-                        {user.full_name || "No name set"}
-                      </h3>
+        {/* Group users by label accounts */}
+        {(() => {
+          // Separate master accounts and independent users
+          const masterAccounts = users.filter(u => u.is_master_account);
+          const independentUsers = users.filter(u => !u.is_master_account && !u.parent_account_id);
+          
+          return (
+            <div className="space-y-8">
+              {/* Master Label Accounts */}
+              {masterAccounts.map((masterUser) => {
+                const subaccounts = users.filter(u => u.parent_account_id === masterUser.id);
+                const masterLabel = masterUser.user_labels?.[0];
+                
+                return (
+                  <div key={masterUser.id} className="space-y-4">
+                    <div className="flex items-center gap-3 pb-2 border-b border-border">
+                      <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary">
+                        Label Account
+                      </Badge>
+                      {masterLabel && (
+                        <span className="text-sm text-muted-foreground">
+                          Label ID: <span className="font-mono text-foreground">{masterLabel.label_id}</span>
+                        </span>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {subaccounts.length} subaccount{subaccounts.length !== 1 ? 's' : ''}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-3 h-3 text-muted-foreground shrink-0" />
-                      <p className="text-xs text-muted-foreground truncate">
-                        {user.email}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Status Badges */}
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {user.is_banned ? (
-                    <Badge variant="destructive" className="flex items-center gap-1 text-xs">
-                      <Ban className="w-3 h-3" />
-                      Banned
-                    </Badge>
-                  ) : user.is_locked ? (
-                    <Badge variant="secondary" className="flex items-center gap-1 text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
-                      <Lock className="w-3 h-3" />
-                      Locked
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/20">
-                      Active
-                    </Badge>
-                  )}
-
-                  {user.is_master_account ? (
-                    <Badge className="text-xs bg-primary/20 text-primary border-primary/30">
-                      Master ({user.sublabel_count})
-                    </Badge>
-                  ) : user.parent_account_id ? (
-                    <Badge variant="outline" className="text-xs bg-muted">
-                      Sublabel
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-xs">Regular</Badge>
-                  )}
-                </div>
-
-                {/* Current Plan */}
-                <div className="mb-3">
-                  <p className="text-xs text-muted-foreground mb-1">Current Plan</p>
-                  {user.user_plans?.[0]?.plan ? (
-                    <Badge className="bg-gradient-primary text-white text-xs">
-                      {user.user_plans[0].plan.name}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-xs">No Plan</Badge>
-                  )}
-                </div>
-
-                <Separator className="my-3" />
-
-                {/* Plan Assignment */}
-                <div className="mb-3">
-                  <Label className="text-xs text-muted-foreground mb-2 block">Assign Plan</Label>
-                  <Select
-                    onValueChange={(planId) => assignPlan(user.id, planId)}
-                    defaultValue={user.user_plans?.[0]?.plan_id}
-                    disabled={user.is_banned}
-                  >
-                    <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
-                      <SelectValue placeholder="Select plan" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      {plans.map((plan) => (
-                        <SelectItem key={plan.id} value={plan.id}>
-                          <div className="flex items-center gap-2">
-                            <Package className="w-3 h-3" />
-                            <span className="text-xs">{plan.name}</span>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {/* Master Account Card with Red Glow */}
+                      <Card className="bg-card/50 border-border hover:border-primary/30 transition-all shadow-[0_0_15px_rgba(239,68,68,0.3)] border-red-500/50">
+                        <CardContent className="p-4">
+                          {/* User Header */}
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <User className="w-4 h-4 text-red-500 shrink-0" />
+                                <h3 className="font-semibold text-sm truncate">
+                                  {masterUser.full_name || "No name set"}
+                                </h3>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-3 h-3 text-muted-foreground shrink-0" />
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {masterUser.email}
+                                </p>
+                              </div>
+                              {masterUser.user_id && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  ID: {masterUser.user_id}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </SelectItem>
+
+                          {/* Status Badges */}
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {masterUser.is_banned ? (
+                              <Badge variant="destructive" className="flex items-center gap-1 text-xs">
+                                <Ban className="w-3 h-3" />
+                                Banned
+                              </Badge>
+                            ) : masterUser.is_locked ? (
+                              <Badge variant="secondary" className="flex items-center gap-1 text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                                <Lock className="w-3 h-3" />
+                                Locked
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/20">
+                                Active
+                              </Badge>
+                            )}
+
+                            <Badge className="text-xs bg-red-500/20 text-red-500 border-red-500/30">
+                              Master Account ({masterUser.sublabel_count})
+                            </Badge>
+                          </div>
+
+                          {/* Current Plan */}
+                          <div className="mb-3">
+                            <p className="text-xs text-muted-foreground mb-1">Current Plan</p>
+                            {masterUser.user_plans?.[0]?.plan ? (
+                              <Badge className="bg-gradient-primary text-white text-xs">
+                                {masterUser.user_plans[0].plan.name}
+                              </Badge>
+                            ) : masterUser.label_type ? (
+                              <Badge className="bg-gradient-primary text-white text-xs">
+                                {masterUser.label_type.replace('_', ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">No Plan</Badge>
+                            )}
+                          </div>
+
+                          <Separator className="my-3" />
+
+                          {/* Plan Assignment */}
+                          <div className="mb-3">
+                            <Label className="text-xs text-muted-foreground mb-2 block">Assign Plan</Label>
+                            <Select
+                              onValueChange={(planId) => assignPlan(masterUser.id, planId)}
+                              defaultValue={masterUser.user_plans?.[0]?.plan_id}
+                              disabled={masterUser.is_banned}
+                            >
+                              <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
+                                <SelectValue placeholder="Select plan" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-card border-border">
+                                {plans.map((plan) => (
+                                  <SelectItem key={plan.id} value={plan.id}>
+                                    <div className="flex items-center gap-2">
+                                      <Package className="w-3 h-3" />
+                                      <span className="text-xs">{plan.name}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <Separator className="my-3" />
+
+                          {/* Actions - using masterUser instead of user */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor={`ban-${masterUser.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                                {masterUser.is_banned ? "Unban User" : "Ban User"}
+                              </Label>
+                              <Switch
+                                id={`ban-${masterUser.id}`}
+                                checked={masterUser.is_banned}
+                                onCheckedChange={() => toggleBanUser(masterUser.id, masterUser.is_banned)}
+                              />
+                            </div>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleLockUser(masterUser.id, masterUser.is_locked)}
+                              className="w-full justify-start gap-2 h-8 text-xs"
+                            >
+                              {masterUser.is_locked ? (
+                                <>
+                                  <Unlock className="w-3 h-3" />
+                                  Unlock Account
+                                </>
+                              ) : (
+                                <>
+                                  <Lock className="w-3 h-3" />
+                                  Lock Account
+                                </>
+                              )}
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                await supabase
+                                  .from("profiles")
+                                  .update({ onboarding_completed: false })
+                                  .eq("id", masterUser.id);
+                                toast.success("Tutorial will start on next login");
+                              }}
+                              className="w-full justify-start gap-2 h-8 text-xs"
+                              title="Reset tutorial for this user"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              Reset Tutorial
+                            </Button>
+
+                            <div className="flex justify-center pt-1">
+                              <SendNotificationDialog 
+                                userId={masterUser.id} 
+                                userName={masterUser.full_name || masterUser.email} 
+                              />
+                            </div>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteUser(masterUser.id, masterUser.email)}
+                              className="w-full justify-start gap-2 h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              Delete User
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Subaccount Cards */}
+                      {subaccounts.map((subUser) => (
+                        <Card key={subUser.id} className="bg-card/50 border-border hover:border-primary/30 transition-all">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                                  <h3 className="font-semibold text-sm truncate">
+                                    {subUser.full_name || "No name set"}
+                                  </h3>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Mail className="w-3 h-3 text-muted-foreground shrink-0" />
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {subUser.email}
+                                  </p>
+                                </div>
+                                {subUser.user_id && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    ID: {subUser.user_id}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {subUser.is_banned ? (
+                                <Badge variant="destructive" className="flex items-center gap-1 text-xs">
+                                  <Ban className="w-3 h-3" />
+                                  Banned
+                                </Badge>
+                              ) : subUser.is_locked ? (
+                                <Badge variant="secondary" className="flex items-center gap-1 text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                                  <Lock className="w-3 h-3" />
+                                  Locked
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/20">
+                                  Active
+                                </Badge>
+                              )}
+
+                              <Badge variant="outline" className="text-xs bg-muted">
+                                Subaccount
+                              </Badge>
+                            </div>
+
+                            <div className="mb-3">
+                              <p className="text-xs text-muted-foreground mb-1">Account Type</p>
+                              <Badge variant="outline" className="text-xs">
+                                Subaccount - {masterLabel?.label_id || 'N/A'}
+                              </Badge>
+                            </div>
+
+                            <Separator className="my-3" />
+
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <Label htmlFor={`ban-${subUser.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                                  {subUser.is_banned ? "Unban User" : "Ban User"}
+                                </Label>
+                                <Switch
+                                  id={`ban-${subUser.id}`}
+                                  checked={subUser.is_banned}
+                                  onCheckedChange={() => toggleBanUser(subUser.id, subUser.is_banned)}
+                                />
+                              </div>
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleLockUser(subUser.id, subUser.is_locked)}
+                                className="w-full justify-start gap-2 h-8 text-xs"
+                              >
+                                {subUser.is_locked ? (
+                                  <>
+                                    <Unlock className="w-3 h-3" />
+                                    Unlock Account
+                                  </>
+                                ) : (
+                                  <>
+                                    <Lock className="w-3 h-3" />
+                                    Lock Account
+                                  </>
+                                )}
+                              </Button>
+
+                              <div className="flex justify-center pt-1">
+                                <SendNotificationDialog 
+                                  userId={subUser.id} 
+                                  userName={subUser.full_name || subUser.email} 
+                                />
+                              </div>
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteUser(subUser.id, subUser.email)}
+                                className="w-full justify-start gap-2 h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                Delete User
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    </div>
+                  </div>
+                );
+              })}
 
-                <Separator className="my-3" />
-
-                {/* Actions */}
-                <div className="space-y-2">
-                  {/* Ban/Unban */}
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor={`ban-${user.id}`} className="text-xs text-muted-foreground cursor-pointer">
-                      {user.is_banned ? "Unban User" : "Ban User"}
-                    </Label>
-                    <Switch
-                      id={`ban-${user.id}`}
-                      checked={user.is_banned}
-                      onCheckedChange={() => toggleBanUser(user.id, user.is_banned)}
-                    />
+              {/* Independent Users */}
+              {independentUsers.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 pb-2 border-b border-border">
+                    <Badge variant="outline" className="bg-muted">
+                      Independent Artists
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {independentUsers.length} user{independentUsers.length !== 1 ? 's' : ''}
+                    </span>
                   </div>
 
-                  {/* Lock/Unlock */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleLockUser(user.id, user.is_locked)}
-                    className="w-full justify-start gap-2 h-8 text-xs"
-                  >
-                    {user.is_locked ? (
-                      <>
-                        <Unlock className="w-3 h-3" />
-                        Unlock Account
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="w-3 h-3" />
-                        Lock Account
-                      </>
-                    )}
-                  </Button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {independentUsers.map((user) => (
+                      <Card key={user.id} className="bg-card/50 border-border hover:border-primary/30 transition-all">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                                <h3 className="font-semibold text-sm truncate">
+                                  {user.full_name || "No name set"}
+                                </h3>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-3 h-3 text-muted-foreground shrink-0" />
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {user.email}
+                                </p>
+                              </div>
+                              {user.user_id && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  ID: {user.user_id}
+                                </p>
+                              )}
+                            </div>
+                          </div>
 
-                  {/* Reset Tutorial */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={async () => {
-                      await supabase
-                        .from("profiles")
-                        .update({ onboarding_completed: false })
-                        .eq("id", user.id);
-                      toast.success("Tutorial will start on next login");
-                    }}
-                    className="w-full justify-start gap-2 h-8 text-xs"
-                    title="Reset tutorial for this user"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    Reset Tutorial
-                  </Button>
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {user.is_banned ? (
+                              <Badge variant="destructive" className="flex items-center gap-1 text-xs">
+                                <Ban className="w-3 h-3" />
+                                Banned
+                              </Badge>
+                            ) : user.is_locked ? (
+                              <Badge variant="secondary" className="flex items-center gap-1 text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                                <Lock className="w-3 h-3" />
+                                Locked
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/20">
+                                Active
+                              </Badge>
+                            )}
 
-                  {/* Send Notification */}
-                  <div className="flex justify-center pt-1">
-                    <SendNotificationDialog 
-                      userId={user.id} 
-                      userName={user.full_name || user.email} 
-                    />
+                            <Badge variant="outline" className="text-xs">Independent</Badge>
+                          </div>
+
+                          <div className="mb-3">
+                            <p className="text-xs text-muted-foreground mb-1">Current Plan</p>
+                            {user.user_plans?.[0]?.plan ? (
+                              <Badge className="bg-gradient-primary text-white text-xs">
+                                {user.user_plans[0].plan.name}
+                              </Badge>
+                            ) : user.label_type ? (
+                              <Badge className="bg-gradient-primary text-white text-xs">
+                                {user.label_type.replace('_', ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">No Plan</Badge>
+                            )}
+                          </div>
+
+                          <Separator className="my-3" />
+
+                          <div className="mb-3">
+                            <Label className="text-xs text-muted-foreground mb-2 block">Assign Plan</Label>
+                            <Select
+                              onValueChange={(planId) => assignPlan(user.id, planId)}
+                              defaultValue={user.user_plans?.[0]?.plan_id}
+                              disabled={user.is_banned}
+                            >
+                              <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
+                                <SelectValue placeholder="Select plan" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-card border-border">
+                                {plans.map((plan) => (
+                                  <SelectItem key={plan.id} value={plan.id}>
+                                    <div className="flex items-center gap-2">
+                                      <Package className="w-3 h-3" />
+                                      <span className="text-xs">{plan.name}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <Separator className="my-3" />
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor={`ban-${user.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                                {user.is_banned ? "Unban User" : "Ban User"}
+                              </Label>
+                              <Switch
+                                id={`ban-${user.id}`}
+                                checked={user.is_banned}
+                                onCheckedChange={() => toggleBanUser(user.id, user.is_banned)}
+                              />
+                            </div>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleLockUser(user.id, user.is_locked)}
+                              className="w-full justify-start gap-2 h-8 text-xs"
+                            >
+                              {user.is_locked ? (
+                                <>
+                                  <Unlock className="w-3 h-3" />
+                                  Unlock Account
+                                </>
+                              ) : (
+                                <>
+                                  <Lock className="w-3 h-3" />
+                                  Lock Account
+                                </>
+                              )}
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                await supabase
+                                  .from("profiles")
+                                  .update({ onboarding_completed: false })
+                                  .eq("id", user.id);
+                                toast.success("Tutorial will start on next login");
+                              }}
+                              className="w-full justify-start gap-2 h-8 text-xs"
+                              title="Reset tutorial for this user"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              Reset Tutorial
+                            </Button>
+
+                            <div className="flex justify-center pt-1">
+                              <SendNotificationDialog 
+                                userId={user.id} 
+                                userName={user.full_name || user.email} 
+                              />
+                            </div>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteUser(user.id, user.email)}
+                              className="w-full justify-start gap-2 h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              Delete User
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-
-                  {/* Delete User */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteUser(user.id, user.email)}
-                    className="w-full justify-start gap-2 h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    Delete User
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              )}
+            </div>
+          );
+        })()}
       </CardContent>
     </Card>
   );
