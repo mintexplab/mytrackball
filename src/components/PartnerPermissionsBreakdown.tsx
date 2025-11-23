@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Shield, History, Eye } from "lucide-react";
+import { Shield, History } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
@@ -58,28 +57,16 @@ export const PartnerPermissionsBreakdown = () => {
 
   const fetchPartnerAccounts = async () => {
     try {
-      // Get all partner accounts (users with Trackball Partner plan)
-      const { data: partnerPlans } = await supabase
-        .from("user_plans")
-        .select("user_id, plan_name")
-        .eq("plan_name", "Trackball Partner")
-        .eq("status", "active");
-
-      if (!partnerPlans || partnerPlans.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      const partnerUserIds = partnerPlans.map(p => p.user_id);
-
-      // Get profile information for partners
+      // Get all users with partner_label label type
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, display_name, email, label_name, user_id")
-        .in("id", partnerUserIds);
+        .select("id, display_name, email, label_name, user_id, label_type")
+        .eq("label_type", "partner_label");
 
-      if (profiles) {
+      if (profiles && profiles.length > 0) {
         setPartners(profiles);
+
+        const partnerUserIds = profiles.map(p => p.id);
 
         // Fetch royalty splits
         const { data: splits } = await supabase
@@ -93,19 +80,18 @@ export const PartnerPermissionsBreakdown = () => {
         });
         setRoyaltySplits(splitsMap);
 
-        // Fetch service access from label invitations
-        const { data: invitations } = await supabase
-          .from("label_invitations")
-          .select("master_account_email, service_access")
-          .in("master_account_email", profiles.map(p => p.email))
-          .eq("status", "accepted");
+        // Fetch user permissions for service access
+        const { data: permissions } = await supabase
+          .from("user_permissions")
+          .select("user_id, permission")
+          .in("user_id", partnerUserIds);
 
         const accessMap: Record<string, string[]> = {};
-        invitations?.forEach(inv => {
-          const profile = profiles.find(p => p.email === inv.master_account_email);
-          if (profile && inv.service_access) {
-            accessMap[profile.id] = inv.service_access;
+        permissions?.forEach(perm => {
+          if (!accessMap[perm.user_id]) {
+            accessMap[perm.user_id] = [];
           }
+          accessMap[perm.user_id].push(perm.permission);
         });
         setServiceAccess(accessMap);
 
@@ -250,44 +236,39 @@ export const PartnerPermissionsBreakdown = () => {
         <CardDescription>Detailed view of all partner account permissions and audit history</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead>Partner</TableHead>
-                <TableHead>Label</TableHead>
-                <TableHead>Account ID</TableHead>
-                <TableHead>Royalty Split</TableHead>
-                <TableHead>Service Access</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {partners.map((partner) => {
-                const split = royaltySplits[partner.id];
-                const services = serviceAccess[partner.id] || [];
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {partners.map((partner) => {
+            const split = royaltySplits[partner.id];
+            const services = serviceAccess[partner.id] || [];
 
-                return (
-                  <TableRow key={partner.id} className="hover:bg-muted/30 transition-colors">
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{partner.display_name}</div>
-                        <div className="text-sm text-muted-foreground">{partner.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{partner.label_name || "N/A"}</Badge>
-                    </TableCell>
-                    <TableCell>
+            return (
+              <Card key={partner.id} className="bg-card/50 border-border hover:border-primary/30 transition-all">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    {/* Partner Info */}
+                    <div>
+                      <h3 className="font-semibold text-sm truncate">{partner.display_name || "No name"}</h3>
+                      <p className="text-xs text-muted-foreground truncate">{partner.email}</p>
+                    </div>
+
+                    {/* Label & Account ID */}
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="text-xs">{partner.label_name || "N/A"}</Badge>
                       <code className="text-xs bg-muted px-2 py-1 rounded">ID:{partner.user_id}</code>
-                    </TableCell>
-                    <TableCell>
+                    </div>
+
+                    {/* Royalty Split */}
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Royalty Split</p>
                       <div className="font-bold text-lg text-primary">
                         {split ? `${split}%` : "Not Set"}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1 max-w-xs">
+                    </div>
+
+                    {/* Service Access */}
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">Service Access</p>
+                      <div className="flex flex-wrap gap-1">
                         {services.length > 0 ? (
                           services.map((service) => (
                             <Badge key={service} variant="secondary" className="text-xs">
@@ -295,18 +276,20 @@ export const PartnerPermissionsBreakdown = () => {
                             </Badge>
                           ))
                         ) : (
-                          <Badge variant="outline">All Services</Badge>
+                          <Badge variant="outline" className="text-xs">All Services</Badge>
                         )}
                       </div>
-                    </TableCell>
-                    <TableCell>
+                    </div>
+
+                    {/* Audit Log Button */}
+                    <div className="pt-2">
                       <AuditLogDialog partnerId={partner.id} partnerName={partner.display_name || partner.email} />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </CardContent>
     </Card>
