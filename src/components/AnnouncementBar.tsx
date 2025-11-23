@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const AnnouncementBar = () => {
   const [visible, setVisible] = useState(false);
   const [announcement, setAnnouncement] = useState<any>(null);
   const [dismissed, setDismissed] = useState(false);
+  const [isSliding, setIsSliding] = useState(false);
 
   useEffect(() => {
     fetchAnnouncementBar();
@@ -70,8 +72,12 @@ export const AnnouncementBar = () => {
   };
 
   const handleDismiss = () => {
-    setDismissed(true);
-    setVisible(false);
+    setIsSliding(true);
+    setTimeout(() => {
+      setDismissed(true);
+      setVisible(false);
+      setIsSliding(false);
+    }, 300); // Match animation duration
   };
 
   if (!visible || dismissed || !announcement) {
@@ -79,7 +85,11 @@ export const AnnouncementBar = () => {
   }
 
   return (
-    <div className="bg-gradient-primary border-b border-primary/20 animate-in slide-in-from-top duration-300">
+    <div className={cn(
+      "bg-gradient-primary border-b border-primary/20 transition-all duration-300",
+      !isSliding && "animate-in slide-in-from-top",
+      isSliding && "animate-out slide-out-to-top"
+    )}>
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm text-white flex-1 break-words">
