@@ -176,12 +176,15 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, us
           <>
             {labelMemberships.length === 1 ? (
               <DropdownMenuLabel className="font-normal">
-                <div className="flex items-center gap-2 text-sm">
-                  <Building2 className="h-4 w-4" />
-                  <span>ID: {labelMemberships[0].five_digit_label_id}</span>
-                  {labelMemberships[0].role === "owner" && (
-                    <Badge variant="outline" className="text-xs">Owner</Badge>
-                  )}
+                <div className="flex flex-col gap-1">
+                  <div className="text-sm font-medium">{labelMemberships[0].label_name}</div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Building2 className="h-3 w-3" />
+                    <span>ID: {labelMemberships[0].five_digit_label_id}</span>
+                    {labelMemberships[0].role === "owner" && (
+                      <Badge variant="outline" className="text-xs">Owner</Badge>
+                    )}
+                  </div>
                 </div>
               </DropdownMenuLabel>
             ) : (
