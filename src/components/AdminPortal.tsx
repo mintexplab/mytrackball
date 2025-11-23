@@ -29,7 +29,10 @@ import { TakedownRequestsManagement } from "./TakedownRequestsManagement";
 import { PartnerPermissionsBreakdown } from "./PartnerPermissionsBreakdown";
 import { InvoiceDraftsManagement } from "./InvoiceDraftsManagement";
 import LabelDesignationWelcomeDialog from "./LabelDesignationWelcomeDialog";
-import { Bug } from "lucide-react";
+import { OnboardingTutorial } from "./OnboardingTutorial";
+import { Bug, GraduationCap, CreditCard } from "lucide-react";
+import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -45,7 +48,10 @@ const AdminPortal = ({
   const [adminAvatar, setAdminAvatar] = useState<string>("");
   const [adminArtistName, setAdminArtistName] = useState<string>("");
   const [adminFullName, setAdminFullName] = useState<string>("");
+  const [adminUserId, setAdminUserId] = useState<string>("");
   const [debugWelcomeDialog, setDebugWelcomeDialog] = useState<{ open: boolean; type: "partner_label" | "signature_label" | "prestige_label" | null }>({ open: false, type: null });
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [selectedDebugPlan, setSelectedDebugPlan] = useState<string>("");
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   useEffect(() => {
@@ -66,7 +72,77 @@ const AdminPortal = ({
         setAdminAvatar(profile.avatar_url || "");
         setAdminArtistName(profile.artist_name || "");
         setAdminFullName(profile.full_name || "");
+        setAdminUserId(user.id);
       }
+    }
+  };
+
+  const handleDebugPlanAssignment = async () => {
+    if (!selectedDebugPlan || !adminUserId) {
+      toast.error("Please select a plan");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ label_type: selectedDebugPlan })
+        .eq("id", adminUserId);
+
+      if (error) throw error;
+
+      // Create notification
+      const planNames: Record<string, string> = {
+        partner_label: "Partner Label",
+        signature_label: "Signature Label", 
+        prestige_label: "Prestige Label"
+      };
+
+      const planBenefits: Record<string, string[]> = {
+        partner_label: [
+          "Custom royalty split arrangement",
+          "Create and manage multiple labels",
+          "Invite unlimited users to your labels",
+          "Advanced permission controls",
+          "Priority support"
+        ],
+        signature_label: [
+          "Create and manage multiple labels",
+          "Invite unlimited users to your labels",
+          "Advanced permission controls",
+          "Priority support",
+          "Priority approval",
+          "XZ1 upgrade opportunities"
+        ],
+        prestige_label: [
+          "Create and manage multiple labels",
+          "Invite unlimited users to your labels",
+          "Advanced permission controls",
+          "Priority support",
+          "Publishing tab for PRO submissions",
+          "XZ1 Music Publishing enrollment",
+          "Potential advances",
+          "Free mastering"
+        ]
+      };
+
+      const planName = planNames[selectedDebugPlan] || selectedDebugPlan;
+      const benefits = planBenefits[selectedDebugPlan] || [];
+      
+      const notificationMessage = `Welcome to ${planName}!\n\nYour benefits include:\n${benefits.map(b => `• ${b}`).join('\n')}`;
+
+      await supabase.from("notifications").insert({
+        user_id: adminUserId,
+        title: `Welcome to ${planName}`,
+        message: notificationMessage,
+        type: "plan_assignment"
+      });
+
+      toast.success(`Assigned ${planName} and sent notification`);
+      setSelectedDebugPlan("");
+    } catch (error: any) {
+      console.error("Error assigning plan:", error);
+      toast.error("Failed to assign plan");
     }
   };
   const handleSignOut = async () => {
@@ -360,9 +436,28 @@ const AdminPortal = ({
                 <CardTitle className="text-2xl font-bold">DEBUG TOOLS</CardTitle>
                 <CardDescription>Testing and debugging utilities for admin use</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-8">
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Label Designation Setup Guides</h3>
+                  <div className="flex items-center gap-2 mb-4">
+                    <GraduationCap className="w-5 h-5 text-primary" />
+                    <h3 className="text-lg font-semibold">User Onboarding Tutorial</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Trigger the standard user onboarding tutorial to test the flow
+                  </p>
+                  <Button 
+                    onClick={() => setShowOnboarding(true)}
+                    variant="outline"
+                  >
+                    Start Onboarding Tutorial
+                  </Button>
+                </div>
+
+                <div className="border-t border-border pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Bug className="w-5 h-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Label Designation Setup Guides</h3>
+                  </div>
                   <p className="text-sm text-muted-foreground mb-4">
                     Trigger welcome dialogs for any label designation to test the onboarding flow
                   </p>
@@ -387,6 +482,34 @@ const AdminPortal = ({
                     </Button>
                   </div>
                 </div>
+
+                <div className="border-t border-border pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CreditCard className="w-5 h-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Subscription Plan Assignment</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Assign yourself a label designation and trigger the welcome notification
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Select value={selectedDebugPlan} onValueChange={setSelectedDebugPlan}>
+                      <SelectTrigger className="w-full sm:w-[250px]">
+                        <SelectValue placeholder="Select a plan..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="partner_label">Partner Label</SelectItem>
+                        <SelectItem value="signature_label">Signature Label</SelectItem>
+                        <SelectItem value="prestige_label">Prestige Label</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      onClick={handleDebugPlanAssignment}
+                      disabled={!selectedDebugPlan}
+                    >
+                      Assign & Notify
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -398,6 +521,13 @@ const AdminPortal = ({
           open={debugWelcomeDialog.open}
           onClose={() => setDebugWelcomeDialog({ open: false, type: null })}
           labelType={debugWelcomeDialog.type}
+        />
+      )}
+
+      {showOnboarding && (
+        <OnboardingTutorial 
+          onComplete={() => setShowOnboarding(false)} 
+          onSkip={() => setShowOnboarding(false)}
         />
       )}
     </div>;
