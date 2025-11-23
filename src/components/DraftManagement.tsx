@@ -64,23 +64,32 @@ export const DraftManagement = () => {
 
   if (drafts.length === 0) {
     return (
-      <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+      <Card className="backdrop-blur-sm bg-card/80 border-primary/20 min-h-[280px] flex flex-col">
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl">Saved Drafts</CardTitle>
-          <CardDescription>No saved drafts found</CardDescription>
+          <CardDescription>Resume your release submissions</CardDescription>
         </CardHeader>
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-center py-8">
+            <FileText className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground mb-2">No saved drafts found</p>
+            <p className="text-xs text-muted-foreground/70">
+              Start a new release to create a draft
+            </p>
+          </div>
+        </CardContent>
       </Card>
     );
   }
 
   return (
     <>
-      <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+      <Card className="backdrop-blur-sm bg-card/80 border-primary/20 min-h-[280px] flex flex-col">
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl">Saved Drafts</CardTitle>
           <CardDescription>Resume your release submissions</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 flex-1">
           {drafts.map((draft) => (
             <div
               key={draft.id}

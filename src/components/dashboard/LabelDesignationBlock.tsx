@@ -1,11 +1,20 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
-import { Building2 } from "lucide-react";
+import { Building2, Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LabelDesignationBlockProps {
   labelType: string | null;
   labelName: string | null;
+}
+
+interface LabelMembership {
+  id: string;
+  label_id: string;
+  label_name: string;
+  role: string;
 }
 
 const LABEL_TYPE_DISPLAY: Record<string, { label: string; description: string }> = {
@@ -24,42 +33,101 @@ const LABEL_TYPE_DISPLAY: Record<string, { label: string; description: string }>
 };
 
 export const LabelDesignationBlock = ({ labelType, labelName }: LabelDesignationBlockProps) => {
+  const [labels, setLabels] = useState<LabelMembership[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLabels();
+  }, []);
+
+  const fetchLabels = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("user_label_memberships")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("joined_at", { ascending: false });
+
+      if (error) throw error;
+      setLabels(data || []);
+    } catch (error) {
+      console.error("Error fetching labels:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!labelType || !LABEL_TYPE_DISPLAY[labelType]) return null;
 
   const designation = LABEL_TYPE_DISPLAY[labelType];
 
   return (
     <Collapsible defaultOpen>
-      <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+      <Card className="backdrop-blur-sm bg-card/80 border-primary/20 min-h-[280px] flex flex-col">
         <CollapsibleTrigger className="w-full">
           <CardHeader className="pb-3 sm:pb-6 cursor-pointer hover:bg-muted/30 transition-colors">
             <div className="flex justify-between items-start gap-3">
               <div className="min-w-0">
-                <CardTitle className="text-base sm:text-xl font-bold text-left">Your Label</CardTitle>
-                <CardDescription className="text-xs sm:text-sm text-left">Label designation</CardDescription>
+                <CardTitle className="text-base sm:text-xl font-bold text-left">Your Labels</CardTitle>
+                <CardDescription className="text-xs sm:text-sm text-left">
+                  {labels.length} {labels.length === 1 ? 'label' : 'labels'} on your account
+                </CardDescription>
               </div>
               <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
             </div>
           </CardHeader>
         </CollapsibleTrigger>
-        <CollapsibleContent>
-          <CardContent className="space-y-3">
+        <CollapsibleContent className="flex-1">
+          <CardContent className="space-y-4">
             <div className="space-y-2">
               <Badge className="bg-gradient-primary text-white px-2 py-1 text-xs">
                 {designation.label}
               </Badge>
-              {labelName && (
-                <p className="text-sm font-medium text-foreground">
-                  {labelName}
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground">{designation.description}</p>
             </div>
-            <p className="text-sm text-muted-foreground">{designation.description}</p>
-            <div className="pt-3 border-t border-border">
-              <p className="text-xs text-muted-foreground">
-                You can create and manage multiple labels from the Labels tab
+
+            {loading ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              </div>
+            ) : labels.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Your Labels</p>
+                <div className="space-y-2 max-h-[140px] overflow-y-auto pr-2">
+                  {labels.map((label) => (
+                    <div
+                      key={label.id}
+                      className="flex items-center justify-between p-2 rounded-md bg-muted/30 border border-border"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <Building2 className="w-4 h-4 text-primary flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {label.label_name}
+                          </p>
+                          <p className="text-xs text-muted-foreground capitalize">
+                            {label.role}
+                          </p>
+                        </div>
+                      </div>
+                      {label.label_name === labelName && (
+                        <Badge variant="outline" className="text-xs border-primary/30 bg-primary/10 flex-shrink-0">
+                          <Check className="w-3 h-3 mr-1" />
+                          Active
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No labels found. Create one from the Labels tab.
               </p>
-            </div>
+            )}
           </CardContent>
         </CollapsibleContent>
       </Card>
