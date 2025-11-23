@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,6 +8,7 @@ const corsHeaders = {
 
 interface SmartLinkRequest {
   spotifyUrl: string;
+  userId: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -15,9 +17,14 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { spotifyUrl }: SmartLinkRequest = await req.json();
+    const { spotifyUrl, userId }: SmartLinkRequest = await req.json();
 
     console.log("Generating smart link for:", spotifyUrl);
+    
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     if (!spotifyUrl || !spotifyUrl.includes("spotify.com")) {
       throw new Error("Invalid Spotify URL");
@@ -104,11 +111,28 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("ToneDen response:", tonedenData);
 
     // ToneDen returns a smart link URL
-    const smartlink = tonedenData.url || tonedenData.link || `https://stream.trackball.cc/${spotifyId}`;
+    const smartlink = tonedenData.url || tonedenData.shortened_url || `https://stream.trackball.cc/${spotifyId}`;
+    const tonedenLinkId = tonedenData.id?.toString() || null;
+
+    // Store the smart link in the database
+    const { error: dbError } = await supabase
+      .from('smart_links')
+      .insert({
+        user_id: userId,
+        spotify_url: spotifyUrl,
+        smart_link_url: smartlink,
+        toneden_link_id: tonedenLinkId,
+        title: tonedenData.title || `Smart Link ${spotifyId}`,
+        platforms: tonedenData.services || []
+      });
+
+    if (dbError) {
+      console.error("Error saving smart link to database:", dbError);
+    }
 
     return new Response(JSON.stringify({ 
       smartlink,
-      platforms: tonedenData.platforms || [],
+      platforms: tonedenData.platforms || tonedenData.services || [],
       created_at: new Date().toISOString()
     }), {
       status: 200,
