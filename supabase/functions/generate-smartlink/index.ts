@@ -54,27 +54,43 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Call ToneDen API to create smart link
+    // Based on ToneDen API docs: https://www.toneden.io/api/v1/links
     const tonedenResponse = await fetch("https://www.toneden.io/api/v1/links", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${tonedenApiKey}`,
-        "Content-Type": "application/json",
+        "accept": "application/json",
+        "content-type": "application/json",
+        "Authorization": `Bearer ${tonedenApiKey}`, // Try Bearer auth first
       },
       body: JSON.stringify({
-        spotify_uri: `spotify:${type}:${spotifyId}`,
-        custom_domain: "stream.trackball.cc" // User will configure this
+        target_type: "music", // Assuming 'music' for Spotify links
+        custom_domain: "stream.trackball.cc",
+        title: `Smart Link for ${spotifyId}`,
+        // Add the Spotify URL as target or in services
+        services: [{
+          name: "Spotify",
+          url: spotifyUrl
+        }]
       }),
     });
 
     if (!tonedenResponse.ok) {
       const errorData = await tonedenResponse.text();
-      console.error("ToneDen API error:", errorData);
+      console.error("ToneDen API error status:", tonedenResponse.status);
+      console.error("ToneDen API error response:", errorData);
+      console.error("ToneDen API request body was:", JSON.stringify({
+        target_type: "music",
+        custom_domain: "stream.trackball.cc",
+        title: `Smart Link for ${spotifyId}`,
+        services: [{ name: "Spotify", url: spotifyUrl }]
+      }));
+      
       // Fallback to placeholder smart link instead of failing the whole request
       const fallbackLink = `https://stream.trackball.cc/${spotifyId}`;
       return new Response(JSON.stringify({
         smartlink: fallbackLink,
         platforms: [],
-        note: "ToneDen API call failed. Returning fallback smart link instead.",
+        note: "ToneDen API call failed. Returning fallback smart link. Check logs for details.",
       }), {
         status: 200,
         headers: {
