@@ -213,7 +213,7 @@ const AccountSettings = () => {
       if (!user) throw new Error('Not authenticated');
 
       const fileExt = file.name.split('.').pop();
-      const s3Path = `profile-pictures/${user.id}/avatar.${fileExt}`;
+      const s3Path = `${user.id}/profile-pictures/avatar.${fileExt}`;
       
       // Extract old path from URL if exists
       const oldPath = formData.avatar_url ? extractS3PathFromUrl(formData.avatar_url) : undefined;

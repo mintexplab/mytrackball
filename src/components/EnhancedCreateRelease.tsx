@@ -177,12 +177,12 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Upload artwork to S3 if file is selected
+      // Upload artwork to S3 if file is selected (path must start with user.id for security)
       let artworkUrl = validatedRelease.artwork_url || null;
       if (artworkFile) {
         const timestamp = Date.now();
         const fileExt = artworkFile.name.split('.').pop();
-        const s3Path = `release-artwork/${user.id}/${timestamp}.${fileExt}`;
+        const s3Path = `${user.id}/release-artwork/${timestamp}.${fileExt}`;
         
         const uploadedUrl = await uploadFile({ file: artworkFile, path: s3Path });
         if (uploadedUrl) {

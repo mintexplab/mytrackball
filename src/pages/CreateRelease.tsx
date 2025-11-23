@@ -488,21 +488,21 @@ const CreateRelease = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Upload artwork to S3
+      // Upload artwork to S3 (path must start with user.id for security)
       setUploadingFile('artwork');
-      const artworkPath = `release-artwork/${user.id}/${Date.now()}.jpg`;
+      const artworkPath = `${user.id}/release-artwork/${Date.now()}.jpg`;
       const artworkUrl = await uploadFile({ file: artworkFile, path: artworkPath });
       setUploadingFile(null);
       if (!artworkUrl) {
         throw new Error("Artwork upload failed - please try again");
       }
 
-      // Upload all track audio files to S3
+      // Upload all track audio files to S3 (path must start with user.id for security)
       setUploadingFile('audio');
       const uploadedTracks = await Promise.all(
         tracks.map(async (track) => {
           if (!track.audioFile) return null;
-          const audioPath = `release-audio/${user.id}/${Date.now()}_${track.id}.${track.audioFile.name.split('.').pop()}`;
+          const audioPath = `${user.id}/release-audio/${Date.now()}_${track.id}.${track.audioFile.name.split('.').pop()}`;
           const audioUrl = await uploadFile({ file: track.audioFile, path: audioPath });
           return { ...track, audioUrl };
         })
