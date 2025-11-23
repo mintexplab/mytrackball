@@ -78,6 +78,43 @@ const SubscriptionManagement = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [showDrafts, setShowDrafts] = useState(false);
 
+  // Check if user is a subaccount and fetch parent plan if needed
+  const { data: accountInfo } = useQuery({
+    queryKey: ["accountInfo"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("parent_account_id")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile?.parent_account_id) {
+        return { isSubaccount: false, parentPlan: null };
+      }
+
+      // Fetch parent account's plan
+      const { data: parentPlan } = await supabase
+        .from("user_plans")
+        .select(`
+          plan_id,
+          plan_name,
+          status,
+          plan:plans(name, description)
+        `)
+        .eq("user_id", profile.parent_account_id)
+        .eq("status", "active")
+        .single();
+
+      return {
+        isSubaccount: true,
+        parentPlan: parentPlan
+      };
+    },
+  });
+
   // Fetch user's current plan from database
   const { data: userPlan } = useQuery({
     queryKey: ["userPlan"],
@@ -98,6 +135,7 @@ const SubscriptionManagement = () => {
       }
       return data as UserPlan;
     },
+    enabled: !accountInfo?.isSubaccount, // Only fetch if not a subaccount
   });
 
   // Fetch plans from database
@@ -242,6 +280,27 @@ const SubscriptionManagement = () => {
           <div className="flex justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
+        ) : accountInfo?.isSubaccount ? (
+          <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold">Subscription Management</CardTitle>
+              <CardDescription>You are part of a managed account</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-6 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
+                <p className="text-lg font-semibold mb-2">
+                  You are part of an account with {accountInfo.parentPlan?.plan?.name || "Trackball"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Your subscription is managed by the account owner. Please contact the person who invited you if you have questions about plan features or billing.
+                </p>
+              </div>
+              <Button variant="outline" onClick={() => navigate("/dashboard")}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Dashboard
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <Tabs defaultValue="overview" className="space-y-6">
             <TabsList className="grid w-full grid-cols-4">

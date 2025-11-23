@@ -608,39 +608,61 @@ const Dashboard = () => {
 
           <TabsContent value="help" className="animate-fade-in">
             <div className="space-y-6">
-              {/* Documentation Section */}
-              <DocumentationSection />
-
-              {/* Contact Support Section */}
-              <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-bold flex items-center gap-2 text-left">
-                    <HelpCircle className="w-6 h-6 text-primary" />
-                    Contact Support
-                  </CardTitle>
-                  <CardDescription className="text-left">Get direct assistance from our team</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="p-6 rounded-lg bg-muted/50 border border-border">
-                      <h3 className="font-semibold text-lg mb-2">Email Us</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Need help with your account, releases, or have questions? Our support team is here to assist you.
+              {profile?.parent_account_id ? (
+                <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+                  <CardHeader>
+                    <CardTitle className="text-2xl font-bold flex items-center gap-2 text-left">
+                      <HelpCircle className="w-6 h-6 text-primary" />
+                      Contact Support
+                    </CardTitle>
+                    <CardDescription className="text-left">Get assistance for your account</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="p-6 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
+                      <h3 className="font-semibold text-lg mb-2">Account Support</h3>
+                      <p className="text-muted-foreground">
+                        Please contact the person who invited you for assistance with your account, releases, or any questions you may have.
                       </p>
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <Button onClick={() => window.location.href = 'mailto:contact@trackball.cc'} className="bg-gradient-primary hover:opacity-90">
-                          <Mail className="w-4 h-4 mr-2" />
-                          Email Support
-                        </Button>
-                        <span className="text-sm text-muted-foreground self-center">
-                          contact@trackball.cc
-                        </span>
-                      </div>
                     </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  {/* Documentation Section */}
+                  <DocumentationSection />
 
-                  </div>
-                </CardContent>
-              </Card>
+                  {/* Contact Support Section */}
+                  <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+                    <CardHeader>
+                      <CardTitle className="text-2xl font-bold flex items-center gap-2 text-left">
+                        <HelpCircle className="w-6 h-6 text-primary" />
+                        Contact Support
+                      </CardTitle>
+                      <CardDescription className="text-left">Get direct assistance from our team</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-4">
+                        <div className="p-6 rounded-lg bg-muted/50 border border-border">
+                          <h3 className="font-semibold text-lg mb-2">Email Us</h3>
+                          <p className="text-muted-foreground mb-4">
+                            Need help with your account, releases, or have questions? Our support team is here to assist you.
+                          </p>
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <Button onClick={() => window.location.href = 'mailto:contact@trackball.cc'} className="bg-gradient-primary hover:opacity-90">
+                              <Mail className="w-4 h-4 mr-2" />
+                              Email Support
+                            </Button>
+                            <span className="text-sm text-muted-foreground self-center">
+                              contact@trackball.cc
+                            </span>
+                          </div>
+                        </div>
+
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
           </TabsContent>
         </Tabs>
