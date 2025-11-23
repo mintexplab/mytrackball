@@ -535,10 +535,11 @@ const Dashboard = () => {
                 <p className="text-sm font-medium text-foreground">
                   {profile?.full_name || profile?.display_name || profile?.artist_name || "User"}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {activeLabelDigitId && <span>Label ID: {activeLabelDigitId} </span>}
-                  {profile?.user_id && <span>ID: {profile.user_id}</span>}
-                </p>
+                {activeLabelDigitId && (
+                  <p className="text-xs text-muted-foreground">
+                    {profile?.label_name} ID: {activeLabelDigitId}
+                  </p>
+                )}
                 {parentAccount && (
                   <Badge variant="outline" className="text-xs border-primary/30 bg-primary/10 mt-1">
                     Subaccount of {parentAccount.label_name || parentAccount.display_name || parentAccount.artist_name}
