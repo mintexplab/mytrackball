@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Bell, CheckCircle, Trash2, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import notificationSound from "@/assets/notification-sound.mp3";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,8 +44,15 @@ export const NotificationsDropdown = ({ userId }: NotificationsDropdownProps) =>
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [isRinging, setIsRinging] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const prevUnreadCountRef = useRef(0);
 
   useEffect(() => {
+    // Initialize audio
+    audioRef.current = new Audio(notificationSound);
+    audioRef.current.volume = 0.5;
+    
     fetchNotifications();
     
     // Subscribe to new notifications
@@ -58,7 +66,16 @@ export const NotificationsDropdown = ({ userId }: NotificationsDropdownProps) =>
           table: 'notifications',
           filter: `user_id=eq.${userId}`
         },
-        () => fetchNotifications()
+        () => {
+          fetchNotifications();
+          // Play sound and trigger ring animation
+          if (audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(e => console.error('Error playing notification sound:', e));
+          }
+          setIsRinging(true);
+          setTimeout(() => setIsRinging(false), 500);
+        }
       )
       .subscribe();
 
@@ -82,6 +99,19 @@ export const NotificationsDropdown = ({ userId }: NotificationsDropdownProps) =>
 
     setNotifications(data || []);
     setLoading(false);
+
+    // Check if unread count increased
+    const newUnreadCount = (data || []).filter(n => !n.is_read).length;
+    if (newUnreadCount > prevUnreadCountRef.current && prevUnreadCountRef.current > 0) {
+      // Play sound and trigger animation for new notification
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(e => console.error('Error playing notification sound:', e));
+      }
+      setIsRinging(true);
+      setTimeout(() => setIsRinging(false), 500);
+    }
+    prevUnreadCountRef.current = newUnreadCount;
   };
 
   const markAsRead = async (notificationId: string) => {
@@ -136,9 +166,9 @@ export const NotificationsDropdown = ({ userId }: NotificationsDropdownProps) =>
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
+          <Bell className={`h-5 w-5 ${isRinging ? 'animate-ring' : ''}`} />
           {unreadCount > 0 && (
-            <Badge className="absolute top-0 right-0 h-5 w-5 flex items-center justify-center p-0 text-[10px] bg-primary rounded-full">
+            <Badge className={`absolute top-0 right-0 h-5 w-5 flex items-center justify-center p-0 text-[10px] bg-primary rounded-full ${unreadCount > 0 ? 'animate-pulse-glow' : ''}`}>
               {unreadCount > 9 ? '9+' : unreadCount}
             </Badge>
           )}
