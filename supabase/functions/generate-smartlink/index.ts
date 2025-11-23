@@ -69,7 +69,19 @@ const handler = async (req: Request): Promise<Response> => {
     if (!tonedenResponse.ok) {
       const errorData = await tonedenResponse.text();
       console.error("ToneDen API error:", errorData);
-      throw new Error("Failed to create smart link with ToneDen");
+      // Fallback to placeholder smart link instead of failing the whole request
+      const fallbackLink = `https://stream.trackball.cc/${spotifyId}`;
+      return new Response(JSON.stringify({
+        smartlink: fallbackLink,
+        platforms: [],
+        note: "ToneDen API call failed. Returning fallback smart link instead.",
+      }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
     }
 
     const tonedenData = await tonedenResponse.json();
