@@ -93,12 +93,22 @@ const UserManagement = () => {
       const parentLabel = profile.parent_account_id ? 
         labels?.find(l => l.user_id === profile.parent_account_id) : null;
       
+      // Enrich user labels with full label data (including label_id)
+      const enrichedUserLabels = userLabels.map(membership => {
+        const fullLabel = labelMap.get(membership.label_id);
+        return {
+          ...membership,
+          label_id_code: fullLabel?.label_id || 'N/A',
+          label_name: fullLabel?.name || membership.label_name
+        };
+      });
+      
       return {
         ...profile,
         user_plans: plansData?.filter(p => p.user_id === profile.id) || [],
         sublabel_count: sublabelCountMap[profile.id] || 0,
         is_master_account: (sublabelCountMap[profile.id] || 0) > 0,
-        user_labels: userLabels,
+        user_labels: enrichedUserLabels,
         parent_label: parentLabel
       };
     });
@@ -441,9 +451,14 @@ const UserManagement = () => {
                         Label Account
                       </Badge>
                       {masterLabel && (
-                        <span className="text-sm text-muted-foreground">
-                          Label ID: <span className="font-mono text-foreground">{masterLabel.label_id}</span>
-                        </span>
+                        <>
+                          <span className="text-sm font-semibold text-foreground">
+                            {masterLabel.label_name}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            ID: <span className="font-mono text-foreground">{masterLabel.label_id_code}</span>
+                          </span>
+                        </>
                       )}
                       <span className="text-xs text-muted-foreground">
                         {subaccounts.length} subaccount{subaccounts.length !== 1 ? 's' : ''}
@@ -664,7 +679,7 @@ const UserManagement = () => {
                             <div className="mb-3">
                               <p className="text-xs text-muted-foreground mb-1">Account Type</p>
                               <Badge variant="outline" className="text-xs">
-                                Subaccount - {masterLabel?.label_id || 'N/A'}
+                                Subaccount - {masterLabel?.label_id_code || 'N/A'}
                               </Badge>
                             </div>
 
