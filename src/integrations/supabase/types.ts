@@ -951,6 +951,7 @@ export type Database = {
           invitation_type: string | null
           invitee_email: string
           inviter_id: string
+          label_id: string | null
           permissions: string[] | null
           status: string
         }
@@ -962,6 +963,7 @@ export type Database = {
           invitation_type?: string | null
           invitee_email: string
           inviter_id: string
+          label_id?: string | null
           permissions?: string[] | null
           status?: string
         }
@@ -973,6 +975,7 @@ export type Database = {
           invitation_type?: string | null
           invitee_email?: string
           inviter_id?: string
+          label_id?: string | null
           permissions?: string[] | null
           status?: string
         }
@@ -982,6 +985,13 @@ export type Database = {
             columns: ["inviter_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sublabel_invitations_label_id_fkey"
+            columns: ["label_id"]
+            isOneToOne: false
+            referencedRelation: "labels"
             referencedColumns: ["id"]
           },
         ]
