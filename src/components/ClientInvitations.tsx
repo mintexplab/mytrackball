@@ -406,7 +406,7 @@ const ClientInvitations = () => {
                     <SelectContent className="bg-card border-border">
                       {labels.map((label) => (
                         <SelectItem key={label.label_id} value={label.label_id}>
-                          {label.label_name}
+                          {label.label_name} (ID:{label.label_id})
                         </SelectItem>
                       ))}
                     </SelectContent>
