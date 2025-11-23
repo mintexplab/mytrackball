@@ -19,6 +19,7 @@ interface ProfileDropdownProps {
   avatarUrl?: string;
   artistName?: string;
   fullName?: string;
+  userId?: string;
   onSignOut: () => void;
 }
 
@@ -30,7 +31,7 @@ interface LabelMembership {
   five_digit_label_id: string;
 }
 
-export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, onSignOut }: ProfileDropdownProps) => {
+export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, userId, onSignOut }: ProfileDropdownProps) => {
   const navigate = useNavigate();
   const [labelMemberships, setLabelMemberships] = useState<LabelMembership[]>([]);
   const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
@@ -144,6 +145,11 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, on
             <p className="text-xs leading-none text-muted-foreground">
               {userEmail}
             </p>
+            {userId && (
+              <p className="text-xs leading-none text-muted-foreground/70">
+                ID: {userId}
+              </p>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-border" />
@@ -172,7 +178,7 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, on
               <DropdownMenuLabel className="font-normal">
                 <div className="flex items-center gap-2 text-sm">
                   <Building2 className="h-4 w-4" />
-                  <span>{labelMemberships[0].label_name} (ID:{labelMemberships[0].five_digit_label_id})</span>
+                  <span>ID: {labelMemberships[0].five_digit_label_id}</span>
                   {labelMemberships[0].role === "owner" && (
                     <Badge variant="outline" className="text-xs">Owner</Badge>
                   )}

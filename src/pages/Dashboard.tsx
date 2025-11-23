@@ -75,6 +75,7 @@ const Dashboard = () => {
   const [showSubscriptionWelcome, setShowSubscriptionWelcome] = useState(false);
   const [welcomePlanName, setWelcomePlanName] = useState("");
   const [welcomePlanFeatures, setWelcomePlanFeatures] = useState<string[]>([]);
+  const [activeLabelDigitId, setActiveLabelDigitId] = useState<string>("");
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   useEffect(() => {
@@ -252,6 +253,19 @@ const Dashboard = () => {
       data: profileData
     } = await supabase.from("profiles").select("*").eq("id", userId).single();
     setProfile(profileData);
+
+    // Fetch label 5-digit ID if user has an active label
+    if (profileData?.active_label_id) {
+      const { data: labelData } = await supabase
+        .from("labels")
+        .select("label_id")
+        .eq("id", profileData.active_label_id)
+        .single();
+      
+      if (labelData) {
+        setActiveLabelDigitId(labelData.label_id);
+      }
+    }
 
     // Check if this is a newly assigned plan (subscription_welcome_shown_at is null or old)
     if (data?.plan && profileData) {
@@ -522,7 +536,7 @@ const Dashboard = () => {
                   {profile?.full_name || profile?.display_name || profile?.artist_name || "User"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {profile?.label_name && <span>{profile.label_name} </span>}
+                  {activeLabelDigitId && <span>Label ID: {activeLabelDigitId} </span>}
                   {profile?.user_id && <span>ID: {profile.user_id}</span>}
                 </p>
                 {parentAccount && (
@@ -540,6 +554,7 @@ const Dashboard = () => {
                   avatarUrl={profile?.avatar_url}
                   artistName={profile?.artist_name}
                   fullName={profile?.full_name}
+                  userId={profile?.user_id}
                   onSignOut={handleSignOut} 
                   data-tutorial="profile-dropdown"
                 />

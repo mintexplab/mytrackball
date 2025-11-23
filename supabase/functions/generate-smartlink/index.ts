@@ -45,12 +45,12 @@ const handler = async (req: Request): Promise<Response> => {
     
     const tonedenApiKey = Deno.env.get("TONEDEN_API_KEY");
     if (!tonedenApiKey) {
-      console.warn("TONEDEN_API_KEY not configured, generating placeholder link");
-      // Return a placeholder smart link for now
-      const placeholderLink = `https://stream.trackball.cc/${spotifyId}`;
+      console.warn("TONEDEN_API_KEY not configured, generating fanlink.tv link");
+      // Return a fanlink.tv smart link
+      const fanlinkUrl = `https://fanlink.tv/${spotifyId}`;
       return new Response(JSON.stringify({ 
-        smartlink: placeholderLink,
-        note: "ToneDen API key not configured. This is a placeholder link."
+        smartlink: fanlinkUrl,
+        note: "ToneDen API key not configured. Using fanlink.tv default domain."
       }), {
         status: 200,
         headers: {
@@ -63,18 +63,18 @@ const handler = async (req: Request): Promise<Response> => {
     // Call ToneDen API to create smart link
     // ToneDen API appears to require session-based auth, not Bearer token
     // For now, return placeholder until proper auth flow is implemented
-    console.warn("ToneDen API requires proper OAuth2 authentication. Returning placeholder.");
-    const placeholderLink = `https://stream.trackball.cc/${spotifyId}`;
+    console.warn("ToneDen API requires proper OAuth2 authentication. Returning fanlink.tv link.");
+    const fanlinkUrl = `https://fanlink.tv/${spotifyId}`;
     
-    // Store placeholder in database
+    // Store fanlink in database
     const { error: insertError } = await supabase
       .from('smart_links')
       .insert({
         user_id: userId,
         spotify_url: spotifyUrl,
-        smart_link_url: placeholderLink,
+        smart_link_url: fanlinkUrl,
         toneden_link_id: null,
-        title: `Smart Link ${spotifyId}`,
+        title: `Smart Link for ${spotifyId}`,
         platforms: []
       });
 
@@ -83,10 +83,10 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     return new Response(JSON.stringify({ 
-      smartlink: placeholderLink,
+      smartlink: fanlinkUrl,
       platforms: [],
       created_at: new Date().toISOString(),
-      note: "ToneDen integration requires OAuth2 setup. Using placeholder link."
+      note: "Using fanlink.tv default domain."
     }), {
       status: 200,
       headers: {
