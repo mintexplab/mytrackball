@@ -334,18 +334,21 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          label_id: string
           name: string
           user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
+          label_id: string
           name: string
           user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
+          label_id?: string
           name?: string
           user_id?: string
         }
@@ -1250,6 +1253,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_label_id: { Args: never; Returns: string }
       generate_user_id: { Args: never; Returns: string }
       has_role: {
         Args: {

@@ -83,7 +83,7 @@ const LabelManagementTab = ({
       } = await supabase.from("labels").insert({
         name: labelName,
         user_id: userId
-      }).select().single();
+      } as any).select().single();
       
       if (labelError) throw labelError;
 
