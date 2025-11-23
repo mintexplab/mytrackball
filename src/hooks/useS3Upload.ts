@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UploadOptions {
   file: File;
@@ -25,12 +26,19 @@ export const useS3Upload = () => {
         formData.append('oldPath', oldPath);
       }
 
-      // Get the Supabase URL and anon key from environment
+      // Get the Supabase URL and user token
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-      if (!supabaseUrl || !supabaseAnonKey) {
+      
+      if (!supabaseUrl) {
         throw new Error('Supabase configuration missing');
+      }
+
+      // Get current user session token for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      const userToken = session?.access_token;
+
+      if (!userToken) {
+        throw new Error('Not authenticated - please log in');
       }
 
       console.log('Starting upload to:', `${supabaseUrl}/functions/v1/upload-to-s3`);
@@ -102,10 +110,9 @@ export const useS3Upload = () => {
         // Set timeout to 10 minutes for large files
         xhr.timeout = 600000;
 
-        // Send request
+        // Send request with user session token
         xhr.open('POST', `${supabaseUrl}/functions/v1/upload-to-s3`);
-        xhr.setRequestHeader('Authorization', `Bearer ${supabaseAnonKey}`);
-        xhr.setRequestHeader('apikey', supabaseAnonKey);
+        xhr.setRequestHeader('Authorization', `Bearer ${userToken}`);
         console.log('Sending upload request...');
         xhr.send(formData);
       });
@@ -124,13 +131,23 @@ export const useS3Upload = () => {
     
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      if (!supabaseUrl) {
+        throw new Error('Supabase configuration missing');
+      }
+
+      // Get current user session token for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      const userToken = session?.access_token;
+
+      if (!userToken) {
+        throw new Error('Not authenticated - please log in');
+      }
 
       const response = await fetch(`${supabaseUrl}/functions/v1/upload-to-s3`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${userToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

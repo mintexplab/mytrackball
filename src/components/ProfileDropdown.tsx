@@ -164,7 +164,7 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, on
               >
                 <div className="flex items-center">
                   <Building2 className="mr-2 h-4 w-4" />
-                  <span>{membership.label_name}</span>
+                  <span>{membership.label_name} (ID:{membership.label_id})</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {membership.role === "owner" && (
