@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, User, Mail, Lock, Upload, X, Clock, Trash2, HelpCircle } from "lucide-react";
+import { ArrowLeft, User, Mail, Lock, Upload, X, Clock, Trash2, HelpCircle, Book } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TwoFactorAuth } from "@/components/TwoFactorAuth";
 import { useS3Upload } from "@/hooks/useS3Upload";
+import LabelDesignationWelcomeDialog from "@/components/LabelDesignationWelcomeDialog";
 const TIMEZONES = [{
   value: "America/New_York",
   label: "Eastern Time (ET)"
@@ -49,6 +50,7 @@ const AccountSettings = () => {
   const [userPlan, setUserPlan] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const { uploadFile, deleteFile, uploading } = useS3Upload();
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -511,8 +513,27 @@ const AccountSettings = () => {
               <HelpCircle className="w-4 h-4 mr-2" />
               Restart Tutorial
             </Button>
+
+            {profile?.label_type && ["partner_label", "signature_label", "prestige_label"].includes(profile.label_type) && (
+              <Button 
+                onClick={() => setShowWelcomeDialog(true)}
+                variant="outline"
+                className="w-full sm:w-auto border-primary/20"
+              >
+                <Book className="w-4 h-4 mr-2" />
+                View Label Setup Guide
+              </Button>
+            )}
           </CardContent>
         </Card>
+
+        {profile?.label_type && ["partner_label", "signature_label", "prestige_label"].includes(profile.label_type) && (
+          <LabelDesignationWelcomeDialog
+            open={showWelcomeDialog}
+            onClose={() => setShowWelcomeDialog(false)}
+            labelType={profile.label_type as "partner_label" | "signature_label" | "prestige_label"}
+          />
+        )}
 
         <Card className="border-destructive/50 bg-destructive/5">
           <CardHeader>

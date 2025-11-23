@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Building2, Check, HelpCircle } from "lucide-react";
+import { Building2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import LabelDesignationWelcomeDialog from "@/components/LabelDesignationWelcomeDialog";
 
@@ -136,20 +135,9 @@ export const LabelDesignationBlock = ({ labelType, labelName }: LabelDesignation
           <CollapsibleContent className="flex-1">
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <Badge className="bg-gradient-primary text-white px-2 py-1 text-xs">
-                    {designation.label}
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowWelcomeDialog(true)}
-                    className="h-7 px-2 text-xs"
-                  >
-                    <HelpCircle className="w-3 h-3 mr-1" />
-                    Setup Guide
-                  </Button>
-                </div>
+                <Badge className="bg-gradient-primary text-white px-2 py-1 text-xs">
+                  {designation.label}
+                </Badge>
                 <p className="text-xs text-muted-foreground">{designation.description}</p>
                 {labelType === "partner_label" && royaltySplit !== null && (
                   <div className="mt-2 text-sm font-medium text-primary">
