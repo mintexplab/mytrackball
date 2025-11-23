@@ -66,9 +66,23 @@ const LabelManagementTab = ({
   const saveLabelName = async () => {
     setSaving(true);
     try {
-      const canEditLabel = userPlan?.plan?.name === "Trackball Signature" || userPlan?.plan?.name === "Trackball Prestige";
+      // Get profile to check label_type
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("label_type")
+        .eq("id", user?.id)
+        .single();
+
+      const hasLabelDesignation = profile?.label_type && 
+        ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type);
+      const canEditLabel = 
+        userPlan?.plan?.name === "Trackball Signature" || 
+        userPlan?.plan?.name === "Trackball Prestige" ||
+        hasLabelDesignation;
+      
       if (!canEditLabel) {
-        toast.error("Label creation is only available for Signature and Prestige members");
+        toast.error("Label creation is only available for Partner, Signature and Prestige members");
         return;
       }
       if (!labelName.trim()) {
@@ -227,7 +241,13 @@ const LabelManagementTab = ({
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>;
   }
-  const canEditLabel = userPlan?.plan?.name === "Trackball Signature" || userPlan?.plan?.name === "Trackball Prestige";
+  
+  const hasLabelDesignation = labelType && 
+    ['partner_label', 'signature_label', 'prestige_label'].includes(labelType);
+  const canEditLabel = 
+    userPlan?.plan?.name === "Trackball Signature" || 
+    userPlan?.plan?.name === "Trackball Prestige" ||
+    hasLabelDesignation;
   return <div className="space-y-6">
       {/* Create New Label Section */}
       <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
@@ -237,7 +257,7 @@ const LabelManagementTab = ({
             CREATE NEW LABEL
           </CardTitle>
           <CardDescription>
-            {canEditLabel ? "Create and manage multiple labels for your distribution" : "Label creation is only available for Signature and Prestige members"}
+            {canEditLabel ? "Create and manage multiple labels for your distribution" : "Label creation is only available for Partner, Signature and Prestige members"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
