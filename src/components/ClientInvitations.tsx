@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { UserPlus, Mail, Trash2, Clock, CheckCircle, XCircle, UserX, Settings } from "lucide-react";
+import { UserPlus, Mail, Trash2, Clock, CheckCircle, XCircle, UserX } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -513,7 +513,6 @@ const ClientInvitations = () => {
                     <TableHead>User</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Permissions</TableHead>
-                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -545,15 +544,6 @@ const ClientInvitations = () => {
                             ))
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-muted-foreground hover:text-foreground"
-                        >
-                          <Settings className="w-4 h-4" />
-                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
