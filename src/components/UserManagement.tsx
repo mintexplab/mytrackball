@@ -317,6 +317,26 @@ const UserManagement = () => {
     }
   };
 
+  const assignLabelDesignation = async (userId: string, labelType: string | null) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ 
+          label_type: labelType,
+          label_designation_welcome_shown: false // Reset welcome dialog
+        })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      toast.success(labelType ? "Label designation assigned successfully" : "Label designation removed");
+      fetchUsers();
+    } catch (error: any) {
+      console.error("Label designation assignment error:", error);
+      toast.error("Failed to assign label designation: " + error.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -541,27 +561,56 @@ const UserManagement = () => {
                           <Separator className="my-3" />
 
                           {/* Plan Assignment */}
-                          <div className="mb-3">
-                            <Label className="text-xs text-muted-foreground mb-2 block">Assign Plan</Label>
-                            <Select
-                              onValueChange={(planId) => assignPlan(masterUser.id, planId)}
-                              defaultValue={masterUser.user_plans?.[0]?.plan_id}
-                              disabled={masterUser.is_banned}
-                            >
-                              <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
-                                <SelectValue placeholder="Select plan" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-card border-border">
-                                {plans.map((plan) => (
-                                  <SelectItem key={plan.id} value={plan.id}>
-                                    <div className="flex items-center gap-2">
-                                      <Package className="w-3 h-3" />
-                                      <span className="text-xs">{plan.name}</span>
-                                    </div>
+                          <div className="mb-3 space-y-3">
+                            <div>
+                              <Label className="text-xs text-muted-foreground mb-2 block">Assign Plan</Label>
+                              <Select
+                                onValueChange={(planId) => assignPlan(masterUser.id, planId)}
+                                defaultValue={masterUser.user_plans?.[0]?.plan_id}
+                                disabled={masterUser.is_banned}
+                              >
+                                <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
+                                  <SelectValue placeholder="Select plan" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-card border-border">
+                                  {plans.map((plan) => (
+                                    <SelectItem key={plan.id} value={plan.id}>
+                                      <div className="flex items-center gap-2">
+                                        <Package className="w-3 h-3" />
+                                        <span className="text-xs">{plan.name}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs text-muted-foreground mb-2 block">Label Designation</Label>
+                              <Select
+                                onValueChange={(value) => assignLabelDesignation(masterUser.id, value === "none" ? null : value)}
+                                defaultValue={masterUser.label_type || "none"}
+                                disabled={masterUser.is_banned}
+                              >
+                                <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
+                                  <SelectValue placeholder="Select designation" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-card border-border">
+                                  <SelectItem value="none">
+                                    <span className="text-xs">No Designation</span>
                                   </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                                  <SelectItem value="partner_label">
+                                    <span className="text-xs">Partner Label</span>
+                                  </SelectItem>
+                                  <SelectItem value="signature_label">
+                                    <span className="text-xs">Signature Label</span>
+                                  </SelectItem>
+                                  <SelectItem value="prestige_label">
+                                    <span className="text-xs">Prestige Label</span>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
 
                           <Separator className="my-3" />
@@ -819,27 +868,56 @@ const UserManagement = () => {
 
                           <Separator className="my-3" />
 
-                          <div className="mb-3">
-                            <Label className="text-xs text-muted-foreground mb-2 block">Assign Plan</Label>
-                            <Select
-                              onValueChange={(planId) => assignPlan(user.id, planId)}
-                              defaultValue={user.user_plans?.[0]?.plan_id}
-                              disabled={user.is_banned}
-                            >
-                              <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
-                                <SelectValue placeholder="Select plan" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-card border-border">
-                                {plans.map((plan) => (
-                                  <SelectItem key={plan.id} value={plan.id}>
-                                    <div className="flex items-center gap-2">
-                                      <Package className="w-3 h-3" />
-                                      <span className="text-xs">{plan.name}</span>
-                                    </div>
+                          <div className="mb-3 space-y-3">
+                            <div>
+                              <Label className="text-xs text-muted-foreground mb-2 block">Assign Plan</Label>
+                              <Select
+                                onValueChange={(planId) => assignPlan(user.id, planId)}
+                                defaultValue={user.user_plans?.[0]?.plan_id}
+                                disabled={user.is_banned}
+                              >
+                                <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
+                                  <SelectValue placeholder="Select plan" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-card border-border">
+                                  {plans.map((plan) => (
+                                    <SelectItem key={plan.id} value={plan.id}>
+                                      <div className="flex items-center gap-2">
+                                        <Package className="w-3 h-3" />
+                                        <span className="text-xs">{plan.name}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs text-muted-foreground mb-2 block">Label Designation</Label>
+                              <Select
+                                onValueChange={(value) => assignLabelDesignation(user.id, value === "none" ? null : value)}
+                                defaultValue={user.label_type || "none"}
+                                disabled={user.is_banned}
+                              >
+                                <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
+                                  <SelectValue placeholder="Select designation" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-card border-border">
+                                  <SelectItem value="none">
+                                    <span className="text-xs">No Designation</span>
                                   </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                                  <SelectItem value="partner_label">
+                                    <span className="text-xs">Partner Label</span>
+                                  </SelectItem>
+                                  <SelectItem value="signature_label">
+                                    <span className="text-xs">Signature Label</span>
+                                  </SelectItem>
+                                  <SelectItem value="prestige_label">
+                                    <span className="text-xs">Prestige Label</span>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
 
                           <Separator className="my-3" />
