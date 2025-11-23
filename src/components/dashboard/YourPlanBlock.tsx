@@ -2,12 +2,52 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Package } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface YourPlanBlockProps {
   userPlan: any;
 }
 
 export const YourPlanBlock = ({ userPlan }: YourPlanBlockProps) => {
+  // Check if user is a subaccount and fetch parent plan
+  const { data: accountInfo } = useQuery({
+    queryKey: ["planBlockAccountInfo"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("parent_account_id")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile?.parent_account_id) {
+        return { isSubaccount: false, parentPlan: null };
+      }
+
+      // Fetch parent account's plan
+      const { data: parentPlan } = await supabase
+        .from("user_plans")
+        .select(`
+          plan_id,
+          plan_name,
+          status,
+          plan:plans(name, description, features)
+        `)
+        .eq("user_id", profile.parent_account_id)
+        .eq("status", "active")
+        .single();
+
+      return {
+        isSubaccount: true,
+        parentPlan: parentPlan
+      };
+    },
+  });
+
+  const displayPlan = accountInfo?.isSubaccount ? accountInfo.parentPlan : userPlan;
   return (
     <Collapsible defaultOpen>
       <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
@@ -24,38 +64,53 @@ export const YourPlanBlock = ({ userPlan }: YourPlanBlockProps) => {
         </CollapsibleTrigger>
         <CollapsibleContent>
           <CardContent className="space-y-3">
-            <div>
-              <Badge className="bg-gradient-primary text-white px-2 py-1 text-xs">
-                {userPlan?.plan.name || "Trackball Free"}
-              </Badge>
-            </div>
-            {userPlan ? (
+            {accountInfo?.isSubaccount ? (
               <>
-                <p className="text-sm text-muted-foreground">{userPlan.plan.description}</p>
-                {userPlan.plan.name === "Trackball Partner" ? (
-                  <div className="pt-3 border-t border-border">
-                    <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
-                      <p className="text-sm text-foreground">
-                        You have a custom partner deal with Trackball Distribution, please ask your label manager about deal offerings
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="pt-3 border-t border-border">
-                    <p className="text-xs font-medium mb-2">Plan Features:</p>
-                    <ul className="space-y-1 text-xs text-muted-foreground">
-                      {userPlan.plan.features?.map((feature: string, index: number) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 flex-shrink-0" />
-                          <span className="flex-1">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
+                  <p className="text-sm font-semibold mb-1">
+                    You are part of an account with {displayPlan?.plan?.name || "Trackball"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Your subscription is managed by the account owner
+                  </p>
+                </div>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">Basic distribution plan with essential features</p>
+              <>
+                <div>
+                  <Badge className="bg-gradient-primary text-white px-2 py-1 text-xs">
+                    {displayPlan?.plan?.name || "Trackball Free"}
+                  </Badge>
+                </div>
+                {displayPlan ? (
+                  <>
+                    <p className="text-sm text-muted-foreground">{displayPlan.plan.description}</p>
+                    {displayPlan.plan.name === "Trackball Partner" ? (
+                      <div className="pt-3 border-t border-border">
+                        <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
+                          <p className="text-sm text-foreground">
+                            You have a custom partner deal with Trackball Distribution, please ask your label manager about deal offerings
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="pt-3 border-t border-border">
+                        <p className="text-xs font-medium mb-2">Plan Features:</p>
+                        <ul className="space-y-1 text-xs text-muted-foreground">
+                          {displayPlan.plan.features?.map((feature: string, index: number) => (
+                            <li key={index} className="flex items-start gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 flex-shrink-0" />
+                              <span className="flex-1">{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Basic distribution plan with essential features</p>
+                )}
+              </>
             )}
           </CardContent>
         </CollapsibleContent>
