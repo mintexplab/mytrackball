@@ -103,11 +103,8 @@ const Auth = () => {
         fadeOverlay.style.opacity = '0';
         fadeOverlay.style.transition = 'opacity 1s ease-in-out';
         fadeOverlay.innerHTML = `
-          <div class="relative">
-            <div class="w-20 h-20 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
-            <div class="absolute inset-0 w-20 h-20 rounded-full bg-gradient-primary opacity-20 blur-xl animate-pulse"></div>
-          </div>
-          <p class="text-foreground font-medium animate-pulse mt-4">Loading your dashboard...</p>
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p class="text-muted-foreground animate-pulse">Loading your dashboard...</p>
         `;
         document.body.appendChild(fadeOverlay);
         

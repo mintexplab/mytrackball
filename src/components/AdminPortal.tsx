@@ -17,6 +17,7 @@ import { PayoutRequestsManagement } from "./PayoutRequestsManagement";
 import VersionManagement from "./VersionManagement";
 import ArtistInvitationManagement from "./ArtistInvitationManagement";
 import PublishingManagement from "./PublishingManagement";
+import LabelInvitationManagement from "./LabelInvitationManagement";
 import MaintenanceManagement from "./MaintenanceManagement";
 import AccountAppealsManagement from "./AccountAppealsManagement";
 import { ProfileDropdown } from "./ProfileDropdown";
@@ -250,6 +251,7 @@ const AdminPortal = ({
               <DropdownMenuContent className="bg-card border-border">
                 <DropdownMenuItem onClick={() => setActiveTab("managers")}>Managers</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("invite-artists")}>Invite Artists</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("invite-labels")}>Invite Labels</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("partner-permissions")}>Partner Permissions</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("takedowns")}>Takedowns</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("announcements")}>Announcements</DropdownMenuItem>
@@ -289,6 +291,10 @@ const AdminPortal = ({
 
           <TabsContent value="invite-artists">
             <ArtistInvitationManagement />
+          </TabsContent>
+
+          <TabsContent value="invite-labels">
+            <LabelInvitationManagement />
           </TabsContent>
 
           <TabsContent value="partner-permissions">

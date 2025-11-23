@@ -75,14 +75,9 @@ export const MaintenanceDialog = ({ userId, onSignOut }: MaintenanceDialogProps)
   return (
     <AlertDialog open={showDialog} onOpenChange={() => {}}>
       <AlertDialogContent 
-        className="bg-black border-primary/30 max-w-md backdrop-blur-sm relative" 
+        className="bg-card border-primary/30 max-w-md" 
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        <div className="absolute inset-0 -z-10 overflow-hidden rounded-lg">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }}></div>
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-red-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }}></div>
-          <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-red-400/25 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }}></div>
-        </div>
         <AlertDialogHeader>
           <div className="flex items-center justify-center mb-4">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
