@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ExternalLink, Link as LinkIcon, Loader2, Copy, Check, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
 interface SmartLink {
   id: string;
   spotify_url: string;
@@ -14,7 +13,6 @@ interface SmartLink {
   title: string;
   created_at: string;
 }
-
 export const SmartLinksTab = () => {
   const [spotifyUrl, setSpotifyUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,18 +25,20 @@ export const SmartLinksTab = () => {
   useEffect(() => {
     fetchSavedLinks();
   }, []);
-
   const fetchSavedLinks = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { data, error } = await supabase
-        .from('smart_links')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
+      const {
+        data,
+        error
+      } = await supabase.from('smart_links').select('*').eq('user_id', user.id).order('created_at', {
+        ascending: false
+      });
       if (error) throw error;
       setSavedLinks(data || []);
     } catch (error: any) {
@@ -47,16 +47,12 @@ export const SmartLinksTab = () => {
       setLoadingLinks(false);
     }
   };
-
   const deleteSmartLink = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('smart_links')
-        .delete()
-        .eq('id', id);
-
+      const {
+        error
+      } = await supabase.from('smart_links').delete().eq('id', id);
       if (error) throw error;
-      
       toast.success("Smart link deleted");
       fetchSavedLinks();
     } catch (error: any) {
@@ -64,7 +60,6 @@ export const SmartLinksTab = () => {
       toast.error("Failed to delete smart link");
     }
   };
-
   const generateSmartLink = async () => {
     if (!spotifyUrl.trim()) {
       toast.error("Please enter a Spotify link");
@@ -76,24 +71,27 @@ export const SmartLinksTab = () => {
       toast.error("Please enter a valid Spotify URL");
       return;
     }
-
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) {
         toast.error("Please log in to generate smart links");
         return;
       }
-
-      const { data, error } = await supabase.functions.invoke("generate-smartlink", {
-        body: { 
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke("generate-smartlink", {
+        body: {
           spotifyUrl,
-          userId: user.id 
+          userId: user.id
         }
       });
-
       if (error) throw error;
-
       if (data?.smartlink) {
         setSmartLink(data.smartlink);
         toast.success("Smart link generated successfully!");
@@ -108,19 +106,16 @@ export const SmartLinksTab = () => {
       setLoading(false);
     }
   };
-
   const copyToClipboard = () => {
     navigator.clipboard.writeText(smartLink);
     setCopied(true);
     toast.success("Smart link copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Smart Links</h2>
-        <p className="text-muted-foreground mt-1">Create universal smart links for your music</p>
+        <h2 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">Smart Links (Experimental) </h2>
+        <p className="text-muted-foreground mt-1">This feCreate universal smart links for your music</p>
       </div>
 
       <Card className="bg-card border-border">
@@ -137,69 +132,34 @@ export const SmartLinksTab = () => {
           <div className="space-y-2">
             <Label htmlFor="spotify-url">Spotify Track/Album URL</Label>
             <div className="flex gap-2">
-              <Input
-                id="spotify-url"
-                placeholder="https://open.spotify.com/track/..."
-                value={spotifyUrl}
-                onChange={(e) => setSpotifyUrl(e.target.value)}
-                className="bg-background border-border"
-                disabled={loading}
-              />
-              <Button 
-                onClick={generateSmartLink}
-                disabled={loading || !spotifyUrl.trim()}
-                className="bg-gradient-primary hover:opacity-90 shrink-0"
-              >
-                {loading ? (
-                  <>
+              <Input id="spotify-url" placeholder="https://open.spotify.com/track/..." value={spotifyUrl} onChange={e => setSpotifyUrl(e.target.value)} className="bg-background border-border" disabled={loading} />
+              <Button onClick={generateSmartLink} disabled={loading || !spotifyUrl.trim()} className="bg-gradient-primary hover:opacity-90 shrink-0">
+                {loading ? <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Generating...
-                  </>
-                ) : (
-                  <>
+                  </> : <>
                     <LinkIcon className="h-4 w-4 mr-2" />
                     Generate
-                  </>
-                )}
+                  </>}
               </Button>
             </div>
           </div>
 
-          {smartLink && (
-            <div className="space-y-3 p-4 bg-gradient-primary/10 border border-primary/20 rounded-lg">
+          {smartLink && <div className="space-y-3 p-4 bg-gradient-primary/10 border border-primary/20 rounded-lg">
               <Label>Your Smart Link</Label>
               <div className="flex gap-2">
-                <Input
-                  value={smartLink}
-                  readOnly
-                  className="bg-background border-border font-mono text-sm"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={copyToClipboard}
-                  className="shrink-0"
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
+                <Input value={smartLink} readOnly className="bg-background border-border font-mono text-sm" />
+                <Button variant="outline" size="icon" onClick={copyToClipboard} className="shrink-0">
+                  {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => window.open(smartLink, "_blank")}
-                  className="shrink-0"
-                >
+                <Button variant="outline" size="icon" onClick={() => window.open(smartLink, "_blank")} className="shrink-0">
                   <ExternalLink className="h-4 w-4" />
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
                 Share this link with your fans. It will automatically direct them to their preferred streaming platform.
               </p>
-            </div>
-          )}
+            </div>}
         </CardContent>
       </Card>
 
@@ -212,24 +172,15 @@ export const SmartLinksTab = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loadingLinks ? (
-            <div className="text-center py-8">
+          {loadingLinks ? <div className="text-center py-8">
               <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
               <p className="mt-2 text-sm text-muted-foreground">Loading your smart links...</p>
-            </div>
-          ) : savedLinks.length === 0 ? (
-            <div className="text-center py-8">
+            </div> : savedLinks.length === 0 ? <div className="text-center py-8">
               <LinkIcon className="h-12 w-12 mx-auto text-muted-foreground/50" />
               <p className="mt-2 text-muted-foreground">No smart links created yet</p>
               <p className="text-sm text-muted-foreground/70">Generate your first smart link above</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {savedLinks.map((link) => (
-                <div 
-                  key={link.id}
-                  className="p-4 bg-background border border-border rounded-lg space-y-3"
-                >
+            </div> : <div className="space-y-4">
+              {savedLinks.map(link => <div key={link.id} className="p-4 bg-background border border-border rounded-lg space-y-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-1">
                       <p className="font-medium">{link.title}</p>
@@ -237,12 +188,7 @@ export const SmartLinksTab = () => {
                         Created {new Date(link.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => deleteSmartLink(link.id)}
-                    >
+                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => deleteSmartLink(link.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -255,34 +201,20 @@ export const SmartLinksTab = () => {
                   <div className="space-y-2">
                     <Label className="text-xs">Smart Link</Label>
                     <div className="flex gap-2">
-                      <Input
-                        value={link.smart_link_url}
-                        readOnly
-                        className="text-sm font-mono"
-                      />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          navigator.clipboard.writeText(link.smart_link_url);
-                          toast.success("Link copied to clipboard!");
-                        }}
-                      >
+                      <Input value={link.smart_link_url} readOnly className="text-sm font-mono" />
+                      <Button size="sm" variant="outline" onClick={() => {
+                  navigator.clipboard.writeText(link.smart_link_url);
+                  toast.success("Link copied to clipboard!");
+                }}>
                         <Copy className="h-4 w-4" />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => window.open(link.smart_link_url, '_blank')}
-                      >
+                      <Button size="sm" variant="outline" onClick={() => window.open(link.smart_link_url, '_blank')}>
                         <ExternalLink className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                </div>)}
+            </div>}
         </CardContent>
       </Card>
 
@@ -309,6 +241,5 @@ export const SmartLinksTab = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
