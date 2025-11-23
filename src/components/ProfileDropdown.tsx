@@ -141,11 +141,11 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, us
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 bg-card border-border p-0 overflow-hidden">
         {/* Banner Image */}
-        <div className="w-full h-24 overflow-hidden rounded-t-md">
+        <div className="w-full h-20 overflow-hidden rounded-t-md">
           <img 
             src={dropdownBanner} 
             alt="Banner" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover animate-fade-in"
           />
         </div>
         

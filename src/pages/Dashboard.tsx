@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Upload, Building2, Link as LinkIcon, Home } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import trackballLogo from "@/assets/trackball-logo.png";
+import trackballLogo from "@/assets/trackball-logo-mono.png";
 import AdminPortal from "@/components/AdminPortal";
 import ReleasesList from "@/components/ReleasesList";
 import ReleasesGallery from "@/components/ReleasesGallery";
@@ -400,8 +400,8 @@ const Dashboard = () => {
                 setActiveTab={setActiveTab} 
                 userPlan={userPlan}
               />
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
+              <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center flex-shrink-0">
+                <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-contain" />
               </div>
             </div>
             
