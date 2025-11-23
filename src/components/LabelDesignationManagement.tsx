@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Building2 } from "lucide-react";
 
@@ -17,10 +19,17 @@ interface Profile {
   parent_account_id: string | null;
 }
 
+interface RoyaltySplit {
+  royalty_split_percentage: number;
+}
+
 const LabelDesignationManagement = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [royaltySplits, setRoyaltySplits] = useState<Record<string, number>>({});
+  const [editingRoyalty, setEditingRoyalty] = useState<string | null>(null);
+  const [tempRoyalty, setTempRoyalty] = useState<string>("");
 
   useEffect(() => {
     fetchProfiles();
@@ -37,6 +46,19 @@ const LabelDesignationManagement = () => {
       console.error(error);
     } else {
       setProfiles(data || []);
+      
+      // Fetch royalty splits for all profiles
+      const profileIds = data?.map(p => p.id) || [];
+      const { data: royaltyData } = await supabase
+        .from("partner_royalty_splits")
+        .select("user_id, royalty_split_percentage")
+        .in("user_id", profileIds);
+      
+      const royaltySplitsMap: Record<string, number> = {};
+      royaltyData?.forEach(split => {
+        royaltySplitsMap[split.user_id] = split.royalty_split_percentage;
+      });
+      setRoyaltySplits(royaltySplitsMap);
     }
     setLoading(false);
   };
@@ -46,10 +68,23 @@ const LabelDesignationManagement = () => {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ label_type: labelType })
+        .update({ 
+          label_type: labelType,
+          label_designation_welcome_shown: false // Reset to show welcome dialog
+        })
         .eq("id", profileId);
 
       if (error) throw error;
+
+      // If setting to partner label and no royalty split exists, create one with 70% default
+      if (labelType === "partner_label" && !royaltySplits[profileId]) {
+        await supabase
+          .from("partner_royalty_splits")
+          .insert({
+            user_id: profileId,
+            royalty_split_percentage: 70
+          });
+      }
 
       toast.success("Label designation updated successfully");
       fetchProfiles();
@@ -57,6 +92,30 @@ const LabelDesignationManagement = () => {
       toast.error(error.message || "Failed to update label designation");
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const updateRoyaltySplit = async (profileId: string, percentage: number) => {
+    try {
+      if (percentage < 0 || percentage > 100) {
+        toast.error("Royalty split must be between 0 and 100");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("partner_royalty_splits")
+        .upsert({
+          user_id: profileId,
+          royalty_split_percentage: percentage
+        });
+
+      if (error) throw error;
+
+      setRoyaltySplits(prev => ({ ...prev, [profileId]: percentage }));
+      setEditingRoyalty(null);
+      toast.success("Royalty split updated successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update royalty split");
     }
   };
 
@@ -102,6 +161,7 @@ const LabelDesignationManagement = () => {
                 <TableHead>Account</TableHead>
                 <TableHead>Label Name</TableHead>
                 <TableHead>Current Designation</TableHead>
+                <TableHead>Royalty Split</TableHead>
                 <TableHead>Change Designation</TableHead>
               </TableRow>
             </TableHeader>
@@ -129,6 +189,56 @@ const LabelDesignationManagement = () => {
                       )}
                     </TableCell>
                     <TableCell>{getLabelTypeBadge(profile.label_type)}</TableCell>
+                    <TableCell>
+                      {profile.parent_account_id ? (
+                        <span className="text-sm text-muted-foreground">N/A</span>
+                      ) : profile.label_type === "partner_label" ? (
+                        editingRoyalty === profile.id ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={tempRoyalty}
+                              onChange={(e) => setTempRoyalty(e.target.value)}
+                              className="w-20"
+                            />
+                            <span className="text-sm">%</span>
+                            <Button
+                              size="sm"
+                              onClick={() => updateRoyaltySplit(profile.id, Number(tempRoyalty))}
+                            >
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setEditingRoyalty(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{royaltySplits[profile.id] || 70}%</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingRoyalty(profile.id);
+                                setTempRoyalty(String(royaltySplits[profile.id] || 70));
+                              }}
+                            >
+                              Edit
+                            </Button>
+                          </div>
+                        )
+                      ) : profile.label_type === "signature_label" || profile.label_type === "prestige_label" ? (
+                        <span className="font-medium text-green-500">100%</span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">N/A</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {profile.parent_account_id ? (
                         <div className="text-sm text-muted-foreground">

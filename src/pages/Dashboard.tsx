@@ -486,7 +486,7 @@ const Dashboard = () => {
                     <DollarSign className="w-4 h-4 mr-2" />
                     Royalties
                   </DropdownMenuItem>
-                  {userPlan?.plan.name === "Trackball Prestige" && (
+                  {profile?.label_type === "prestige_label" && (
                     <DropdownMenuItem onClick={() => setActiveTab("publishing")} className="cursor-pointer">
                       <FileMusic className="w-4 h-4 mr-2" />
                       Publishing
@@ -654,7 +654,7 @@ const Dashboard = () => {
             {user && <RoyaltiesTab userId={user.id} />}
           </TabsContent>
 
-          {userPlan?.plan.name === "Trackball Prestige" && (
+          {profile?.label_type === "prestige_label" && (
             <TabsContent value="publishing" className="animate-fade-in">
               {user && <PublishingTab userId={user.id} />}
             </TabsContent>
