@@ -6,14 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Package, UserPlus, Ban, Lock, Unlock, Trash2 } from "lucide-react";
+import { Package, UserPlus, Ban, Lock, Unlock, Trash2, Mail, User, RotateCcw } from "lucide-react";
 import { z } from "zod";
 import SendNotificationDialog from "./SendNotificationDialog";
+import { Separator } from "@/components/ui/separator";
 
 const createUserSchema = z.object({
   email: z.string().email("Invalid email address").max(255),
@@ -400,159 +400,173 @@ const UserManagement = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border border-border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead>User</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Account Type</TableHead>
-                <TableHead>Current Plan</TableHead>
-                <TableHead>Assign Plan</TableHead>
-                <TableHead>Ban</TableHead>
-                <TableHead>Lock</TableHead>
-                <TableHead>Delete</TableHead>
-                <TableHead>Tutorial</TableHead>
-                <TableHead>Notify</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id} className="hover:bg-muted/30 transition-colors">
-                  <TableCell className="font-medium">
-                    {user.full_name || "No name set"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                  <TableCell>
-                    {user.is_banned ? (
-                      <Badge variant="destructive" className="flex items-center gap-1 w-fit">
-                        <Ban className="w-3 h-3" />
-                        Banned
-                      </Badge>
-                    ) : user.is_locked ? (
-                      <Badge variant="secondary" className="flex items-center gap-1 w-fit bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
-                        <Lock className="w-3 h-3" />
-                        Locked
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
-                        Active
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {user.is_master_account ? (
-                      <Badge className="bg-primary/20 text-primary border-primary/30">
-                        Master ({user.sublabel_count} sublabels)
-                      </Badge>
-                    ) : user.parent_account_id ? (
-                      <Badge variant="outline" className="bg-muted">
-                        Sublabel
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">Regular</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {user.user_plans?.[0]?.plan ? (
-                      <Badge className="bg-gradient-primary text-white">
-                        {user.user_plans[0].plan.name}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">No Plan</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      onValueChange={(planId) => assignPlan(user.id, planId)}
-                      defaultValue={user.user_plans?.[0]?.plan_id}
-                      disabled={user.is_banned}
-                    >
-                      <SelectTrigger className="w-[200px] bg-background/50 border-border">
-                        <SelectValue placeholder="Select plan" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-border">
-                        {plans.map((plan) => (
-                          <SelectItem key={plan.id} value={plan.id}>
-                            <div className="flex items-center gap-2">
-                              <Package className="w-4 h-4" />
-                              {plan.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor={`ban-${user.id}`} className="text-xs text-muted-foreground cursor-pointer">
-                        {user.is_banned ? "Unban" : "Ban"}
-                      </Label>
-                      <Switch
-                        id={`ban-${user.id}`}
-                        checked={user.is_banned}
-                        onCheckedChange={() => toggleBanUser(user.id, user.is_banned)}
-                      />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {users.map((user) => (
+            <Card key={user.id} className="bg-card/50 border-border hover:border-primary/30 transition-all">
+              <CardContent className="p-4">
+                {/* User Header */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <h3 className="font-semibold text-sm truncate">
+                        {user.full_name || "No name set"}
+                      </h3>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleLockUser(user.id, user.is_locked)}
-                      className="gap-2"
-                    >
-                      {user.is_locked ? (
-                        <>
-                          <Unlock className="w-4 h-4" />
-                          Unlock
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="w-4 h-4" />
-                          Lock
-                        </>
-                      )}
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteUser(user.id, user.email)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={async () => {
-                        await supabase
-                          .from("profiles")
-                          .update({ onboarding_completed: false })
-                          .eq("id", user.id);
-                        toast.success("Tutorial will start on next login");
-                      }}
-                      className="gap-2"
-                      title="Reset tutorial for this user"
-                    >
-                      Start Tutorial
-                    </Button>
-                  </TableCell>
-                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-3 h-3 text-muted-foreground shrink-0" />
+                      <p className="text-xs text-muted-foreground truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Badges */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {user.is_banned ? (
+                    <Badge variant="destructive" className="flex items-center gap-1 text-xs">
+                      <Ban className="w-3 h-3" />
+                      Banned
+                    </Badge>
+                  ) : user.is_locked ? (
+                    <Badge variant="secondary" className="flex items-center gap-1 text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                      <Lock className="w-3 h-3" />
+                      Locked
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/20">
+                      Active
+                    </Badge>
+                  )}
+
+                  {user.is_master_account ? (
+                    <Badge className="text-xs bg-primary/20 text-primary border-primary/30">
+                      Master ({user.sublabel_count})
+                    </Badge>
+                  ) : user.parent_account_id ? (
+                    <Badge variant="outline" className="text-xs bg-muted">
+                      Sublabel
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs">Regular</Badge>
+                  )}
+                </div>
+
+                {/* Current Plan */}
+                <div className="mb-3">
+                  <p className="text-xs text-muted-foreground mb-1">Current Plan</p>
+                  {user.user_plans?.[0]?.plan ? (
+                    <Badge className="bg-gradient-primary text-white text-xs">
+                      {user.user_plans[0].plan.name}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs">No Plan</Badge>
+                  )}
+                </div>
+
+                <Separator className="my-3" />
+
+                {/* Plan Assignment */}
+                <div className="mb-3">
+                  <Label className="text-xs text-muted-foreground mb-2 block">Assign Plan</Label>
+                  <Select
+                    onValueChange={(planId) => assignPlan(user.id, planId)}
+                    defaultValue={user.user_plans?.[0]?.plan_id}
+                    disabled={user.is_banned}
+                  >
+                    <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
+                      <SelectValue placeholder="Select plan" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      {plans.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id}>
+                          <div className="flex items-center gap-2">
+                            <Package className="w-3 h-3" />
+                            <span className="text-xs">{plan.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Separator className="my-3" />
+
+                {/* Actions */}
+                <div className="space-y-2">
+                  {/* Ban/Unban */}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor={`ban-${user.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                      {user.is_banned ? "Unban User" : "Ban User"}
+                    </Label>
+                    <Switch
+                      id={`ban-${user.id}`}
+                      checked={user.is_banned}
+                      onCheckedChange={() => toggleBanUser(user.id, user.is_banned)}
+                    />
+                  </div>
+
+                  {/* Lock/Unlock */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleLockUser(user.id, user.is_locked)}
+                    className="w-full justify-start gap-2 h-8 text-xs"
+                  >
+                    {user.is_locked ? (
+                      <>
+                        <Unlock className="w-3 h-3" />
+                        Unlock Account
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-3 h-3" />
+                        Lock Account
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Reset Tutorial */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      await supabase
+                        .from("profiles")
+                        .update({ onboarding_completed: false })
+                        .eq("id", user.id);
+                      toast.success("Tutorial will start on next login");
+                    }}
+                    className="w-full justify-start gap-2 h-8 text-xs"
+                    title="Reset tutorial for this user"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    Reset Tutorial
+                  </Button>
+
+                  {/* Send Notification */}
+                  <div className="flex justify-center pt-1">
                     <SendNotificationDialog 
                       userId={user.id} 
                       userName={user.full_name || user.email} 
                     />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </div>
+
+                  {/* Delete User */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteUser(user.id, user.email)}
+                    className="w-full justify-start gap-2 h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Delete User
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </CardContent>
     </Card>
