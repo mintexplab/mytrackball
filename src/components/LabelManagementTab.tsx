@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Building2, LogOut, Crown, Users, Check } from "lucide-react";
+import { Building2, LogOut, Crown, Users, Check, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 interface LabelMembership {
   id: string;
@@ -30,6 +30,8 @@ const LabelManagementTab = ({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [leavingLabelId, setLeavingLabelId] = useState<string | null>(null);
+  const [deletingLabelId, setDeletingLabelId] = useState<string | null>(null);
+  const [labelType, setLabelType] = useState<string | null>(null);
   useEffect(() => {
     fetchLabelData();
   }, [userId]);
@@ -38,10 +40,11 @@ const LabelManagementTab = ({
       // Get profile
       const {
         data: profile
-      } = await supabase.from("profiles").select("id, active_label_id, label_name, email").eq("id", userId).single();
+      } = await supabase.from("profiles").select("id, active_label_id, label_name, label_type, email").eq("id", userId).single();
       if (profile) {
         setActiveLabelId(profile.active_label_id);
         setLabelName(profile.label_name || "");
+        setLabelType(profile.label_type);
 
         // Get all label memberships
         const {
@@ -121,12 +124,15 @@ const LabelManagementTab = ({
         error
       } = await supabase.from("profiles").update({
         active_label_id: labelId,
-        label_name: labelNameToSwitch
+        label_name: labelNameToSwitch,
+        label_id: labelId
       }).eq("id", userId);
       if (error) throw error;
       setActiveLabelId(labelId);
       toast.success(`Switched to ${labelNameToSwitch}`);
-      fetchLabelData();
+      
+      // Force page refresh to update header
+      window.location.reload();
     } catch (error: any) {
       toast.error(error.message || "Failed to switch label");
     }
@@ -161,6 +167,59 @@ const LabelManagementTab = ({
       toast.error(error.message || "Failed to leave label");
     } finally {
       setLeavingLabelId(null);
+    }
+  };
+
+  const deleteLabel = async (membershipId: string, labelId: string, labelNameToDelete: string, isOwner: boolean) => {
+    if (!isOwner) {
+      toast.error("Only label owners can delete labels");
+      return;
+    }
+
+    // Check if this is the only label and user has a label designation
+    const hasLabelDesignation = labelType && ['partner_label', 'signature_label', 'prestige_label'].includes(labelType);
+    if (memberships.length === 1 && hasLabelDesignation) {
+      toast.error("You must have at least one label. Create a new label before deleting this one.");
+      return;
+    }
+
+    setDeletingLabelId(membershipId);
+    try {
+      // Delete the label itself (this will cascade delete memberships due to FK)
+      const { error: labelError } = await supabase
+        .from("labels")
+        .delete()
+        .eq("id", labelId)
+        .eq("user_id", userId); // Ensure user owns this label
+
+      if (labelError) throw labelError;
+
+      // Delete the membership entry
+      await supabase.from("user_label_memberships").delete().eq("id", membershipId);
+
+      // If this was the active label, switch to another one
+      if (activeLabelId === labelId) {
+        const remainingMemberships = memberships.filter(m => m.id !== membershipId);
+        if (remainingMemberships.length > 0) {
+          await switchToLabel(remainingMemberships[0].label_id, remainingMemberships[0].label_name);
+        } else {
+          // No more labels, clear active label
+          await supabase.from("profiles").update({
+            active_label_id: null,
+            label_name: null,
+            label_id: null
+          }).eq("id", userId);
+          setActiveLabelId(null);
+        }
+      }
+
+      toast.success(`Deleted ${labelNameToDelete}`);
+      await fetchLabelData();
+    } catch (error: any) {
+      console.error("Error deleting label:", error);
+      toast.error(error.message || "Failed to delete label");
+    } finally {
+      setDeletingLabelId(null);
     }
   };
   if (loading) {
@@ -281,10 +340,52 @@ const LabelManagementTab = ({
                               </AlertDialogContent>
                             </AlertDialog>}
 
-                          {isOwner && <Button variant="outline" size="sm" disabled className="gap-2 opacity-50">
-                              <Crown className="w-4 h-4" />
-                              Owner
-                            </Button>}
+                          {isOwner && (
+                            <>
+                              <Button variant="outline" size="sm" disabled className="gap-2 opacity-50">
+                                <Crown className="w-4 h-4" />
+                                Owner
+                              </Button>
+                              
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm" 
+                                    className="gap-2" 
+                                    disabled={deletingLabelId === membership.id}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="bg-card border-border">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete {membership.label_name}?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to permanently delete this label? This action cannot be undone. All releases under this label will remain but the label will be removed.
+                                      {isActive && " Since this is your active label, you will be switched to another label."}
+                                      {memberships.length === 1 && labelType && ['partner_label', 'signature_label', 'prestige_label'].includes(labelType) && (
+                                        <span className="block mt-2 text-destructive font-semibold">
+                                          You must have at least one label. Create a new label before deleting this one.
+                                        </span>
+                                      )}
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={() => deleteLabel(membership.id, membership.label_id, membership.label_name, isOwner)} 
+                                      className="bg-destructive hover:bg-destructive/90"
+                                      disabled={memberships.length === 1 && labelType && ['partner_label', 'signature_label', 'prestige_label'].includes(labelType)}
+                                    >
+                                      Delete Label
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
                         </div>
                       </div>
 
