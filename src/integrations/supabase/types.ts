@@ -589,6 +589,7 @@ export type Database = {
           id: string
           is_banned: boolean | null
           is_locked: boolean | null
+          label_designation_welcome_shown: boolean | null
           label_id: string | null
           label_name: string | null
           label_type: string | null
@@ -617,6 +618,7 @@ export type Database = {
           id: string
           is_banned?: boolean | null
           is_locked?: boolean | null
+          label_designation_welcome_shown?: boolean | null
           label_id?: string | null
           label_name?: string | null
           label_type?: string | null
@@ -645,6 +647,7 @@ export type Database = {
           id?: string
           is_banned?: boolean | null
           is_locked?: boolean | null
+          label_designation_welcome_shown?: boolean | null
           label_id?: string | null
           label_name?: string | null
           label_type?: string | null
