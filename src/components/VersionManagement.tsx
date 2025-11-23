@@ -39,10 +39,10 @@ const VersionManagement = () => {
   };
 
   const handleUpdateVersion = async () => {
-    if (!version.match(/^\d+\.\d+\.\d+$/)) {
+    if (!version.trim()) {
       toast({
-        title: "Invalid Format",
-        description: "Version must be in format 1.x.x (e.g., 1.16.0)",
+        title: "Invalid Version",
+        description: "Version text cannot be empty",
         variant: "destructive",
       });
       return;
@@ -91,7 +91,7 @@ const VersionManagement = () => {
       <CardHeader>
         <CardTitle>Version Management</CardTitle>
         <CardDescription>
-          Update the app version number displayed in the footer (format: 1.x.x)
+          Update the app version text displayed in the footer (any text is allowed)
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -104,7 +104,7 @@ const VersionManagement = () => {
             onChange={(e) => setVersion(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            Format: 1.major.minor (e.g., 1.16.0)
+            This text will be shown as the version label in the footer.
           </p>
         </div>
         <Button onClick={handleUpdateVersion} disabled={updating}>

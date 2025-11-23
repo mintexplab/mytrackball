@@ -81,9 +81,10 @@ export const AnnouncementBar = () => {
   };
 
   const handleDismiss = () => {
+    console.log("Announcement bar dismissed", announcement?.id);
     if (announcement?.id) {
       // Store dismissed announcement ID in localStorage
-      localStorage.setItem('dismissedAnnouncementId', announcement.id);
+      localStorage.setItem("dismissedAnnouncementId", announcement.id);
       setDismissedId(announcement.id);
     }
     setIsSliding(true);
