@@ -27,6 +27,7 @@ interface LabelMembership {
   label_id: string;
   label_name: string;
   role: string;
+  five_digit_label_id: string;
 }
 
 export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, onSignOut }: ProfileDropdownProps) => {
@@ -59,15 +60,29 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, on
         setActiveLabelId(profile.active_label_id);
       }
 
-      // Get all label memberships
+      // Get all label memberships with 5-digit label IDs from labels table
       const { data: memberships } = await supabase
         .from("user_label_memberships")
-        .select("id, label_id, label_name, role")
+        .select(`
+          id, 
+          label_id, 
+          label_name, 
+          role,
+          labels!inner(label_id)
+        `)
         .eq("user_id", profile?.id || user.id)
         .order("joined_at", { ascending: true });
 
       if (memberships) {
-        setLabelMemberships(memberships);
+        // Map the data to include the 5-digit label ID
+        const mappedMemberships = memberships.map(m => ({
+          id: m.id,
+          label_id: m.label_id,
+          label_name: m.label_name,
+          role: m.role,
+          five_digit_label_id: (m.labels as any).label_id
+        }));
+        setLabelMemberships(mappedMemberships);
       }
     } catch (error) {
       console.error("Error fetching label memberships:", error);
@@ -150,32 +165,46 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, on
         
         <DropdownMenuSeparator className="bg-border" />
         
-        {/* Label Switching Section */}
-        {labelMemberships.length > 1 && (
+        {/* Label Information - Always show if user has labels */}
+        {labelMemberships.length > 0 && (
           <>
-            <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Switch Label Account
-            </DropdownMenuLabel>
-            {labelMemberships.map((membership) => (
-              <DropdownMenuItem
-                key={membership.id}
-                onClick={() => switchLabel(membership.label_id, membership.label_name)}
-                className="cursor-pointer flex items-center justify-between"
-              >
-                <div className="flex items-center">
-                  <Building2 className="mr-2 h-4 w-4" />
-                  <span>{membership.label_name} (ID:{membership.label_id})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {membership.role === "owner" && (
+            {labelMemberships.length === 1 ? (
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex items-center gap-2 text-sm">
+                  <Building2 className="h-4 w-4" />
+                  <span>{labelMemberships[0].label_name} (ID:{labelMemberships[0].five_digit_label_id})</span>
+                  {labelMemberships[0].role === "owner" && (
                     <Badge variant="outline" className="text-xs">Owner</Badge>
                   )}
-                  {activeLabelId === membership.label_id && (
-                    <Check className="h-4 w-4 text-primary" />
-                  )}
                 </div>
-              </DropdownMenuItem>
-            ))}
+              </DropdownMenuLabel>
+            ) : (
+              <>
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  Switch Label Account
+                </DropdownMenuLabel>
+                {labelMemberships.map((membership) => (
+                  <DropdownMenuItem
+                    key={membership.id}
+                    onClick={() => switchLabel(membership.label_id, membership.label_name)}
+                    className="cursor-pointer flex items-center justify-between"
+                  >
+                    <div className="flex items-center">
+                      <Building2 className="mr-2 h-4 w-4" />
+                      <span>{membership.label_name} (ID:{membership.five_digit_label_id})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {membership.role === "owner" && (
+                        <Badge variant="outline" className="text-xs">Owner</Badge>
+                      )}
+                      {activeLabelId === membership.label_id && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </>
+            )}
             <DropdownMenuSeparator className="bg-border" />
           </>
         )}

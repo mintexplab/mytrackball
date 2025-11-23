@@ -63,14 +63,22 @@ const ClientInvitations = () => {
     
     const { data, error } = await supabase
       .from("user_label_memberships")
-      .select("*")
+      .select(`
+        *,
+        labels!inner(label_id)
+      `)
       .eq("user_id", user?.id)
       .order("joined_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching labels:", error);
     } else {
-      setLabels(data || []);
+      // Map to include the 5-digit label_id
+      const mappedLabels = (data || []).map(d => ({
+        ...d,
+        five_digit_label_id: (d.labels as any).label_id
+      }));
+      setLabels(mappedLabels);
     }
   };
 
@@ -406,7 +414,7 @@ const ClientInvitations = () => {
                     <SelectContent className="bg-card border-border">
                       {labels.map((label) => (
                         <SelectItem key={label.label_id} value={label.label_id}>
-                          {label.label_name} (ID:{label.label_id})
+                          {label.label_name} (ID:{label.five_digit_label_id})
                         </SelectItem>
                       ))}
                     </SelectContent>
