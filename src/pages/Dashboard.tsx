@@ -66,6 +66,7 @@ const Dashboard = () => {
   } | null>(null);
   const [viewAsArtist, setViewAsArtist] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   useEffect(() => {
@@ -229,6 +230,43 @@ const Dashboard = () => {
       supabase.removeChannel(channel);
     };
   }, [user?.id]);
+
+  // Listen for notifications
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchUnreadCount = async () => {
+      const { count } = await supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_read", false);
+      
+      setUnreadNotifications(count || 0);
+    };
+
+    fetchUnreadCount();
+
+    const channel = supabase
+      .channel('notification_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchUnreadCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
   const fetchUserPlan = async (userId: string) => {
     const {
       data
@@ -339,6 +377,7 @@ const Dashboard = () => {
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
                 userPlan={userPlan}
+                unreadNotifications={unreadNotifications}
               />
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                 <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
@@ -487,6 +526,21 @@ const Dashboard = () => {
                 onClick={() => navigate("/create-release")}
               >
                 <Plus className="w-4 h-4" />
+              </Button>
+
+              {/* Notification Bell */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setActiveTab("notifications")}
+                className="relative"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  </span>
+                )}
               </Button>
 
               <div className="ml-2 pl-2 border-l border-border">
