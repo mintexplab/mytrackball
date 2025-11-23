@@ -12,10 +12,10 @@ import AdminPortal from "@/components/AdminPortal";
 import ReleasesList from "@/components/ReleasesList";
 import ReleasesGallery from "@/components/ReleasesGallery";
 import { ProfileDropdown } from "@/components/ProfileDropdown";
+import { NotificationsDropdown } from "@/components/NotificationsDropdown";
 import { AnnouncementDialog } from "@/components/AnnouncementDialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import NotificationsTab from "@/components/NotificationsTab";
 import RoyaltiesTab from "@/components/RoyaltiesTab";
 import ArtistLabelOnboarding from "@/components/ArtistLabelOnboarding";
 import ClientInvitations from "@/components/ClientInvitations";
@@ -70,7 +70,6 @@ const Dashboard = () => {
   } | null>(null);
   const [viewAsArtist, setViewAsArtist] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [showLabelDesignationWelcome, setShowLabelDesignationWelcome] = useState(false);
   const [labelDesignationType, setLabelDesignationType] = useState<"partner_label" | "signature_label" | "prestige_label" | null>(null);
   const [showSubscriptionWelcome, setShowSubscriptionWelcome] = useState(false);
@@ -239,43 +238,6 @@ const Dashboard = () => {
       supabase.removeChannel(channel);
     };
   }, [user?.id]);
-
-  // Listen for notifications
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const fetchUnreadCount = async () => {
-      const { count } = await supabase
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("is_read", false);
-      
-      setUnreadNotifications(count || 0);
-    };
-
-    fetchUnreadCount();
-
-    const channel = supabase
-      .channel('notification_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          fetchUnreadCount();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id]);
   const fetchUserPlan = async (userId: string) => {
     const {
       data
@@ -423,7 +385,6 @@ const Dashboard = () => {
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
                 userPlan={userPlan}
-                unreadNotifications={unreadNotifications}
               />
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                 <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
@@ -535,18 +496,7 @@ const Dashboard = () => {
                 </DropdownMenu>
               )}
 
-              <Button 
-                variant={activeTab === "notifications" ? "default" : "ghost"} 
-                size="sm" 
-                onClick={() => setActiveTab("notifications")}
-                className={activeTab === "notifications" ? "bg-gradient-primary text-primary-foreground" : ""}
-                data-tutorial="notifications-tab"
-              >
-                <Bell className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Notifications</span>
-              </Button>
-
-              <Button 
+              <Button
                 variant={activeTab === "help" ? "default" : "ghost"} 
                 size="sm" 
                 onClick={() => setActiveTab("help")}
@@ -580,23 +530,10 @@ const Dashboard = () => {
                 <Plus className="w-4 h-4" />
               </Button>
 
-              {/* Notification Bell */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setActiveTab("notifications")}
-                className="relative"
-              >
-                <Bell className="w-5 h-5" />
-                {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
-                  </span>
-                )}
-              </Button>
-
-              <div className="ml-2 pl-2 border-l border-border">
-                <ProfileDropdown 
+              {/* Notifications Dropdown */}
+              <div className="flex items-center gap-2" data-tutorial="notifications-icon">
+                <NotificationsDropdown userId={user?.id || ""} />
+                <ProfileDropdown
                   userEmail={user?.email} 
                   avatarUrl={profile?.avatar_url}
                   artistName={profile?.artist_name}
@@ -698,10 +635,6 @@ const Dashboard = () => {
               </TabsContent>
             </>
           )}
-
-          <TabsContent value="notifications" className="animate-fade-in">
-            {user && <NotificationsTab userId={user.id} />}
-          </TabsContent>
 
           <TabsContent value="royalties" className="animate-fade-in">
             {user && <RoyaltiesTab userId={user.id} />}
