@@ -4,8 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Building2, Check, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 
 interface LabelMembership {
   id: string;
@@ -38,7 +36,6 @@ const LABEL_TYPE_DISPLAY: Record<string, { label: string; description: string }>
 export const PlanAndLabelsBlock = ({ userPlan, labelType, labelName }: PlanAndLabelsBlockProps) => {
   const [labels, setLabels] = useState<LabelMembership[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchLabels();
@@ -84,27 +81,14 @@ export const PlanAndLabelsBlock = ({ userPlan, labelType, labelName }: PlanAndLa
           
           <TabsContent value="plan" className="space-y-3 mt-4">
             {hasLabelDesignation ? (
-              <>
-                <div className="p-3 rounded-lg bg-gradient-primary/10 border border-primary/20">
-                  <h3 className="font-semibold text-lg text-foreground">
-                    {designation.label}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {designation.description}
-                  </p>
-                </div>
-                
-                <div className="pt-2">
-                  <Button
-                    onClick={() => navigate('/subscription')}
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                  >
-                    View Details
-                  </Button>
-                </div>
-              </>
+              <div className="p-3 rounded-lg bg-gradient-primary/10 border border-primary/20">
+                <h3 className="font-semibold text-lg text-foreground">
+                  {designation.label}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {designation.description}
+                </p>
+              </div>
             ) : userPlan ? (
               <>
                 <div className="p-3 rounded-lg bg-gradient-primary/10 border border-primary/20">
@@ -123,29 +107,11 @@ export const PlanAndLabelsBlock = ({ userPlan, labelType, labelName }: PlanAndLa
                     {userPlan.plan.description}
                   </p>
                 )}
-                
-                <div className="pt-2">
-                  <Button
-                    onClick={() => navigate('/subscription')}
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                  >
-                    Manage Subscription
-                  </Button>
-                </div>
               </>
             ) : (
               <div className="text-center py-6">
                 <CreditCard className="w-10 h-10 text-muted-foreground/50 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground mb-3">No active plan</p>
-                <Button
-                  onClick={() => navigate('/subscription')}
-                  size="sm"
-                  className="bg-gradient-primary"
-                >
-                  Choose a Plan
-                </Button>
+                <p className="text-sm text-muted-foreground">No active plan</p>
               </div>
             )}
           </TabsContent>
