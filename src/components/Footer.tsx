@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useBranding } from "@/hooks/useBrandingContext";
 
 const Footer = () => {
   const [version, setVersion] = useState("1.16.0");
-  const [footerText, setFooterText] = useState("© 2025 XZ1 Recording Ventures. All rights reserved");
+  const { footerText } = useBranding();
 
   useEffect(() => {
     const fetchVersion = async () => {
@@ -20,45 +21,7 @@ const Footer = () => {
       }
     };
 
-    const fetchCustomFooter = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        // Get current user's profile
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("is_subdistributor_master, subdistributor_footer_text, parent_account_id")
-          .eq("id", user.id)
-          .single();
-
-        if (!profile) return;
-
-        // Check if current user is subdistributor master
-        if (profile.is_subdistributor_master && profile.subdistributor_footer_text) {
-          setFooterText(profile.subdistributor_footer_text);
-          return;
-        }
-
-        // Check if parent account is subdistributor master
-        if (profile.parent_account_id) {
-          const { data: parentProfile } = await supabase
-            .from("profiles")
-            .select("is_subdistributor_master, subdistributor_footer_text")
-            .eq("id", profile.parent_account_id)
-            .single();
-
-          if (parentProfile?.is_subdistributor_master && parentProfile.subdistributor_footer_text) {
-            setFooterText(parentProfile.subdistributor_footer_text);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching custom footer:", error);
-      }
-    };
-
     fetchVersion();
-    fetchCustomFooter();
 
     // Subscribe to version changes
     const channel = supabase
