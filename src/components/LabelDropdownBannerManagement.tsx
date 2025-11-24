@@ -86,17 +86,17 @@ export const LabelDropdownBannerManagement = () => {
     try {
       setSaving(true);
 
-      // Upload to S3
-      const path = `label-banners/${labelId}/${Date.now()}-${file.name}`;
+      // Get user first for path validation
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // Upload to S3 with user ID prefix for security
+      const path = `${user.id}/label-banners/${Date.now()}-${file.name}`;
       const uploadedUrl = await uploadFile({ file, path, oldPath: currentBanner || undefined });
 
       if (!uploadedUrl) {
         throw new Error("Upload failed");
       }
-
-      // Save to database
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
 
       const { error } = await supabase
         .from("label_dropdown_banners")
