@@ -637,17 +637,15 @@ const Dashboard = () => {
               {/* Notifications Dropdown */}
               <div className="flex items-center gap-3 ml-3" data-tutorial="notifications-icon">
                 <NotificationsDropdown userId={user?.id || ""} />
-                <div className="lg:hidden">
-                  <ProfileDropdown
-                    userEmail={user?.email} 
-                    avatarUrl={profile?.avatar_url}
-                    artistName={profile?.artist_name}
-                    fullName={profile?.full_name}
-                    userId={profile?.user_id}
-                    onSignOut={handleSignOut} 
-                    data-tutorial="profile-dropdown"
-                  />
-                </div>
+                <ProfileDropdown
+                  userEmail={user?.email} 
+                  avatarUrl={profile?.avatar_url}
+                  artistName={profile?.artist_name}
+                  fullName={profile?.full_name}
+                  userId={profile?.user_id}
+                  onSignOut={handleSignOut} 
+                  data-tutorial="profile-dropdown"
+                />
               </div>
             </div>
           </div>
