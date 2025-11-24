@@ -36,6 +36,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { z } from "zod";
+import { PlanPermissions } from "@/hooks/usePlanPermissions";
+import { FeatureLockBadge } from "./FeatureLockBadge";
 
 const inviteSchema = z.object({
   email: z.string().email("Invalid email address").max(255),
@@ -51,7 +53,11 @@ const PERMISSIONS = [
   { id: "settings", label: "Settings", description: "Modify account settings" },
 ];
 
-const ClientInvitations = () => {
+interface ClientInvitationsProps {
+  permissions: PlanPermissions;
+}
+
+const ClientInvitations = ({ permissions }: ClientInvitationsProps) => {
   const [invitations, setInvitations] = useState<any[]>([]);
   const [activeUsers, setActiveUsers] = useState<any[]>([]);
   const [labels, setLabels] = useState<any[]>([]);
@@ -63,6 +69,7 @@ const ClientInvitations = () => {
   const [sending, setSending] = useState(false);
   const [showExistingUserConfirm, setShowExistingUserConfirm] = useState(false);
   const [existingUserData, setExistingUserData] = useState<any>(null);
+  const [userCount, setUserCount] = useState(0);
 
   useEffect(() => {
     fetchInvitations();
@@ -140,11 +147,40 @@ const ClientInvitations = () => {
     } else {
       setInvitations(data || []);
     }
+    
+    // Calculate user count
+    await calculateUserCount();
     setLoading(false);
+  };
+
+  const calculateUserCount = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // Count current subaccounts
+    const { count: subaccountCount } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .eq("parent_account_id", user?.id);
+    
+    // Count pending invitations
+    const { count: pendingCount } = await supabase
+      .from("sublabel_invitations")
+      .select("*", { count: "exact", head: true })
+      .eq("inviter_id", user?.id)
+      .eq("status", "pending");
+    
+    // Total: 1 (current user) + subaccounts + pending invites
+    setUserCount(1 + (subaccountCount || 0) + (pendingCount || 0));
   };
 
   const sendInvitation = async () => {
     try {
+      // Check user limit FIRST
+      if (permissions.maxUsers && userCount >= permissions.maxUsers) {
+        toast.error(`You've reached your plan limit of ${permissions.maxUsers} user(s). Upgrade to add more users.`);
+        return;
+      }
+      
       const validatedData = inviteSchema.parse({ 
         email: inviteEmail,
         permissions: selectedPermissions,
@@ -511,6 +547,11 @@ const ClientInvitations = () => {
             <CardTitle className="text-2xl font-bold text-left">User Management</CardTitle>
             <CardDescription className="text-left">
               Manage invitations and active users with permissions
+              {permissions.maxUsers && (
+                <span className="ml-2 text-sm font-medium">
+                  ({userCount}/{permissions.maxUsers} users)
+                </span>
+              )}
             </CardDescription>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -599,6 +640,19 @@ const ClientInvitations = () => {
         </div>
       </CardHeader>
       <CardContent>
+        {permissions.maxUsers && userCount >= permissions.maxUsers && (
+          <div className="mb-6 p-4 rounded-lg bg-muted/50 border border-border relative">
+            <FeatureLockBadge 
+              isLocked={true}
+              currentLimit={userCount}
+              maxLimit={permissions.maxUsers}
+              requiredPlan={permissions.planTier === "free" ? "Trackball Lite or higher" : "higher tier"}
+            />
+            <p className="text-sm text-muted-foreground pr-28">
+              You've reached your plan limit of {permissions.maxUsers} user(s). Upgrade to add more users to your account.
+            </p>
+          </div>
+        )}
         <Tabs defaultValue="invitations" className="space-y-4">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="invitations">Invitations</TabsTrigger>

@@ -49,6 +49,8 @@ import { ModernSupportTicketSystem } from "@/components/ModernSupportTicketSyste
 import { LabelCustomizationTab } from "@/components/LabelCustomizationTab";
 import { LabelInvitationNotification } from "@/components/LabelInvitationNotification";
 import { LabelSwitcherDropdown } from "@/components/LabelSwitcherDropdown";
+import { usePlanPermissions } from "@/hooks/usePlanPermissions";
+import { FeatureLockBadge } from "@/components/FeatureLockBadge";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -84,6 +86,7 @@ const Dashboard = () => {
   const [activeLabelLogo, setActiveLabelLogo] = useState<string | null>(null);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const permissions = usePlanPermissions(userPlan, profile);
 
   // Function to apply accent color globally
   const applyAccentColor = (color: string) => {
@@ -525,10 +528,22 @@ const Dashboard = () => {
                     <Package className="w-4 h-4 mr-2" />
                     Catalog
                   </DropdownMenuItem>
-                  {profile?.label_type === "prestige_label" && (
+                  {permissions.canAccessPublishing && (
                     <DropdownMenuItem onClick={() => setActiveTab("publishing")} className="cursor-pointer" data-tutorial="publishing-tab">
                       <FileMusic className="w-4 h-4 mr-2" />
                       Publishing
+                    </DropdownMenuItem>
+                  )}
+                  {!permissions.canAccessPublishing && (
+                    <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
+                      <FileMusic className="w-4 h-4 mr-2" />
+                      Publishing
+                      <FeatureLockBadge 
+                        isLocked={true} 
+                        requiredPlan="Label Prestige/Partner"
+                        feature="Publishing"
+                        inline
+                      />
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
@@ -553,8 +568,7 @@ const Dashboard = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {((userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") || 
-                (profile?.label_type && ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type))) && (
+              {(permissions.canAddUsers || permissions.canCreateLabels) && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="gap-1">
@@ -566,18 +580,67 @@ const Dashboard = () => {
                   <DropdownMenuContent align="end" className="w-56 bg-card border-border z-50">
                     <DropdownMenuLabel>Team Management</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setActiveTab("clients")} className="cursor-pointer" data-tutorial="clients-tab">
-                      <Users className="w-4 h-4 mr-2" />
-                      Users
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setActiveTab("labels")} className="cursor-pointer">
-                      <Building2 className="w-4 h-4 mr-2" />
-                      Labels
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setActiveTab("label-customization")} className="cursor-pointer">
-                      <Palette className="w-4 h-4 mr-2" />
-                      Label Customization
-                    </DropdownMenuItem>
+                    {permissions.canAddUsers ? (
+                      <DropdownMenuItem onClick={() => setActiveTab("clients")} className="cursor-pointer" data-tutorial="clients-tab">
+                        <Users className="w-4 h-4 mr-2" />
+                        Users
+                        {permissions.maxUsers && (
+                          <span className="ml-auto text-xs text-muted-foreground">
+                            Max {permissions.maxUsers}
+                          </span>
+                        )}
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
+                        <Users className="w-4 h-4 mr-2" />
+                        Users
+                        <FeatureLockBadge 
+                          isLocked={true} 
+                          requiredPlan="Trackball Prestige or Label plans"
+                          feature="User Management"
+                          inline
+                        />
+                      </DropdownMenuItem>
+                    )}
+                    {permissions.canCreateLabels ? (
+                      <DropdownMenuItem onClick={() => setActiveTab("labels")} className="cursor-pointer">
+                        <Building2 className="w-4 h-4 mr-2" />
+                        Labels
+                        {permissions.maxLabels && (
+                          <span className="ml-auto text-xs text-muted-foreground">
+                            Max {permissions.maxLabels}
+                          </span>
+                        )}
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
+                        <Building2 className="w-4 h-4 mr-2" />
+                        Labels
+                        <FeatureLockBadge 
+                          isLocked={true} 
+                          requiredPlan="Trackball Prestige or Label plans"
+                          feature="Label Management"
+                          inline
+                        />
+                      </DropdownMenuItem>
+                    )}
+                    {permissions.canCustomizeLabels ? (
+                      <DropdownMenuItem onClick={() => setActiveTab("label-customization")} className="cursor-pointer">
+                        <Palette className="w-4 h-4 mr-2" />
+                        Label Customization
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
+                        <Palette className="w-4 h-4 mr-2" />
+                        Label Customization
+                        <FeatureLockBadge 
+                          isLocked={true} 
+                          requiredPlan="Label Signature/Prestige/Partner"
+                          feature="Label Customization"
+                          inline
+                        />
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
@@ -722,27 +785,29 @@ const Dashboard = () => {
           </TabsContent>
 
 
-          {((userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") ||
-            (profile?.label_type && ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type))) && (
-            <>
-              <TabsContent value="clients" className="animate-fade-in">
-                <ClientInvitations />
-              </TabsContent>
+          {permissions.canAddUsers && (
+            <TabsContent value="clients" className="animate-fade-in">
+              <ClientInvitations permissions={permissions} />
+            </TabsContent>
+          )}
 
-              <TabsContent value="labels" className="animate-fade-in">
-                {user && <LabelManagementTab userId={user.id} userPlan={userPlan} />}
-              </TabsContent>
+          {permissions.canCreateLabels && (
+            <TabsContent value="labels" className="animate-fade-in">
+              {user && <LabelManagementTab userId={user.id} userPlan={userPlan} permissions={permissions} />}
+            </TabsContent>
+          )}
+
+          {permissions.canCustomizeLabels && (
             <TabsContent value="label-customization" className="animate-fade-in">
               <LabelCustomizationTab />
             </TabsContent>
-          </>
-        )}
+          )}
 
         <TabsContent value="royalties" className="animate-fade-in">
             {user && <RoyaltiesTab userId={user.id} />}
           </TabsContent>
 
-          {profile?.label_type === "prestige_label" && (
+          {permissions.canAccessPublishing && (
             <TabsContent value="publishing" className="animate-fade-in">
               {user && <PublishingTab userId={user.id} />}
             </TabsContent>
@@ -750,7 +815,7 @@ const Dashboard = () => {
 
           <TabsContent value="help" className="animate-fade-in">
             <div className="space-y-6">
-              {profile?.parent_account_id ? (
+              {!permissions.canAccessTickets && profile?.parent_account_id ? (
                 <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
                   <CardHeader>
                     <CardTitle className="text-2xl font-bold flex items-center gap-2 text-left">
@@ -764,6 +829,29 @@ const Dashboard = () => {
                       <h3 className="font-semibold text-lg mb-2">Account Support</h3>
                       <p className="text-muted-foreground">
                         Please contact the person who invited you for assistance with your account, releases, or any questions you may have.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : !permissions.canAccessTickets ? (
+                <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+                  <CardHeader>
+                    <CardTitle className="text-2xl font-bold flex items-center gap-2 text-left">
+                      <HelpCircle className="w-6 h-6 text-primary" />
+                      Support Tickets
+                    </CardTitle>
+                    <CardDescription className="text-left">Available on Signature, Prestige, and Label plans</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="p-6 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 relative">
+                      <FeatureLockBadge 
+                        isLocked={true}
+                        requiredPlan="Trackball/Label Signature or higher"
+                        feature="Support Tickets"
+                      />
+                      <h3 className="font-semibold text-lg mb-2">Upgrade for Priority Support</h3>
+                      <p className="text-muted-foreground">
+                        Get access to our ticket system and receive priority support from our team. Available on Trackball Signature, Trackball Prestige, Label Signature, Label Prestige, and Label Partner plans.
                       </p>
                     </div>
                   </CardContent>
