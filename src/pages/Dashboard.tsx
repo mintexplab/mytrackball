@@ -48,7 +48,6 @@ import { ModernSupportTicketSystem } from "@/components/ModernSupportTicketSyste
 
 import { LabelCustomizationTab } from "@/components/LabelCustomizationTab";
 import { LabelInvitationNotification } from "@/components/LabelInvitationNotification";
-import { LabelSwitcherDropdown } from "@/components/LabelSwitcherDropdown";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { FeatureLockBadge } from "@/components/FeatureLockBadge";
 import { SubscriptionManagementTab } from "@/components/SubscriptionManagementTab";
@@ -712,16 +711,17 @@ const Dashboard = () => {
                 <Plus className="w-4 h-4" />
               </Button>
 
-              {/* User Info Display - Name and Label Switcher */}
+              {/* User Info Display - Name and Label ID */}
               <div className="hidden lg:flex flex-col items-end text-right">
                 <p className="text-sm font-medium text-foreground">
                   {profile?.full_name || profile?.display_name || profile?.artist_name || "User"}
                 </p>
-                <LabelSwitcherDropdown
-                  labelName={profile?.label_name}
-                  labelDigitId={activeLabelDigitId}
-                  parentAccount={parentAccount}
-                />
+                {(profile?.label_name || activeLabelDigitId) && (
+                  <p className="text-xs text-muted-foreground">
+                    {profile?.label_name && <span>{profile.label_name} • </span>}
+                    {activeLabelDigitId && <span>ID: {activeLabelDigitId}</span>}
+                  </p>
+                )}
               </div>
 
               {/* Notifications Dropdown */}
