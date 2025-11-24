@@ -1,0 +1,335 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Loader2, Music, Building2 } from "lucide-react";
+
+interface InitialAccountSetupProps {
+  onComplete: () => void;
+}
+
+export const InitialAccountSetup = ({ onComplete }: InitialAccountSetupProps) => {
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    accountType: "",
+    artistName: "",
+    labelName: "",
+  });
+
+  const handleNext = () => {
+    // Validate current step
+    if (step === 1 && !formData.fullName.trim()) {
+      toast.error("Please enter your full name");
+      return;
+    }
+    if (step === 2 && !formData.accountType) {
+      toast.error("Please select an account type");
+      return;
+    }
+    if (step === 3) {
+      if (formData.accountType === "artist" && !formData.artistName.trim()) {
+        toast.error("Please enter your artist name");
+        return;
+      }
+      if (formData.accountType === "label" && !formData.labelName.trim()) {
+        toast.error("Please enter your label name");
+        return;
+      }
+    }
+
+    if (step < 3) {
+      setStep(step + 1);
+    } else {
+      handleComplete();
+    }
+  };
+
+  const handleComplete = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const isArtist = formData.accountType === "artist";
+      
+      // Prepare profile update
+      const profileUpdate: any = {
+        full_name: formData.fullName,
+        account_type: isArtist ? "artist" : "label",
+      };
+
+      if (isArtist) {
+        profileUpdate.artist_name = formData.artistName;
+      } else {
+        profileUpdate.label_name = formData.labelName;
+        profileUpdate.label_type = "Label Free";
+      }
+
+      // Update profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update(profileUpdate)
+        .eq("id", user.id);
+
+      if (profileError) throw profileError;
+
+      // Find the appropriate plan
+      const planName = isArtist ? "Trackball Free" : "Label Free";
+      const { data: planData, error: planFetchError } = await supabase
+        .from("plans")
+        .select("id")
+        .eq("name", planName)
+        .maybeSingle();
+
+      if (planFetchError) throw planFetchError;
+
+      // If plan exists, assign it
+      if (planData) {
+        // Check if user already has a plan
+        const { data: existingPlan } = await supabase
+          .from("user_plans")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (existingPlan) {
+          // Update existing plan
+          await supabase
+            .from("user_plans")
+            .update({
+              plan_id: planData.id,
+              plan_name: planName,
+              status: "active",
+              started_at: new Date().toISOString(),
+            })
+            .eq("user_id", user.id);
+        } else {
+          // Create new plan entry
+          await supabase
+            .from("user_plans")
+            .insert({
+              user_id: user.id,
+              plan_id: planData.id,
+              plan_name: planName,
+              status: "active",
+              started_at: new Date().toISOString(),
+            });
+        }
+      }
+
+      toast.success("Account setup complete!");
+      onComplete();
+    } catch (error: any) {
+      console.error("Error completing account setup:", error);
+      toast.error(error.message || "Failed to complete account setup");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] bg-background/95 flex items-center justify-center p-4">
+      <Card className="w-full max-w-lg border-border animate-fade-in">
+        <CardHeader>
+          <CardTitle className="text-2xl">Welcome to My Trackball</CardTitle>
+          <CardDescription>
+            Let's set up your account in just a few steps
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Progress indicator */}
+          <div className="flex items-center gap-2">
+            {[1, 2, 3].map((s) => (
+              <div
+                key={s}
+                className={`h-2 rounded-full transition-all flex-1 ${
+                  s === step
+                    ? "bg-primary"
+                    : s < step
+                    ? "bg-primary/50"
+                    : "bg-muted"
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Step 1: Full Name */}
+          {step === 1 && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">What's your full name?</Label>
+                <Input
+                  id="fullName"
+                  placeholder="John Doe"
+                  value={formData.fullName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fullName: e.target.value })
+                  }
+                  className="bg-background/50 border-border"
+                  autoFocus
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Account Type */}
+          {step === 2 && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="space-y-4">
+                <Label>Are you an artist or a label?</Label>
+                <RadioGroup
+                  value={formData.accountType}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, accountType: value })
+                  }
+                  className="space-y-3"
+                >
+                  <div
+                    className={`flex items-center space-x-3 border rounded-lg p-4 cursor-pointer transition-all ${
+                      formData.accountType === "artist"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                    onClick={() =>
+                      setFormData({ ...formData, accountType: "artist" })
+                    }
+                  >
+                    <RadioGroupItem value="artist" id="artist" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Music className="h-5 w-5 text-primary" />
+                        <Label
+                          htmlFor="artist"
+                          className="text-base font-medium cursor-pointer"
+                        >
+                          Artist Account
+                        </Label>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        I'm an individual artist distributing my music
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`flex items-center space-x-3 border rounded-lg p-4 cursor-pointer transition-all ${
+                      formData.accountType === "label"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                    onClick={() =>
+                      setFormData({ ...formData, accountType: "label" })
+                    }
+                  >
+                    <RadioGroupItem value="label" id="label" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5 text-primary" />
+                        <Label
+                          htmlFor="label"
+                          className="text-base font-medium cursor-pointer"
+                        >
+                          Label Account
+                        </Label>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        I'm a label managing multiple artists
+                      </p>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Artist/Label Name */}
+          {step === 3 && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="space-y-2">
+                {formData.accountType === "artist" ? (
+                  <>
+                    <Label htmlFor="artistName">What's your artist name?</Label>
+                    <Input
+                      id="artistName"
+                      placeholder="Your Artist Name"
+                      value={formData.artistName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, artistName: e.target.value })
+                      }
+                      className="bg-background/50 border-border"
+                      autoFocus
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      This is how you'll be credited on your releases
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Label htmlFor="labelName">What's your label name?</Label>
+                    <Input
+                      id="labelName"
+                      placeholder="Your Label Name"
+                      value={formData.labelName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, labelName: e.target.value })
+                      }
+                      className="bg-background/50 border-border"
+                      autoFocus
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      This is your official label name for all releases
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <div className="p-3 bg-muted rounded-md">
+                <p className="text-sm text-muted-foreground">
+                  {formData.accountType === "artist"
+                    ? "You'll be assigned to Trackball Free with access to basic distribution features."
+                    : "You'll be assigned to Label Free with tools to manage your label and artists."}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Navigation buttons */}
+          <div className="flex items-center justify-between pt-4">
+            <Button
+              variant="ghost"
+              onClick={() => setStep(Math.max(1, step - 1))}
+              disabled={step === 1 || loading}
+            >
+              Back
+            </Button>
+            <div className="text-sm text-muted-foreground">
+              Step {step} of 3
+            </div>
+            <Button
+              onClick={handleNext}
+              disabled={loading}
+              className="bg-gradient-primary hover:opacity-90"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Setting up...
+                </>
+              ) : step === 3 ? (
+                "Complete Setup"
+              ) : (
+                "Next"
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};

@@ -5,7 +5,7 @@ import { Building2, Users, Tag } from "lucide-react";
 interface LabelDesignationWelcomeDialogProps {
   open: boolean;
   onClose: () => void;
-  labelType: "partner_label" | "signature_label" | "prestige_label";
+  labelType: "partner_label" | "signature_label" | "prestige_label" | "label_free";
 }
 const LabelDesignationWelcomeDialog = ({
   open,
@@ -15,6 +15,8 @@ const LabelDesignationWelcomeDialog = ({
   const [step, setStep] = useState(1);
   const getLabelTypeName = () => {
     switch (labelType) {
+      case "label_free":
+        return "Label Free";
       case "partner_label":
         return "Partner Label";
       case "signature_label":
