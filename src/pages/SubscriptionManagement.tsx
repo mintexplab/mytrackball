@@ -87,12 +87,16 @@ const SubscriptionManagement = () => {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("parent_account_id")
+        .select("parent_account_id, label_type")
         .eq("id", user.id)
         .single();
 
       if (!profile?.parent_account_id) {
-        return { isSubaccount: false, parentPlan: null };
+        return { 
+          isSubaccount: false, 
+          parentPlan: null,
+          labelType: profile?.label_type 
+        };
       }
 
       // Fetch parent account's plan
@@ -110,7 +114,8 @@ const SubscriptionManagement = () => {
 
       return {
         isSubaccount: true,
-        parentPlan: parentPlan
+        parentPlan: parentPlan,
+        labelType: profile?.label_type
       };
     },
   });
@@ -315,53 +320,107 @@ const SubscriptionManagement = () => {
               {/* Current Plan */}
               <div>
                 <h2 className="text-2xl font-bold mb-4">Your Current Plan</h2>
-                {plans?.map((plan) => {
-                  const isCurrent = isCurrentPlan(plan);
-                  if (!isCurrent) return null;
-                  
-                  return (
-                    <Card key={plan.id} className="backdrop-blur-sm bg-card/80 border-primary/20 ring-2 ring-primary">
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                            <CardDescription className="text-3xl font-bold text-foreground mt-2">
-                              ${plan.price.toFixed(2)} CAD/year
-                            </CardDescription>
-                          </div>
-                          <Badge className="bg-primary">Active</Badge>
+                {accountInfo?.labelType && (
+                  accountInfo.labelType.toLowerCase().includes('label prestige') ||
+                  accountInfo.labelType.toLowerCase().includes('label signature') ||
+                  accountInfo.labelType.toLowerCase().includes('label partner')
+                ) ? (
+                  // Display Label Designation for label accounts
+                  <Card className="backdrop-blur-sm bg-card/80 border-primary/20 ring-2 ring-primary">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-2xl font-bold">{accountInfo.labelType}</CardTitle>
+                          <CardDescription className="text-sm text-muted-foreground mt-2">
+                            Label Distribution Account
+                          </CardDescription>
                         </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {billingDetails?.subscription && (
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Status</span>
-                              <Badge variant={billingDetails.subscription.status === 'active' ? 'default' : 'secondary'}>
-                                {billingDetails.subscription.status}
-                              </Badge>
-                            </div>
-                            <Separator />
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Current Period</span>
-                              <span>{formatDate(billingDetails.subscription.current_period_start)} - {formatDate(billingDetails.subscription.current_period_end)}</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Renewal Date</span>
-                              <span>{formatDate(billingDetails.subscription.current_period_end)}</span>
-                            </div>
-                            {billingDetails.subscription.cancel_at_period_end && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-destructive">Cancels At</span>
-                                <span className="text-destructive">{formatDate(billingDetails.subscription.current_period_end)}</span>
-                              </div>
-                            )}
+                        <Badge className="bg-primary">Active</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {billingDetails?.subscription && (
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Status</span>
+                            <Badge variant={billingDetails.subscription.status === 'active' ? 'default' : 'secondary'}>
+                              {billingDetails.subscription.status}
+                            </Badge>
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                          <Separator />
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Current Period</span>
+                            <span>{formatDate(billingDetails.subscription.current_period_start)} - {formatDate(billingDetails.subscription.current_period_end)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Renewal Date</span>
+                            <span>{formatDate(billingDetails.subscription.current_period_end)}</span>
+                          </div>
+                          {billingDetails.subscription.cancel_at_period_end && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-destructive">Cancels At</span>
+                              <span className="text-destructive">{formatDate(billingDetails.subscription.current_period_end)}</span>
+                            </div>
+                          )}
+                          <Separator />
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Amount</span>
+                            <span className="font-semibold">{formatCurrency(billingDetails.subscription.amount, billingDetails.subscription.currency)}/{billingDetails.subscription.interval}</span>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  // Display regular artist plan
+                  plans?.map((plan) => {
+                    const isCurrent = isCurrentPlan(plan);
+                    if (!isCurrent) return null;
+                    
+                    return (
+                      <Card key={plan.id} className="backdrop-blur-sm bg-card/80 border-primary/20 ring-2 ring-primary">
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                              <CardDescription className="text-3xl font-bold text-foreground mt-2">
+                                ${plan.price.toFixed(2)} CAD/year
+                              </CardDescription>
+                            </div>
+                            <Badge className="bg-primary">Active</Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {billingDetails?.subscription && (
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Status</span>
+                                <Badge variant={billingDetails.subscription.status === 'active' ? 'default' : 'secondary'}>
+                                  {billingDetails.subscription.status}
+                                </Badge>
+                              </div>
+                              <Separator />
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Current Period</span>
+                                <span>{formatDate(billingDetails.subscription.current_period_start)} - {formatDate(billingDetails.subscription.current_period_end)}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Renewal Date</span>
+                                <span>{formatDate(billingDetails.subscription.current_period_end)}</span>
+                              </div>
+                              {billingDetails.subscription.cancel_at_period_end && (
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-destructive">Cancels At</span>
+                                  <span className="text-destructive">{formatDate(billingDetails.subscription.current_period_end)}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
               </div>
 
               {/* Upcoming Invoice */}
