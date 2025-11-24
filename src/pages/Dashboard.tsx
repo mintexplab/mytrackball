@@ -51,6 +51,7 @@ import { LabelInvitationNotification } from "@/components/LabelInvitationNotific
 import { LabelSwitcherDropdown } from "@/components/LabelSwitcherDropdown";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { FeatureLockBadge } from "@/components/FeatureLockBadge";
+import { SubscriptionManagementTab } from "@/components/SubscriptionManagementTab";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -87,6 +88,25 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const permissions = usePlanPermissions(userPlan, profile);
+
+  // Handle tab query parameter and custom events
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+
+    // Listen for custom tab change events
+    const handleTabChange = (e: CustomEvent) => {
+      setActiveTab(e.detail);
+    };
+
+    window.addEventListener('changeTab', handleTabChange as EventListener);
+    return () => {
+      window.removeEventListener('changeTab', handleTabChange as EventListener);
+    };
+  }, []);
 
   // Function to apply accent color globally
   const applyAccentColor = (color: string) => {
@@ -646,6 +666,16 @@ const Dashboard = () => {
               )}
 
               <Button
+                variant={activeTab === "subscription" ? "default" : "ghost"} 
+                size="sm" 
+                onClick={() => setActiveTab("subscription")}
+                className={activeTab === "subscription" ? "bg-gradient-primary text-primary-foreground" : ""}
+              >
+                <Package className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Subscription</span>
+              </Button>
+
+              <Button
                 variant={activeTab === "help" ? "default" : "ghost"} 
                 size="sm" 
                 onClick={() => setActiveTab("help")}
@@ -812,6 +842,10 @@ const Dashboard = () => {
               {user && <PublishingTab userId={user.id} />}
             </TabsContent>
           )}
+
+          <TabsContent value="subscription" className="animate-fade-in">
+            <SubscriptionManagementTab userPlan={userPlan} profile={profile} />
+          </TabsContent>
 
           <TabsContent value="help" className="animate-fade-in">
             <div className="space-y-6">

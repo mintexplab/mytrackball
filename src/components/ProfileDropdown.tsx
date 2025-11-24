@@ -181,7 +181,17 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, us
           </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-border" />
         <DropdownMenuItem
-          onClick={() => navigate("/subscription")}
+          onClick={() => {
+            navigate("/dashboard");
+            // Use a small delay to ensure navigation completes before changing tab
+            setTimeout(() => {
+              const params = new URLSearchParams(window.location.search);
+              params.set('tab', 'subscription');
+              window.history.pushState({}, '', `/dashboard?${params.toString()}`);
+              // Trigger a custom event to notify Dashboard to change tab
+              window.dispatchEvent(new CustomEvent('changeTab', { detail: 'subscription' }));
+            }, 100);
+          }}
           className="cursor-pointer"
         >
           <CreditCard className="mr-2 h-4 w-4" />
