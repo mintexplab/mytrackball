@@ -90,12 +90,13 @@ export const YourPlanBlock = ({ userPlan }: YourPlanBlockProps) => {
             ) : (
               <>
                 <div className="flex flex-wrap gap-2">
-                  <Badge className="bg-gradient-primary text-white px-2 py-1 text-xs">
-                    {displayPlan?.plan?.name || "Trackball Free"}
-                  </Badge>
-                  {isLabelPlan && (
+                  {isLabelPlan ? (
                     <Badge className="bg-gradient-to-r from-accent to-primary text-white px-2 py-1 text-xs">
                       {labelType}
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-gradient-primary text-white px-2 py-1 text-xs">
+                      {displayPlan?.plan?.name || "Trackball Free"}
                     </Badge>
                   )}
                 </div>

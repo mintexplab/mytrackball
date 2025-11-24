@@ -106,8 +106,27 @@ export const LabelSwitcherDropdown = ({ labelName, labelDigitId, parentAccount }
     }
   };
 
-  if (loading || labelMemberships.length === 0) {
+  // Don't render if no label info
+  if (loading || (!labelName && !labelDigitId)) {
     return null;
+  }
+
+  // If only one label or no memberships, just show the label info without dropdown
+  if (labelMemberships.length <= 1) {
+    return (
+      <div className="flex flex-col items-end text-right">
+        {labelName && (
+          <p className="text-xs text-muted-foreground">
+            {labelName} ID: {labelDigitId}
+          </p>
+        )}
+        {parentAccount && (
+          <Badge variant="outline" className="text-xs border-primary/30 bg-primary/10 mt-1">
+            Subaccount of {parentAccount.label_name || parentAccount.display_name || parentAccount.artist_name}
+          </Badge>
+        )}
+      </div>
+    );
   }
 
   return (
