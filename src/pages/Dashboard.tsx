@@ -312,7 +312,7 @@ const Dashboard = () => {
       _role: 'admin'
     });
     
-    if (!isAdminData && !profileData?.onboarding_completed && profileData?.mfa_setup_completed) {
+    if (!isAdminData && !profileData?.onboarding_completed) {
       // Check if account needs initial setup (no account_type set)
       if (!profileData?.account_type || profileData.account_type === 'pending') {
         setShowInitialSetup(true);

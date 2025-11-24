@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { TrackballBeads } from "@/components/TrackballBeads";
-import { OtpVerificationDialog } from "@/components/OtpVerificationDialog";
+
 import trackballLogo from "@/assets/trackball-logo.png";
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,8 +16,6 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [isZooming, setIsZooming] = useState(false);
-  const [showOtpDialog, setShowOtpDialog] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState("");
   const navigate = useNavigate();
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,7 +121,7 @@ const Auth = () => {
         fadeOverlay.remove();
         navigate("/dashboard");
         return;
-      } else {
+        } else {
         const {
           error
         } = await supabase.auth.signUp({
@@ -141,10 +139,7 @@ const Auth = () => {
         });
         if (error) throw error;
         
-        // Show OTP verification dialog
-        setPendingEmail(email);
-        setShowOtpDialog(true);
-        toast.success("Verification code sent! Check your email.");
+        toast.success("A verification link has been sent to your email. Verify your email using that link in order to continue with onboarding.");
       }
     } catch (error: any) {
       console.error("Auth error", error);
@@ -154,48 +149,6 @@ const Auth = () => {
     }
   };
   
-  const handleOtpVerified = () => {
-    setShowOtpDialog(false);
-    toast.success("Email verified! Setting up your account...");
-    
-    // Trigger zoom animation
-    setIsZooming(true);
-    
-    setTimeout(async () => {
-      // Fade to black and show loading
-      const fadeOverlay = document.createElement('div');
-      fadeOverlay.className = 'fixed inset-0 bg-black z-50 flex flex-col items-center justify-center gap-4';
-      fadeOverlay.style.opacity = '0';
-      fadeOverlay.style.transition = 'opacity 1s ease-in-out';
-      fadeOverlay.innerHTML = `
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <p class="text-muted-foreground animate-pulse">Setting up your account...</p>
-      `;
-      document.body.appendChild(fadeOverlay);
-      
-      // Trigger fade in
-      setTimeout(() => {
-        fadeOverlay.style.opacity = '1';
-      }, 50);
-      
-      const loadingDuration = 3000 + Math.random() * 2000; // 3-5 seconds
-      await new Promise(resolve => setTimeout(resolve, loadingDuration));
-      
-      // Clean up overlay before navigation
-      fadeOverlay.remove();
-      navigate("/dashboard");
-    }, 1200);
-  };
-
-  const handleOtpCancel = async () => {
-    setShowOtpDialog(false);
-    setPendingEmail("");
-    
-    // Sign out the unverified user
-    await supabase.auth.signOut();
-    
-    toast.info("Signup cancelled. Please try again when ready.");
-  };
   
   return <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
       <div className="absolute inset-0">
@@ -280,13 +233,6 @@ const Auth = () => {
         </CardContent>
       </Card>
 
-      {/* OTP Verification Dialog */}
-      <OtpVerificationDialog
-        open={showOtpDialog}
-        email={pendingEmail}
-        onVerified={handleOtpVerified}
-        onCancel={handleOtpCancel}
-      />
     </div>;
 };
 export default Auth;
