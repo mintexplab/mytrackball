@@ -1,4 +1,4 @@
-import { Menu, Home, Package, Users, Bell, DollarSign, HelpCircle, FileMusic, Upload, Building2, Link as LinkIcon } from "lucide-react";
+import { Menu, Home, Package, Users, Bell, DollarSign, HelpCircle, FileMusic, Upload, Building2, Link as LinkIcon, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -10,9 +10,10 @@ interface MobileMenuProps {
   setActiveTab: (tab: string) => void;
   userPlan?: any;
   isAdmin?: boolean;
+  profile?: any;
 }
 
-export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false }: MobileMenuProps) => {
+export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false, profile }: MobileMenuProps) => {
   const [open, setOpen] = useState(false);
 
   const handleTabChange = (tab: string) => {
@@ -232,7 +233,8 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false 
               Royalties
             </Button>
 
-            {(userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") && (
+            {((userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") ||
+              (profile?.label_type && ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type))) && (
               <>
                 <Separator className="my-4" />
                 <p className="text-xs text-muted-foreground px-3 font-medium">Team</p>
@@ -253,6 +255,15 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false 
                 >
                   <Building2 className="w-4 h-4 mr-2" />
                   Labels
+                </Button>
+
+                <Button
+                  variant={activeTab === "label-customization" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => handleTabChange("label-customization")}
+                >
+                  <Palette className="w-4 h-4 mr-2" />
+                  Label Customization
                 </Button>
               </>
             )}

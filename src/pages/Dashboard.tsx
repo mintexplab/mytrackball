@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Upload, Building2, Link as LinkIcon, Home } from "lucide-react";
+import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Upload, Building2, Link as LinkIcon, Home, Palette } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
@@ -46,6 +46,7 @@ import LabelDesignationWelcomeDialog from "@/components/LabelDesignationWelcomeD
 import SubscriptionWelcomeDialog from "@/components/SubscriptionWelcomeDialog";
 import { ModernSupportTicketSystem } from "@/components/ModernSupportTicketSystem";
 import { SmartLinksTab } from "@/components/SmartLinksTab";
+import { LabelCustomizationTab } from "@/components/LabelCustomizationTab";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -406,6 +407,7 @@ const Dashboard = () => {
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab} 
                 userPlan={userPlan}
+                profile={profile}
               />
               <div 
                 className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
@@ -491,7 +493,7 @@ const Dashboard = () => {
                       <ChevronDown className="w-3 h-3" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 bg-card border-border">
+                  <DropdownMenuContent align="end" className="w-56 bg-card border-border z-50">
                     <DropdownMenuLabel>Team Management</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setActiveTab("clients")} className="cursor-pointer" data-tutorial="clients-tab">
@@ -501,6 +503,10 @@ const Dashboard = () => {
                     <DropdownMenuItem onClick={() => setActiveTab("labels")} className="cursor-pointer">
                       <Building2 className="w-4 h-4 mr-2" />
                       Labels
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setActiveTab("label-customization")} className="cursor-pointer">
+                      <Palette className="w-4 h-4 mr-2" />
+                      Label Customization
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -667,10 +673,13 @@ const Dashboard = () => {
               <TabsContent value="labels" className="animate-fade-in">
                 {user && <LabelManagementTab userId={user.id} userPlan={userPlan} />}
               </TabsContent>
-            </>
-          )}
+            <TabsContent value="label-customization" className="animate-fade-in">
+              <LabelCustomizationTab />
+            </TabsContent>
+          </>
+        )}
 
-          <TabsContent value="royalties" className="animate-fade-in">
+        <TabsContent value="royalties" className="animate-fade-in">
             {user && <RoyaltiesTab userId={user.id} />}
           </TabsContent>
 

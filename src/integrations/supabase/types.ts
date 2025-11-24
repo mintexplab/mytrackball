@@ -374,23 +374,29 @@ export type Database = {
       }
       labels: {
         Row: {
+          accent_color: string | null
           created_at: string | null
           id: string
           label_id: string
+          logo_url: string | null
           name: string
           user_id: string
         }
         Insert: {
+          accent_color?: string | null
           created_at?: string | null
           id?: string
           label_id: string
+          logo_url?: string | null
           name: string
           user_id: string
         }
         Update: {
+          accent_color?: string | null
           created_at?: string | null
           id?: string
           label_id?: string
+          logo_url?: string | null
           name?: string
           user_id?: string
         }
