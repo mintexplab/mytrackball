@@ -79,6 +79,7 @@ const Dashboard = () => {
   const [welcomePlanName, setWelcomePlanName] = useState("");
   const [welcomePlanFeatures, setWelcomePlanFeatures] = useState<string[]>([]);
   const [activeLabelDigitId, setActiveLabelDigitId] = useState<string>("");
+  const [activeLabelLogo, setActiveLabelLogo] = useState<string | null>(null);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
@@ -310,16 +311,17 @@ const Dashboard = () => {
     } = await supabase.from("profiles").select("*").eq("id", userId).single();
     setProfile(profileData);
 
-    // Fetch label 5-digit ID and accent color if user has an active label
+    // Fetch label 5-digit ID, accent color, and logo if user has an active label
     if (profileData?.active_label_id) {
       const { data: labelData } = await supabase
         .from("labels")
-        .select("label_id, accent_color")
+        .select("label_id, accent_color, logo_url")
         .eq("id", profileData.active_label_id)
         .single();
       
       if (labelData) {
         setActiveLabelDigitId(labelData.label_id);
+        setActiveLabelLogo(labelData.logo_url);
         
         // Apply accent color globally if it exists
         if (labelData.accent_color) {
@@ -331,6 +333,7 @@ const Dashboard = () => {
       }
     } else {
       // Reset to default if no active label
+      setActiveLabelLogo(null);
       applyAccentColor("#ef4444");
     }
 
@@ -477,7 +480,11 @@ const Dashboard = () => {
                 className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => setActiveTab("landing")}
               >
-                <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
+                <img 
+                  src={activeLabelLogo || trackballLogo} 
+                  alt={activeLabelLogo ? "Label Logo" : "Trackball Logo"} 
+                  className="w-full h-full object-cover" 
+                />
               </div>
             </div>
             
