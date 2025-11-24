@@ -100,7 +100,16 @@ const ClientInvitations = () => {
       }))
     ];
 
-    setLabels(allLabels);
+    // Remove duplicates by label_id
+    const uniqueLabels = allLabels.reduce((acc, current) => {
+      const exists = acc.find(item => item.label_id === current.label_id);
+      if (!exists) {
+        acc.push(current);
+      }
+      return acc;
+    }, [] as any[]);
+
+    setLabels(uniqueLabels);
   };
 
   const fetchInvitations = async () => {
