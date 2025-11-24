@@ -68,8 +68,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     const distributorName = profile?.label_name || inviterName || 'Trackball Distribution';
 
-    // Use the deployed app domain for signup instead of the Supabase project domain
-    const signupUrl = 'https://mytrackball.lovable.app/auth';
+    // Create invitation record in database
+    const { data: invitationData, error: invitationError } = await supabaseClient
+      .from('artist_invitations')
+      .insert({
+        email: email,
+        invited_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (invitationError) throw invitationError;
+
+    // Use the deployed app domain with invitation token
+    const signupUrl = `https://mytrackball.lovable.app/accept-invitation?token=${invitationData.id}`;
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -98,10 +110,11 @@ const handler = async (req: Request): Promise<Response> => {
               margin: 0;
             }
             .logo {
-              max-width: 150px;
-              max-height: 80px;
+              width: 100px;
+              height: 100px;
               margin: 0 auto 20px;
               display: block;
+              object-fit: contain;
             }
             .content {
               background-color: #1a1a1a;
@@ -176,7 +189,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: `${distributorName} <noreply@trackball.cc>`,
+        from: `${dashboardName} <noreply@trackball.cc>`,
         to: [email],
         subject: `You've been invited to ${dashboardName}`,
         html: emailHtml,
