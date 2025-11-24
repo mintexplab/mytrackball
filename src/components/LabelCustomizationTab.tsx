@@ -79,11 +79,39 @@ export const LabelCustomizationTab = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Get master account's own active label
+      const { data: masterProfile } = await supabase
+        .from("profiles")
+        .select("active_label_id")
+        .eq("id", user.id)
+        .single();
+
+      // Get subaccounts and their active labels
+      const { data: subProfiles } = await supabase
+        .from("profiles")
+        .select("active_label_id")
+        .eq("parent_account_id", user.id);
+
+      const labelIds = new Set<string>();
+      if (masterProfile?.active_label_id) {
+        labelIds.add(masterProfile.active_label_id);
+      }
+      (subProfiles || []).forEach((p: any) => {
+        if (p.active_label_id) {
+          labelIds.add(p.active_label_id);
+        }
+      });
+
+      if (labelIds.size === 0) {
+        setLabels([]);
+        setSelectedLabelId("");
+        return;
+      }
+
       const { data, error } = await supabase
         .from("labels")
         .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .in("id", Array.from(labelIds));
 
       if (error) throw error;
 
@@ -128,7 +156,7 @@ export const LabelCustomizationTab = () => {
       if (logoFile) {
         const uploadedLogoUrl = await uploadFile({
           file: logoFile,
-          path: `label-logos/${user.id}/${Date.now()}-${logoFile.name}`,
+          path: `${user.id}/label-logos/${Date.now()}-${logoFile.name}`,
         });
         if (uploadedLogoUrl) {
           logoUrl = uploadedLogoUrl;
@@ -150,7 +178,7 @@ export const LabelCustomizationTab = () => {
       if (bannerFile) {
         const uploadedBannerUrl = await uploadFile({
           file: bannerFile,
-          path: `label-banners/${user.id}/${Date.now()}-${bannerFile.name}`,
+          path: `${user.id}/label-banners/${Date.now()}-${bannerFile.name}`,
         });
         if (uploadedBannerUrl) {
           if (banner) {
