@@ -232,10 +232,31 @@ const ClientInvitations = () => {
         .single();
 
       const planName = userPlan?.plan?.name;
-      if (planName !== "Trackball Signature" && planName !== "Trackball Prestige") {
-        toast.error("Only Signature and Prestige members can send invitations");
+      
+      // Check plan-based user limits
+      const isLabelLite = planName === "Label Lite";
+      const canInvite = planName === "Trackball Signature" || planName === "Trackball Prestige" || 
+                        planName === "Label Signature" || planName === "Label Prestige" || 
+                        planName === "Label Partner" || isLabelLite;
+      
+      if (!canInvite) {
+        toast.error("Only Label Lite, Signature, and Prestige members can send invitations");
         setSending(false);
         return;
+      }
+
+      // For Label Lite, check user limit (max 2 users)
+      if (isLabelLite) {
+        const { count } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("parent_account_id", user?.id);
+
+        if ((count || 0) >= 2) {
+          toast.error("Label Lite is limited to 2 invited users. Upgrade to Label Signature for more.");
+          setSending(false);
+          return;
+        }
       }
 
       const { data: userProfile } = await supabase

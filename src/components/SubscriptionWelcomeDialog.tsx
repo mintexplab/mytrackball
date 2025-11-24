@@ -28,7 +28,7 @@ const SubscriptionWelcomeDialog = ({
               </div>
             </div>
             <DialogTitle className="text-2xl font-bold text-center">
-              Welcome to {planName}!
+              {planName.includes('Label') ? `You are now on ${planName}!` : `Welcome to ${planName}!`}
             </DialogTitle>
             <DialogDescription className="text-center">
               You&apos;ve been enrolled in a new subscription plan

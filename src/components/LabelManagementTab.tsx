@@ -74,36 +74,55 @@ const LabelManagementTab = ({
         .eq("id", user?.id)
         .single();
 
+      const planName = userPlan?.plan?.name;
       const hasLabelDesignation = profile?.label_type && 
         ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type);
+      
+      // Check if user can create labels
+      const isLabelFree = planName === "Label Free";
+      const isLabelLite = planName === "Label Lite";
       const canEditLabel = 
-        userPlan?.plan?.name === "Trackball Signature" || 
-        userPlan?.plan?.name === "Trackball Prestige" ||
-        hasLabelDesignation;
+        planName === "Trackball Signature" || 
+        planName === "Trackball Prestige" ||
+        planName === "Label Signature" ||
+        planName === "Label Prestige" ||
+        planName === "Label Partner" ||
+        hasLabelDesignation ||
+        isLabelFree ||
+        isLabelLite;
       
       if (!canEditLabel) {
-        toast.error("Label creation is only available for Partner, Signature and Prestige members");
+        toast.error("Label creation is only available for label accounts");
+        setSaving(false);
+        return;
+      }
+
+      // Check label limits
+      const { data: existingLabels } = await supabase
+        .from("user_label_memberships")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("role", "owner");
+
+      const currentLabelCount = existingLabels?.length || 0;
+
+      // Label Free and Label Lite are limited to 1 label
+      if ((isLabelFree || isLabelLite) && currentLabelCount >= 1) {
+        toast.error(`${planName} is limited to 1 label. Upgrade to Label Signature or higher for multiple labels.`);
         setSaving(false);
         return;
       }
       if (!labelName.trim()) {
         toast.error("Please enter a label name");
+        setSaving(false);
         return;
       }
 
       // Check if Signature Label user has 2+ labels already
-      if (profile?.label_type === 'signature_label') {
-        const { data: existingLabels } = await supabase
-          .from("user_label_memberships")
-          .select("id")
-          .eq("user_id", userId)
-          .eq("role", "owner");
-
-        if (existingLabels && existingLabels.length >= 2) {
-          toast.error("Signature Label users are limited to 2 labels. Upgrade to Prestige for unlimited labels.");
-          setSaving(false);
-          return;
-        }
+      if (profile?.label_type === 'signature_label' && currentLabelCount >= 2) {
+        toast.error("Signature Label users are limited to 2 labels. Upgrade to Prestige for unlimited labels.");
+        setSaving(false);
+        return;
       }
 
       // Create new label
@@ -258,12 +277,20 @@ const LabelManagementTab = ({
       </div>;
   }
   
+  const planName = userPlan?.plan?.name;
   const hasLabelDesignation = labelType && 
     ['partner_label', 'signature_label', 'prestige_label'].includes(labelType);
+  const isLabelFree = planName === "Label Free";
+  const isLabelLite = planName === "Label Lite";
   const canEditLabel = 
-    userPlan?.plan?.name === "Trackball Signature" || 
-    userPlan?.plan?.name === "Trackball Prestige" ||
-    hasLabelDesignation;
+    planName === "Trackball Signature" || 
+    planName === "Trackball Prestige" ||
+    planName === "Label Signature" ||
+    planName === "Label Prestige" ||
+    planName === "Label Partner" ||
+    hasLabelDesignation ||
+    isLabelFree ||
+    isLabelLite;
   return <div className="space-y-6">
       {/* Create New Label Section */}
       <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
@@ -273,7 +300,11 @@ const LabelManagementTab = ({
             CREATE NEW LABEL
           </CardTitle>
           <CardDescription>
-            {canEditLabel ? "Create and manage multiple labels for your distribution" : "Label creation is only available for Partner, Signature and Prestige members"}
+            {canEditLabel 
+              ? (isLabelFree || isLabelLite) 
+                ? `${planName} is limited to 1 label with basic features` 
+                : "Create and manage multiple labels for your distribution"
+              : "Label creation is only available for label accounts"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

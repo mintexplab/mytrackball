@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Palette, Image as ImageIcon, Upload } from "lucide-react";
+import { Loader2, Palette, Image as ImageIcon, Upload, Lock } from "lucide-react";
 import { useS3Upload } from "@/hooks/useS3Upload";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Label {
   id: string;
@@ -32,11 +33,35 @@ export const LabelCustomizationTab = () => {
   const [accentColor, setAccentColor] = useState("#ef4444");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [userPlan, setUserPlan] = useState<any>(null);
+  const [labelType, setLabelType] = useState<string | null>(null);
   const { uploadFile, uploading } = useS3Upload();
 
   useEffect(() => {
     fetchLabels();
+    fetchUserPlanAndType();
   }, []);
+
+  const fetchUserPlanAndType = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: planData } = await supabase
+      .from("user_plans")
+      .select("*, plan:plans(*)")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .single();
+
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("label_type")
+      .eq("id", user.id)
+      .single();
+
+    setUserPlan(planData);
+    setLabelType(profileData?.label_type);
+  };
 
   useEffect(() => {
     if (selectedLabelId) {
@@ -173,6 +198,17 @@ export const LabelCustomizationTab = () => {
     }
   };
 
+  // Determine feature access based on plan
+  const planName = userPlan?.plan?.name || "";
+  const isLabelFree = planName === "Label Free";
+  const isLabelLite = planName === "Label Lite";
+  const hasFullAccess = planName === "Label Signature" || planName === "Label Prestige" || 
+                        labelType === "partner_label" || labelType === "signature_label" || labelType === "prestige_label";
+
+  const canCustomizeLogo = !isLabelFree;
+  const canCustomizeAccentColor = !isLabelFree;
+  const canCustomizeBanner = !isLabelFree;
+
   if (labels.length === 0) {
     return (
       <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
@@ -197,6 +233,22 @@ export const LabelCustomizationTab = () => {
           <CardDescription>
             Customize the branding for your labels. Changes will apply to all subaccounts under each label.
           </CardDescription>
+          {isLabelFree && (
+            <Alert className="mt-4 border-muted">
+              <Lock className="h-4 w-4" />
+              <AlertDescription>
+                Label Free is limited to label name only. Upgrade to Label Lite or higher for additional customization options.
+              </AlertDescription>
+            </Alert>
+          )}
+          {isLabelLite && (
+            <Alert className="mt-4 border-muted">
+              <Lock className="h-4 w-4" />
+              <AlertDescription>
+                Label Lite allows dropdown banner customization. Upgrade to Label Signature or higher for full branding control.
+              </AlertDescription>
+            </Alert>
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Label Selection */}
@@ -220,7 +272,10 @@ export const LabelCustomizationTab = () => {
             <>
               {/* Accent Color */}
               <div className="space-y-2">
-                <Label htmlFor="accentColor">Accent Color</Label>
+                <Label htmlFor="accentColor" className="flex items-center gap-2">
+                  Accent Color
+                  {!canCustomizeAccentColor && <Lock className="w-3 h-3 text-muted-foreground" />}
+                </Label>
                 <div className="flex gap-3 items-center">
                   <Input
                     id="accentColor"
@@ -228,6 +283,7 @@ export const LabelCustomizationTab = () => {
                     value={accentColor}
                     onChange={(e) => setAccentColor(e.target.value)}
                     className="h-12 w-24 cursor-pointer"
+                    disabled={!canCustomizeAccentColor}
                   />
                   <Input
                     type="text"
@@ -235,16 +291,21 @@ export const LabelCustomizationTab = () => {
                     onChange={(e) => setAccentColor(e.target.value)}
                     placeholder="#ef4444"
                     className="flex-1 bg-background/50 border-border"
+                    disabled={!canCustomizeAccentColor}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
                   This color will be used throughout the label's branding
+                  {!canCustomizeAccentColor && " (Upgrade to Label Lite or higher)"}
                 </p>
               </div>
 
-              {/* Logo Upload */}
-              <div className="space-y-2">
-                <Label htmlFor="logo">Label Logo</Label>
+          {/* Logo Upload */}
+          <div className="space-y-2">
+            <Label htmlFor="logo" className="flex items-center gap-2">
+              Label Logo
+              {!canCustomizeLogo && <Lock className="w-3 h-3 text-muted-foreground" />}
+            </Label>
                 {selectedLabel.logo_url && !logoFile && (
                   <div className="mb-3 p-4 border border-border rounded-lg bg-muted/20">
                     <p className="text-sm text-muted-foreground mb-2">Current Logo:</p>
@@ -271,6 +332,7 @@ export const LabelCustomizationTab = () => {
                       }
                     }}
                     className="flex-1 bg-background/50 border-border cursor-pointer"
+                    disabled={!canCustomizeLogo}
                   />
                   <Button
                     type="button"
@@ -280,6 +342,7 @@ export const LabelCustomizationTab = () => {
                       const input = document.getElementById("logo") as HTMLInputElement;
                       input?.click();
                     }}
+                    disabled={!canCustomizeLogo}
                   >
                     <ImageIcon className="w-4 h-4" />
                   </Button>
@@ -291,12 +354,16 @@ export const LabelCustomizationTab = () => {
                 )}
                 <p className="text-xs text-muted-foreground">
                   Upload a square logo (recommended: 256x256px, max 5MB)
+                  {!canCustomizeLogo && " (Upgrade to Label Lite or higher)"}
                 </p>
               </div>
 
-              {/* Dropdown Banner Upload */}
-              <div className="space-y-2">
-                <Label htmlFor="banner">Dropdown Banner</Label>
+          {/* Dropdown Banner Upload */}
+          <div className="space-y-2">
+            <Label htmlFor="banner" className="flex items-center gap-2">
+              Dropdown Banner
+              {!canCustomizeBanner && <Lock className="w-3 h-3 text-muted-foreground" />}
+            </Label>
                 {banner && !bannerFile && (
                   <div className="mb-3 p-4 border border-border rounded-lg bg-muted/20">
                     <p className="text-sm text-muted-foreground mb-2">Current Banner:</p>
@@ -323,6 +390,7 @@ export const LabelCustomizationTab = () => {
                       }
                     }}
                     className="flex-1 bg-background/50 border-border cursor-pointer"
+                    disabled={!canCustomizeBanner}
                   />
                   <Button
                     type="button"
@@ -332,6 +400,7 @@ export const LabelCustomizationTab = () => {
                       const input = document.getElementById("banner") as HTMLInputElement;
                       input?.click();
                     }}
+                    disabled={!canCustomizeBanner}
                   >
                     <Upload className="w-4 h-4" />
                   </Button>
@@ -343,6 +412,7 @@ export const LabelCustomizationTab = () => {
                 )}
                 <p className="text-xs text-muted-foreground">
                   Recommended size: 1200x300px (max 5MB)
+                  {!canCustomizeBanner && " (Upgrade to Label Lite or higher)"}
                 </p>
               </div>
 
