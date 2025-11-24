@@ -31,6 +31,7 @@ import { AdvancedCatalogManagement } from "@/components/AdvancedCatalogManagemen
 import { FloatingAudioPlayer } from "@/components/FloatingAudioPlayer";
 import { MobileMenu } from "@/components/MobileMenu";
 import { OnboardingTutorial } from "@/components/OnboardingTutorial";
+import { InitialAccountSetup } from "@/components/InitialAccountSetup";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { SparkleBeads } from "@/components/SparkleBeads";
@@ -69,9 +70,10 @@ const Dashboard = () => {
     artist: string;
   } | null>(null);
   const [viewAsArtist, setViewAsArtist] = useState(false);
+  const [showInitialSetup, setShowInitialSetup] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showLabelDesignationWelcome, setShowLabelDesignationWelcome] = useState(false);
-  const [labelDesignationType, setLabelDesignationType] = useState<"partner_label" | "signature_label" | "prestige_label" | null>(null);
+  const [labelDesignationType, setLabelDesignationType] = useState<"partner_label" | "signature_label" | "prestige_label" | "label_free" | null>(null);
   const [showSubscriptionWelcome, setShowSubscriptionWelcome] = useState(false);
   const [welcomePlanName, setWelcomePlanName] = useState("");
   const [welcomePlanFeatures, setWelcomePlanFeatures] = useState<string[]>([]);
@@ -304,14 +306,19 @@ const Dashboard = () => {
         .eq("id", userId);
     }
 
-    // Check if onboarding should be shown (only for non-admin, first-time users)
+    // Check if initial setup or onboarding should be shown (only for non-admin, first-time users)
     const { data: isAdminData } = await supabase.rpc('has_role', {
       _user_id: userId,
       _role: 'admin'
     });
     
     if (!isAdminData && !profileData?.onboarding_completed && profileData?.mfa_setup_completed) {
-      setShowOnboarding(true);
+      // Check if account needs initial setup (no account_type set)
+      if (!profileData?.account_type || profileData.account_type === 'pending') {
+        setShowInitialSetup(true);
+      } else {
+        setShowOnboarding(true);
+      }
     }
 
     // If user has a parent account, fetch parent account details
@@ -753,11 +760,41 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Onboarding Tutorial */}
-      {showOnboarding && (
+      {/* Initial Account Setup - Shows first */}
+      {showInitialSetup && (
+        <InitialAccountSetup
+          onComplete={async () => {
+            setShowInitialSetup(false);
+            // Refresh profile data to get updated account type
+            if (user?.id) {
+              await fetchUserPlan(user.id);
+            }
+            // Show onboarding tutorial after setup
+            setShowOnboarding(true);
+          }}
+        />
+      )}
+
+      {/* Onboarding Tutorial - Shows after initial setup */}
+      {showOnboarding && !showInitialSetup && (
         <OnboardingTutorial
-          onComplete={() => setShowOnboarding(false)}
-          onSkip={() => setShowOnboarding(false)}
+          onComplete={async () => {
+            setShowOnboarding(false);
+            // If label account, show label designation welcome after tutorial
+            if (profile?.account_type === 'label' && profile?.label_type === 'Label Free') {
+              setLabelDesignationType('label_free');
+              setShowLabelDesignationWelcome(true);
+            }
+          }}
+          onSkip={async () => {
+            setShowOnboarding(false);
+            // If label account, show label designation welcome after skipping tutorial
+            if (profile?.account_type === 'label' && profile?.label_type === 'Label Free') {
+              setLabelDesignationType('label_free');
+              setShowLabelDesignationWelcome(true);
+            }
+          }}
+          isLabelAccount={profile?.account_type === 'label'}
         />
       )}
 

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 interface OnboardingTutorialProps {
   onComplete: () => void;
   onSkip: () => void;
+  isLabelAccount?: boolean;
 }
 
 const tutorialSteps = [
@@ -79,7 +80,7 @@ const tutorialSteps = [
   },
 ];
 
-export const OnboardingTutorial = ({ onComplete, onSkip }: OnboardingTutorialProps) => {
+export const OnboardingTutorial = ({ onComplete, onSkip, isLabelAccount = false }: OnboardingTutorialProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightStyle, setHighlightStyle] = useState<any>({});
 
