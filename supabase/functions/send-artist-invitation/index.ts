@@ -68,7 +68,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     const distributorName = profile?.label_name || inviterName || 'Trackball Distribution';
 
-    const signupUrl = `${SUPABASE_URL?.replace('.supabase.co', '.lovable.app') || 'https://trackball.lovable.app'}/auth`;
+    // Use the deployed app domain for signup instead of the Supabase project domain
+    const signupUrl = 'https://mytrackball.lovable.app/auth';
 
     const emailHtml = `
       <!DOCTYPE html>
