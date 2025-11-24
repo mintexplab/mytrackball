@@ -254,9 +254,9 @@ export const LabelCustomizationTab = () => {
   // Determine feature access based on plan
   // Only Label Prestige and Partner plans have full customization access
   const planName = userPlan?.plan?.name || "";
-  const hasFullAccess = planName === "Label Prestige" || 
-                        labelType === "partner_label" || 
-                        labelType === "prestige_label";
+  const hasFullAccess = planName.toLowerCase().includes("prestige") || 
+                        labelType?.toLowerCase().includes("partner") || 
+                        labelType?.toLowerCase().includes("prestige");
 
   const canCustomizeLogo = hasFullAccess;
   const canCustomizeAccentColor = hasFullAccess;
