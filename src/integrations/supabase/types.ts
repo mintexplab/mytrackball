@@ -651,6 +651,7 @@ export type Database = {
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subdistributor_accent_color: string | null
+          subdistributor_banner_url: string | null
           subdistributor_dashboard_name: string | null
           subdistributor_footer_text: string | null
           subdistributor_logo_url: string | null
@@ -686,6 +687,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subdistributor_accent_color?: string | null
+          subdistributor_banner_url?: string | null
           subdistributor_dashboard_name?: string | null
           subdistributor_footer_text?: string | null
           subdistributor_logo_url?: string | null
@@ -721,6 +723,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subdistributor_accent_color?: string | null
+          subdistributor_banner_url?: string | null
           subdistributor_dashboard_name?: string | null
           subdistributor_footer_text?: string | null
           subdistributor_logo_url?: string | null

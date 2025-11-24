@@ -48,6 +48,7 @@ import { ModernSupportTicketSystem } from "@/components/ModernSupportTicketSyste
 import { SmartLinksTab } from "@/components/SmartLinksTab";
 import { LabelCustomizationTab } from "@/components/LabelCustomizationTab";
 import { SubdistributorCustomization } from "@/components/SubdistributorCustomization";
+import { SubdistributorArtistInvitation } from "@/components/SubdistributorArtistInvitation";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -621,12 +622,30 @@ const Dashboard = () => {
                       <Palette className="w-4 h-4 mr-2" />
                       Label Customization
                     </DropdownMenuItem>
-                    {isSubdistributor && profile?.is_subdistributor_master && (
-                      <DropdownMenuItem onClick={() => setActiveTab("subdistributor-customization")} className="cursor-pointer">
-                        <Building2 className="w-4 h-4 mr-2" />
-                        Platform Customization
-                      </DropdownMenuItem>
-                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              {isSubdistributor && profile?.is_subdistributor_master && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="gap-1">
+                      <Palette className="w-4 h-4" />
+                      <span className="hidden sm:inline">Branding</span>
+                      <ChevronDown className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 bg-card border-border z-50">
+                    <DropdownMenuLabel>Branding Management</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setActiveTab("subdistributor-customization")} className="cursor-pointer">
+                      <Palette className="w-4 h-4 mr-2" />
+                      Platform Branding
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setActiveTab("subdistributor-artists")} className="cursor-pointer">
+                      <Users className="w-4 h-4 mr-2" />
+                      Invite Artists
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
@@ -876,9 +895,15 @@ const Dashboard = () => {
             </TabsContent>
 
             {isSubdistributor && profile?.is_subdistributor_master && (
-              <TabsContent value="subdistributor-customization">
-                <SubdistributorCustomization />
-              </TabsContent>
+              <>
+                <TabsContent value="subdistributor-customization">
+                  <SubdistributorCustomization />
+                </TabsContent>
+                
+                <TabsContent value="subdistributor-artists">
+                  <SubdistributorArtistInvitation />
+                </TabsContent>
+              </>
             )}
           </Tabs>
       </main>

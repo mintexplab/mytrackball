@@ -14,7 +14,9 @@ export const SubdistributorCustomization = () => {
   const [footerText, setFooterText] = useState("© 2025 XZ1 Recording Ventures. All rights reserved.");
   const [accentColor, setAccentColor] = useState("#ef4444");
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
+  const [currentBannerUrl, setCurrentBannerUrl] = useState<string | null>(null);
   const { uploadFile, uploading } = useS3Upload();
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export const SubdistributorCustomization = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("subdistributor_dashboard_name, subdistributor_footer_text, subdistributor_logo_url, subdistributor_accent_color, is_subdistributor_master")
+        .select("subdistributor_dashboard_name, subdistributor_footer_text, subdistributor_logo_url, subdistributor_accent_color, subdistributor_banner_url, is_subdistributor_master")
         .eq("id", user.id)
         .single();
 
@@ -39,6 +41,7 @@ export const SubdistributorCustomization = () => {
         setFooterText(data.subdistributor_footer_text || "© 2025 XZ1 Recording Ventures. All rights reserved.");
         setAccentColor(data.subdistributor_accent_color || "#ef4444");
         setCurrentLogoUrl(data.subdistributor_logo_url);
+        setCurrentBannerUrl(data.subdistributor_banner_url);
       }
     } catch (error: any) {
       console.error("Error fetching customization:", error);
@@ -64,12 +67,25 @@ export const SubdistributorCustomization = () => {
         }
       }
 
+      // Upload banner if selected
+      let bannerUrl = currentBannerUrl;
+      if (bannerFile) {
+        const uploadedBannerUrl = await uploadFile({
+          file: bannerFile,
+          path: `${user.id}/subdistributor-banners/${Date.now()}-${bannerFile.name}`,
+        });
+        if (uploadedBannerUrl) {
+          bannerUrl = uploadedBannerUrl;
+        }
+      }
+
       const { error } = await supabase
         .from("profiles")
         .update({
           subdistributor_dashboard_name: dashboardName.trim() || "My Trackball",
           subdistributor_footer_text: footerText.trim() || "© 2025 XZ1 Recording Ventures. All rights reserved.",
           subdistributor_logo_url: logoUrl,
+          subdistributor_banner_url: bannerUrl,
           subdistributor_accent_color: accentColor,
         })
         .eq("id", user.id);
@@ -78,6 +94,7 @@ export const SubdistributorCustomization = () => {
 
       toast.success("Customization saved! Refresh to see changes.");
       setLogoFile(null);
+      setBannerFile(null);
       await fetchCustomization();
     } catch (error: any) {
       console.error("Error saving customization:", error);
@@ -105,6 +122,29 @@ export const SubdistributorCustomization = () => {
       await fetchCustomization();
     } catch (error) {
       toast.error("Failed to remove logo");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetBanner = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ subdistributor_banner_url: null })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      toast.success("Banner removed! Refresh to see changes.");
+      setCurrentBannerUrl(null);
+      await fetchCustomization();
+    } catch (error) {
+      toast.error("Failed to remove banner");
     } finally {
       setLoading(false);
     }
@@ -271,6 +311,69 @@ export const SubdistributorCustomization = () => {
           )}
           <p className="text-xs text-muted-foreground">
             Upload a logo for your dashboard header (recommended: 256x256px, max 5MB)
+          </p>
+        </div>
+
+        {/* Banner Upload */}
+        <div className="space-y-2">
+          <Label htmlFor="banner">Dropdown Banner</Label>
+          {currentBannerUrl && !bannerFile && (
+            <div className="mb-3 p-4 border border-border rounded-lg bg-muted/20">
+              <p className="text-sm text-muted-foreground mb-2">Current Banner:</p>
+              <div className="flex items-center gap-3">
+                <img
+                  src={currentBannerUrl}
+                  alt="Current banner"
+                  className="max-h-24 rounded-lg border border-border"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetBanner}
+                  disabled={loading}
+                >
+                  Remove
+                </Button>
+              </div>
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            <Input
+              id="banner"
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  if (file.size > 5 * 1024 * 1024) {
+                    toast.error("Banner file must be less than 5MB");
+                    return;
+                  }
+                  setBannerFile(file);
+                }
+              }}
+              className="flex-1 bg-background/50 border-border cursor-pointer"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                const input = document.getElementById("banner") as HTMLInputElement;
+                input?.click();
+              }}
+            >
+              <ImageIcon className="w-4 h-4" />
+            </Button>
+          </div>
+          {bannerFile && (
+            <p className="text-sm text-muted-foreground">
+              Selected: {bannerFile.name}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Upload a banner for your profile dropdown (recommended: 1920x400px, max 5MB)
           </p>
         </div>
 
