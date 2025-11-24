@@ -47,7 +47,6 @@ import SubscriptionWelcomeDialog from "@/components/SubscriptionWelcomeDialog";
 import { ModernSupportTicketSystem } from "@/components/ModernSupportTicketSystem";
 import { SmartLinksTab } from "@/components/SmartLinksTab";
 import { LabelCustomizationTab } from "@/components/LabelCustomizationTab";
-import { AccountSwitcher } from "@/components/AccountSwitcher";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -424,16 +423,6 @@ const Dashboard = () => {
     setReleaseCount(count || 0);
   };
   const handleSignOut = async () => {
-    // Check if this is an account switch (skip loader)
-    const isAccountSwitch = sessionStorage.getItem("account_switching");
-    
-    if (isAccountSwitch) {
-      sessionStorage.removeItem("account_switching");
-      await supabase.auth.signOut();
-      navigate("/auth");
-      return;
-    }
-
     setIsLoggingOut(true);
 
     // Random delay between 3-10 seconds
@@ -658,8 +647,7 @@ const Dashboard = () => {
               </div>
 
               {/* Notifications Dropdown */}
-              <div className="flex items-center gap-1 ml-3" data-tutorial="notifications-icon">
-                <AccountSwitcher currentUserEmail={user?.email} />
+              <div className="flex items-center gap-3 ml-3" data-tutorial="notifications-icon">
                 <NotificationsDropdown userId={user?.id || ""} />
                 <ProfileDropdown
                   userEmail={user?.email} 

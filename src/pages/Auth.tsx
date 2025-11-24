@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,24 +17,6 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [isZooming, setIsZooming] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Check for stored email from account switcher
-    const switchEmail = localStorage.getItem("trackball_switch_email");
-    if (switchEmail) {
-      setEmail(switchEmail);
-      setIsLogin(true);
-      localStorage.removeItem("trackball_switch_email");
-      toast.info(`Switching to ${switchEmail}`);
-    }
-
-    // Fade in animation
-    document.body.style.opacity = "0";
-    document.body.style.transition = "opacity 2s ease-in";
-    setTimeout(() => {
-      document.body.style.opacity = "1";
-    }, 50);
-  }, []);
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Auth submit", {
