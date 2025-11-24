@@ -332,6 +332,23 @@ const UserManagement = () => {
     }
   };
 
+  const updateAccountType = async (userId: string, accountType: string) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ account_type: accountType })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      toast.success(`Account type updated to ${accountType}`);
+      fetchUsers();
+    } catch (error: any) {
+      console.error("Account type update error:", error);
+      toast.error("Failed to update account type: " + error.message);
+    }
+  };
+
   const assignLabelDesignation = async (userId: string, labelType: string | null) => {
     try {
       const { error } = await supabase
@@ -349,6 +366,27 @@ const UserManagement = () => {
     } catch (error: any) {
       console.error("Label designation assignment error:", error);
       toast.error("Failed to assign label designation: " + error.message);
+    }
+  };
+
+  // Filter plans based on account type
+  const getFilteredPlans = (accountType: string | null) => {
+    if (accountType === 'label') {
+      // Label plans: those with "Label" or specific label-related names
+      return plans.filter(p => 
+        p.name.toLowerCase().includes('label') || 
+        p.name.toLowerCase().includes('partner') ||
+        p.name.toLowerCase().includes('signature') ||
+        p.name.toLowerCase().includes('prestige')
+      );
+    } else {
+      // Artist plans: everything else
+      return plans.filter(p => 
+        !p.name.toLowerCase().includes('label') && 
+        !p.name.toLowerCase().includes('partner') &&
+        !p.name.toLowerCase().includes('signature') &&
+        !p.name.toLowerCase().includes('prestige')
+      );
     }
   };
 
@@ -648,10 +686,33 @@ const UserManagement = () => {
 
                           <Separator className="my-3" />
 
-                          {/* Plan Management */}
+                          {/* Account Type & Plan Management */}
                           <div className="mb-3 space-y-3">
                             <div>
-                              <Label className="text-xs text-muted-foreground mb-2 block">Upgrade/Downgrade Plan</Label>
+                              <Label className="text-xs text-muted-foreground mb-2 block">Account Type</Label>
+                              <Select
+                                onValueChange={(value) => updateAccountType(masterUser.id, value)}
+                                defaultValue={masterUser.account_type || "artist"}
+                                disabled={masterUser.is_banned}
+                              >
+                                <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-card border-border">
+                                  <SelectItem value="artist">
+                                    <span className="text-xs">Artist Account</span>
+                                  </SelectItem>
+                                  <SelectItem value="label">
+                                    <span className="text-xs">Label Account</span>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs text-muted-foreground mb-2 block">
+                                {masterUser.account_type === 'label' ? 'Upgrade/Downgrade Label Plan' : 'Upgrade/Downgrade Artist Plan'}
+                              </Label>
                               <Select
                                 onValueChange={(planId) => assignPlan(masterUser.id, planId)}
                                 defaultValue={masterUser.user_plans?.[0]?.plan_id}
@@ -661,7 +722,7 @@ const UserManagement = () => {
                                   <SelectValue placeholder="Select plan" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-card border-border">
-                                  {plans.map((plan) => (
+                                  {getFilteredPlans(masterUser.account_type).map((plan) => (
                                     <SelectItem key={plan.id} value={plan.id}>
                                       <div className="flex items-center gap-2">
                                         <Package className="w-3 h-3" />
@@ -687,6 +748,12 @@ const UserManagement = () => {
                                   <SelectItem value="none">
                                     <span className="text-xs">No Designation</span>
                                   </SelectItem>
+                                  <SelectItem value="label_free">
+                                    <span className="text-xs">Label Free (70/30 split)</span>
+                                  </SelectItem>
+                                  <SelectItem value="label_lite">
+                                    <span className="text-xs">Label Lite (90/10 split)</span>
+                                  </SelectItem>
                                   <SelectItem value="partner_label">
                                     <span className="text-xs">Partner Label</span>
                                   </SelectItem>
@@ -696,7 +763,7 @@ const UserManagement = () => {
                                   <SelectItem value="prestige_label">
                                     <span className="text-xs">Prestige Label</span>
                                   </SelectItem>
-                              </SelectContent>
+                                </SelectContent>
                             </Select>
                           </div>
                         </div>
@@ -958,7 +1025,30 @@ const UserManagement = () => {
 
                           <div className="mb-3 space-y-3">
                             <div>
-                              <Label className="text-xs text-muted-foreground mb-2 block">Upgrade/Downgrade Plan</Label>
+                              <Label className="text-xs text-muted-foreground mb-2 block">Account Type</Label>
+                              <Select
+                                onValueChange={(value) => updateAccountType(user.id, value)}
+                                defaultValue={user.account_type || "artist"}
+                                disabled={user.is_banned}
+                              >
+                                <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-card border-border">
+                                  <SelectItem value="artist">
+                                    <span className="text-xs">Artist Account</span>
+                                  </SelectItem>
+                                  <SelectItem value="label">
+                                    <span className="text-xs">Label Account</span>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs text-muted-foreground mb-2 block">
+                                {user.account_type === 'label' ? 'Upgrade/Downgrade Label Plan' : 'Upgrade/Downgrade Artist Plan'}
+                              </Label>
                               <Select
                                 onValueChange={(planId) => assignPlan(user.id, planId)}
                                 defaultValue={user.user_plans?.[0]?.plan_id}
@@ -968,7 +1058,7 @@ const UserManagement = () => {
                                   <SelectValue placeholder="Select plan" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-card border-border">
-                                  {plans.map((plan) => (
+                                  {getFilteredPlans(user.account_type).map((plan) => (
                                     <SelectItem key={plan.id} value={plan.id}>
                                       <div className="flex items-center gap-2">
                                         <Package className="w-3 h-3" />
@@ -994,6 +1084,12 @@ const UserManagement = () => {
                                   <SelectItem value="none">
                                     <span className="text-xs">No Designation</span>
                                   </SelectItem>
+                                  <SelectItem value="label_free">
+                                    <span className="text-xs">Label Free (70/30 split)</span>
+                                  </SelectItem>
+                                  <SelectItem value="label_lite">
+                                    <span className="text-xs">Label Lite (90/10 split)</span>
+                                  </SelectItem>
                                   <SelectItem value="partner_label">
                                     <span className="text-xs">Partner Label</span>
                                   </SelectItem>
@@ -1003,7 +1099,7 @@ const UserManagement = () => {
                                   <SelectItem value="prestige_label">
                                     <span className="text-xs">Prestige Label</span>
                                   </SelectItem>
-                              </SelectContent>
+                                </SelectContent>
                             </Select>
                           </div>
                         </div>
