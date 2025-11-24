@@ -123,6 +123,10 @@ const LabelDesignationManagement = () => {
     if (!labelType) return <Badge variant="outline">No Designation</Badge>;
     
     switch (labelType) {
+      case "label_free":
+        return <Badge className="bg-green-500/20 text-green-500 border-green-500/30">Label Free</Badge>;
+      case "label_lite":
+        return <Badge className="bg-teal-500/20 text-teal-500 border-teal-500/30">Label Lite</Badge>;
       case "partner_label":
         return <Badge className="bg-purple-500/20 text-purple-500 border-purple-500/30">Partner Label</Badge>;
       case "signature_label":
@@ -192,6 +196,10 @@ const LabelDesignationManagement = () => {
                     <TableCell>
                       {profile.parent_account_id ? (
                         <span className="text-sm text-muted-foreground">N/A</span>
+                      ) : profile.label_type === "label_free" ? (
+                        <span className="font-medium text-green-500">70%</span>
+                      ) : profile.label_type === "label_lite" ? (
+                        <span className="font-medium text-teal-500">90%</span>
                       ) : profile.label_type === "partner_label" ? (
                         editingRoyalty === profile.id ? (
                           <div className="flex items-center gap-2">
@@ -258,6 +266,8 @@ const LabelDesignationManagement = () => {
                           </SelectTrigger>
                           <SelectContent className="bg-card border-border">
                             <SelectItem value="none">No Designation</SelectItem>
+                            <SelectItem value="label_free">Label Free (70/30 split)</SelectItem>
+                            <SelectItem value="label_lite">Label Lite (90/10 split)</SelectItem>
                             <SelectItem value="partner_label">Partner Label</SelectItem>
                             <SelectItem value="signature_label">Signature Label</SelectItem>
                             <SelectItem value="prestige_label">Prestige Label</SelectItem>
@@ -275,6 +285,8 @@ const LabelDesignationManagement = () => {
         <div className="mt-6 space-y-4 p-4 bg-muted/20 rounded-lg border border-border">
           <h3 className="font-semibold text-sm">Label Designation Types:</h3>
           <div className="space-y-2 text-sm text-muted-foreground">
+            <p><strong className="text-green-500">Label Free:</strong> Free label tier with 70/30 royalty split</p>
+            <p><strong className="text-teal-500">Label Lite:</strong> Entry-level label tier with 90/10 royalty split</p>
             <p><strong className="text-purple-500">Partner Label:</strong> Label with a custom partner deal arrangement</p>
             <p><strong className="text-blue-500">Signature Label:</strong> Label holding an active Trackball Signature subscription plan</p>
             <p><strong className="text-amber-500">Prestige Label:</strong> Label holding an active Trackball Prestige subscription plan</p>
