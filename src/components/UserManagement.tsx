@@ -509,9 +509,10 @@ const UserManagement = () => {
           // Separate admin accounts, label accounts, and independent users
           const adminAccounts = users.filter(u => u.roles?.includes('admin'));
           
-          // Label accounts: users with label designation OR users who have created labels
+          // Label accounts: users with account_type === 'label' AND (label designation OR created labels)
           const labelAccounts = users.filter(u => {
             if (u.roles?.includes('admin')) return false;
+            if (u.account_type !== 'label') return false; // Must be explicitly set as label account
             const hasLabelDesignation = u.label_type && 
               ['Label Partner', 'Label Signature', 'Label Prestige', 'Label Free', 'Label Lite'].includes(u.label_type);
             const hasCreatedLabels = u.user_labels && u.user_labels.length > 0;
@@ -521,10 +522,8 @@ const UserManagement = () => {
           const independentUsers = users.filter(u => {
             if (u.roles?.includes('admin')) return false;
             if (u.parent_account_id) return false; // Skip subaccounts
-            const hasLabelDesignation = u.label_type && 
-              ['Label Partner', 'Label Signature', 'Label Prestige', 'Label Free', 'Label Lite'].includes(u.label_type);
-            const hasCreatedLabels = u.user_labels && u.user_labels.length > 0;
-            return !hasLabelDesignation && !hasCreatedLabels && !u.is_master_account;
+            // Independent users are artist accounts without label designations
+            return u.account_type !== 'label';
           });
           
           return (
@@ -591,7 +590,7 @@ const UserManagement = () => {
                 const masterLabel = masterUser.user_labels?.[0];
                 const hasLabelDesignation = masterUser.label_type && 
                   ['Label Partner', 'Label Signature', 'Label Prestige', 'Label Free', 'Label Lite'].includes(masterUser.label_type);
-                const isLabelUnconfigured = hasLabelDesignation && !masterLabel;
+                const isLabelUnconfigured = hasLabelDesignation && !masterLabel && masterUser.account_type === 'label';
                 
                 return (
                   <div key={masterUser.id} className="space-y-4">
