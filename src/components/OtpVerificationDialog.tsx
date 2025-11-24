@@ -121,7 +121,7 @@ export const OtpVerificationDialog = ({ open, email, onVerified, onCancel }: Otp
           </div>
           <DialogTitle className="text-center text-2xl">Verify Your Email</DialogTitle>
           <DialogDescription className="text-center">
-            We've sent a 6-digit verification code to<br />
+            We have sent a verification link to your inbox, you should receive it shortly.<br />
             <span className="font-medium text-foreground">{email}</span>
           </DialogDescription>
         </DialogHeader>

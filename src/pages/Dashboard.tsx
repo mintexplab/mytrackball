@@ -764,9 +764,11 @@ const Dashboard = () => {
         <InitialAccountSetup
           onComplete={async () => {
             setShowInitialSetup(false);
-            // Refresh profile data to get updated account type
+            // Refresh profile data to get updated account type and wait for it
             if (user?.id) {
               await fetchUserPlan(user.id);
+              // Small delay to ensure state updates have propagated
+              await new Promise(resolve => setTimeout(resolve, 100));
             }
             // Show onboarding tutorial after setup
             setShowOnboarding(true);

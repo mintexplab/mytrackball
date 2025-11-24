@@ -71,10 +71,13 @@ export const InitialAccountSetup = ({ onComplete }: InitialAccountSetupProps) =>
         profileUpdate.label_type = "Label Free";
       }
 
-      // Update profile
+      // Update profile and mark onboarding as started
       const { error: profileError } = await supabase
         .from("profiles")
-        .update(profileUpdate)
+        .update({
+          ...profileUpdate,
+          onboarding_completed: false
+        })
         .eq("id", user.id);
 
       if (profileError) throw profileError;
