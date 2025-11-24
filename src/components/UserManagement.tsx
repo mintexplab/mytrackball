@@ -506,12 +506,19 @@ const UserManagement = () => {
       <CardContent>
         {/* Group users by label accounts */}
         {(() => {
-          // Separate admin accounts, label accounts, and independent users
+          // Separate admin accounts, subdistributor accounts, label accounts, and independent users
           const adminAccounts = users.filter(u => u.roles?.includes('admin'));
+          
+          // Subdistributor master accounts
+          const subdistributorAccounts = users.filter(u => {
+            if (u.roles?.includes('admin')) return false;
+            return u.is_subdistributor_master === true;
+          });
           
           // Label accounts: users with account_type === 'label' AND (label designation OR created labels)
           const labelAccounts = users.filter(u => {
             if (u.roles?.includes('admin')) return false;
+            if (u.is_subdistributor_master) return false; // Exclude subdistributor masters
             if (u.account_type !== 'label') return false; // Must be explicitly set as label account
             const hasLabelDesignation = u.label_type && 
               ['Label Partner', 'Label Signature', 'Label Prestige', 'Label Free', 'Label Lite'].includes(u.label_type);
@@ -522,6 +529,7 @@ const UserManagement = () => {
           const independentUsers = users.filter(u => {
             if (u.roles?.includes('admin')) return false;
             if (u.parent_account_id) return false; // Skip subaccounts
+            if (u.is_subdistributor_master) return false; // Exclude subdistributor masters
             // Independent users are artist accounts without label designations
             return u.account_type !== 'label';
           });
@@ -584,6 +592,266 @@ const UserManagement = () => {
                   </div>
                 </div>
               )}
+              
+              {/* Subdistributor Master Accounts */}
+              {subdistributorAccounts.map((subdistributorUser) => {
+                const subaccounts = users.filter(u => u.parent_account_id === subdistributorUser.id);
+                const subdistributorName = subdistributorUser.subdistributor_dashboard_name || "My Trackball";
+                const isSubdistributorUnconfigured = subdistributorName === "My Trackball";
+                
+                return (
+                  <div key={subdistributorUser.id} className="space-y-4">
+                    <div className="flex items-center gap-3 pb-2 border-b border-border">
+                      <Badge variant="outline" className="bg-purple-500/10 border-purple-500/30 text-purple-500">
+                        Subdistributor Master
+                      </Badge>
+                      {isSubdistributorUnconfigured ? (
+                        <span className="text-sm text-yellow-500 font-semibold">
+                          Subdistributor Unconfigured
+                        </span>
+                      ) : (
+                        <span className="text-sm font-semibold text-foreground">
+                          {subdistributorName}
+                        </span>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {subaccounts.length} subaccount{subaccounts.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {/* Master Account Card with Purple Glow */}
+                      <Card className="bg-card/50 border-border hover:border-purple-500/30 transition-all shadow-[0_0_15px_rgba(168,85,247,0.3)] border-purple-500/50">
+                        <CardContent className="p-4">
+                          {/* User Header */}
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <User className="w-4 h-4 text-purple-500 shrink-0" />
+                                <h3 className="font-semibold text-sm truncate">
+                                  {subdistributorUser.full_name || "No name set"}
+                                </h3>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-3 h-3 text-muted-foreground shrink-0" />
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {subdistributorUser.email}
+                                </p>
+                              </div>
+                              {subdistributorUser.user_id && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  ID: {subdistributorUser.user_id}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Status Badges */}
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {subdistributorUser.is_banned ? (
+                              <Badge variant="destructive" className="flex items-center gap-1 text-xs">
+                                <Ban className="w-3 h-3" />
+                                Banned
+                              </Badge>
+                            ) : subdistributorUser.is_locked ? (
+                              <Badge variant="secondary" className="flex items-center gap-1 text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                                <Lock className="w-3 h-3" />
+                                Locked
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/20">
+                                Active
+                              </Badge>
+                            )}
+
+                            <Badge className="text-xs bg-purple-500/20 text-purple-500 border-purple-500/30">
+                              Subdistributor Master ({subdistributorUser.sublabel_count})
+                            </Badge>
+                          </div>
+
+                          {/* Current Plan */}
+                          <div className="mb-3">
+                            <p className="text-xs text-muted-foreground mb-1">Current Plan</p>
+                            {subdistributorUser.user_plans?.[0]?.plan ? (
+                              <Badge className="bg-gradient-primary text-white text-xs">
+                                {subdistributorUser.user_plans[0].plan.name}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">No Plan</Badge>
+                            )}
+                          </div>
+
+                          <Separator className="my-3" />
+
+                          {/* Account Type Management */}
+                          <div className="mb-3 space-y-3">
+                            <div>
+                              <Label className="text-xs text-muted-foreground mb-2 block">Account Type</Label>
+                              <Select
+                                onValueChange={(value) => updateAccountType(subdistributorUser.id, value)}
+                                defaultValue={subdistributorUser.account_type || "artist"}
+                                disabled={subdistributorUser.is_banned}
+                              >
+                                <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-card border-border">
+                                  <SelectItem value="artist">Independent Artist</SelectItem>
+                                  <SelectItem value="label">Label</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs text-muted-foreground mb-2 block">Assign Plan</Label>
+                              <Select
+                                onValueChange={(planId) => assignPlan(subdistributorUser.id, planId)}
+                                value={subdistributorUser.user_plans?.[0]?.plan_id || ""}
+                                disabled={subdistributorUser.is_banned}
+                              >
+                                <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
+                                  <SelectValue placeholder="Select plan" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-card border-border">
+                                  {getFilteredPlans(subdistributorUser.account_type).map((plan) => (
+                                    <SelectItem key={plan.id} value={plan.id}>
+                                      {plan.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          <Separator className="my-3" />
+
+                          {/* Action Buttons */}
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 h-8 text-xs"
+                                onClick={() => toggleBanUser(subdistributorUser.id, subdistributorUser.is_banned || false)}
+                              >
+                                {subdistributorUser.is_banned ? (
+                                  <>
+                                    <Unlock className="w-3 h-3 mr-1" />
+                                    Unban
+                                  </>
+                                ) : (
+                                  <>
+                                    <Ban className="w-3 h-3 mr-1" />
+                                    Ban
+                                  </>
+                                )}
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 h-8 text-xs"
+                                onClick={() => toggleLockUser(subdistributorUser.id, subdistributorUser.is_locked || false)}
+                                disabled={subdistributorUser.is_banned}
+                              >
+                                {subdistributorUser.is_locked ? (
+                                  <>
+                                    <Unlock className="w-3 h-3 mr-1" />
+                                    Unlock
+                                  </>
+                                ) : (
+                                  <>
+                                    <Lock className="w-3 h-3 mr-1" />
+                                    Lock
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+
+                            <div className="flex gap-2">
+                              <SendNotificationDialog userId={subdistributorUser.id} userName={subdistributorUser.full_name || subdistributorUser.email} />
+                              
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="flex-1 h-8 text-xs"
+                                onClick={() => deleteUser(subdistributorUser.id, subdistributorUser.email)}
+                              >
+                                <Trash2 className="w-3 h-3 mr-1" />
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Subaccounts */}
+                      {subaccounts.map((subaccount) => (
+                        <Card key={subaccount.id} className="bg-card/50 border-border hover:border-border/70 transition-all">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                                  <h3 className="font-semibold text-sm truncate">
+                                    {subaccount.full_name || "No name set"}
+                                  </h3>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Mail className="w-3 h-3 text-muted-foreground shrink-0" />
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {subaccount.email}
+                                  </p>
+                                </div>
+                                {subaccount.user_id && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    ID: {subaccount.user_id}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {subaccount.is_banned ? (
+                                <Badge variant="destructive" className="flex items-center gap-1 text-xs">
+                                  <Ban className="w-3 h-3" />
+                                  Banned
+                                </Badge>
+                              ) : subaccount.is_locked ? (
+                                <Badge variant="secondary" className="flex items-center gap-1 text-xs bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+                                  <Lock className="w-3 h-3" />
+                                  Locked
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/20">
+                                  Active
+                                </Badge>
+                              )}
+
+                              <Badge variant="outline" className="text-xs">
+                                Subaccount
+                              </Badge>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="w-full h-8 text-xs"
+                                onClick={() => deleteUser(subaccount.id, subaccount.email)}
+                              >
+                                <Trash2 className="w-3 h-3 mr-1" />
+                                Delete Subaccount
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              
               {/* Label Accounts */}
               {labelAccounts.map((masterUser) => {
                 const subaccounts = users.filter(u => u.parent_account_id === masterUser.id);
