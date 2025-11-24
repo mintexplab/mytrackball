@@ -81,6 +81,59 @@ const Dashboard = () => {
   const [activeLabelDigitId, setActiveLabelDigitId] = useState<string>("");
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+
+  // Function to apply accent color globally
+  const applyAccentColor = (color: string) => {
+    const root = document.documentElement;
+    
+    // Convert hex to HSL for CSS variables
+    const hexToHSL = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      if (!result) return "0 84% 60%";
+      
+      let r = parseInt(result[1], 16) / 255;
+      let g = parseInt(result[2], 16) / 255;
+      let b = parseInt(result[3], 16) / 255;
+      
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      let h = 0, s = 0, l = (max + min) / 2;
+      
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        
+        switch (max) {
+          case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+          case g: h = ((b - r) / d + 2) / 6; break;
+          case b: h = ((r - g) / d + 4) / 6; break;
+        }
+      }
+      
+      h = Math.round(h * 360);
+      s = Math.round(s * 100);
+      l = Math.round(l * 100);
+      
+      return `${h} ${s}% ${l}%`;
+    };
+
+    const hslColor = hexToHSL(color);
+    
+    // Apply to all primary color variables
+    root.style.setProperty('--primary', hslColor);
+    root.style.setProperty('--accent', hslColor);
+    root.style.setProperty('--ring', hslColor);
+    root.style.setProperty('--chart-1', hslColor);
+    
+    // Update gradients
+    const [h, s, l] = hslColor.split(' ');
+    const lightnessNum = parseInt(l);
+    const darkerL = Math.max(20, lightnessNum - 15);
+    root.style.setProperty('--gradient-primary', `linear-gradient(135deg, hsl(${h} ${s} ${l}), hsl(${h} ${s} ${darkerL}%))`);
+    root.style.setProperty('--gradient-accent', `linear-gradient(180deg, hsl(${h} ${s} ${l}), hsl(${h} ${s} ${darkerL}%))`);
+    root.style.setProperty('--shadow-glow', `0 0 40px hsl(${h} ${s} ${l} / 0.3)`);
+  };
+
   useEffect(() => {
     const {
       data: {
@@ -257,17 +310,28 @@ const Dashboard = () => {
     } = await supabase.from("profiles").select("*").eq("id", userId).single();
     setProfile(profileData);
 
-    // Fetch label 5-digit ID if user has an active label
+    // Fetch label 5-digit ID and accent color if user has an active label
     if (profileData?.active_label_id) {
       const { data: labelData } = await supabase
         .from("labels")
-        .select("label_id")
+        .select("label_id, accent_color")
         .eq("id", profileData.active_label_id)
         .single();
       
       if (labelData) {
         setActiveLabelDigitId(labelData.label_id);
+        
+        // Apply accent color globally if it exists
+        if (labelData.accent_color) {
+          applyAccentColor(labelData.accent_color);
+        } else {
+          // Reset to default red if no custom color
+          applyAccentColor("#ef4444");
+        }
       }
+    } else {
+      // Reset to default if no active label
+      applyAccentColor("#ef4444");
     }
 
     // Check if this is a newly assigned plan (subscription_welcome_shown_at is null or old)

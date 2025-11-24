@@ -207,7 +207,7 @@ export const LabelCustomizationTab = () => {
         }
       }
 
-      toast.success("Label customization saved successfully!");
+      toast.success("Label customization saved! Refresh to see changes.");
       
       // Refresh data
       await fetchLabels();
@@ -221,6 +221,31 @@ export const LabelCustomizationTab = () => {
     } catch (error: any) {
       console.error("Error saving customization:", error);
       toast.error(error.message || "Failed to save customization");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetToDefault = async () => {
+    if (!selectedLabel) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("labels")
+        .update({
+          accent_color: "#ef4444",
+        })
+        .eq("id", selectedLabel.id);
+
+      if (error) throw error;
+
+      setAccentColor("#ef4444");
+      toast.success("Accent color reset to default! Refresh to see changes.");
+      await fetchLabels();
+    } catch (error: any) {
+      console.error("Error resetting color:", error);
+      toast.error("Failed to reset color");
     } finally {
       setLoading(false);
     }
@@ -321,9 +346,17 @@ export const LabelCustomizationTab = () => {
                     className="flex-1 bg-background/50 border-border"
                     disabled={!canCustomizeAccentColor}
                   />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleResetToDefault}
+                    disabled={!canCustomizeAccentColor || loading || accentColor === "#ef4444"}
+                  >
+                    Reset
+                  </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  This color will be used throughout the label's branding
+                  This color will be applied to all buttons, accents, and branding throughout your label's organization. Changes apply after saving and refreshing.
                   {!canCustomizeAccentColor && " (Upgrade to Label Lite or higher)"}
                 </p>
               </div>
