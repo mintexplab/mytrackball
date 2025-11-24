@@ -37,6 +37,7 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, us
   const [labelMemberships, setLabelMemberships] = useState<LabelMembership[]>([]);
   const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [customBanner, setCustomBanner] = useState<string | null>(null);
   
   const initials = userEmail
     ? userEmail.substring(0, 2).toUpperCase()
@@ -60,6 +61,19 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, us
 
       if (profile) {
         setActiveLabelId(profile.active_label_id);
+        
+        // Fetch custom banner for active label
+        if (profile.active_label_id) {
+          const { data: banner } = await supabase
+            .from("label_dropdown_banners")
+            .select("banner_url")
+            .eq("label_id", profile.active_label_id)
+            .maybeSingle();
+          
+          if (banner) {
+            setCustomBanner(banner.banner_url);
+          }
+        }
       }
 
       // Get all label memberships with 5-digit label IDs from labels table
@@ -143,7 +157,7 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, us
         {/* Banner Image */}
         <div className="w-full h-20 overflow-hidden rounded-t-md">
           <img 
-            src={dropdownBanner} 
+            src={customBanner || dropdownBanner} 
             alt="Banner" 
             className="w-full h-full object-cover animate-fade-in"
           />
