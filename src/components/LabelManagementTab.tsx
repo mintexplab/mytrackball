@@ -9,6 +9,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { Building2, LogOut, Crown, Users, Check, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { PlanPermissions } from "@/hooks/usePlanPermissions";
+import { FeatureLockBadge } from "./FeatureLockBadge";
 interface LabelMembership {
   id: string;
   label_id: string;
@@ -19,10 +21,12 @@ interface LabelMembership {
 interface LabelManagementTabProps {
   userId: string;
   userPlan: any;
+  permissions: PlanPermissions;
 }
 const LabelManagementTab = ({
   userId,
-  userPlan
+  userPlan,
+  permissions
 }: LabelManagementTabProps) => {
   const [memberships, setMemberships] = useState<LabelMembership[]>([]);
   const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
@@ -64,6 +68,12 @@ const LabelManagementTab = ({
     }
   };
   const saveLabelName = async () => {
+    // Check label limit
+    if (permissions.maxLabels && memberships.length >= permissions.maxLabels) {
+      toast.error(`You've reached your plan limit of ${permissions.maxLabels} label(s). Upgrade to add more labels.`);
+      return;
+    }
+    
     setSaving(true);
     try {
       // Get profile to check label_type
@@ -300,14 +310,27 @@ const LabelManagementTab = ({
             CREATE NEW LABEL
           </CardTitle>
           <CardDescription>
-            {canEditLabel 
-              ? (isLabelFree || isLabelLite) 
-                ? `${planName} is limited to 1 label with basic features` 
-                : "Create and manage multiple labels for your distribution"
-              : "Label creation is only available for label accounts"}
+            {permissions.canCreateLabels
+              ? permissions.maxLabels 
+                ? `Create labels for your distribution (${memberships.length}/${permissions.maxLabels} labels)`
+                : "Create and manage labels for your distribution"
+              : "Label creation is not available on your current plan"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {permissions.maxLabels && memberships.length >= permissions.maxLabels && (
+            <div className="p-4 rounded-lg bg-muted/50 border border-border relative">
+              <FeatureLockBadge 
+                isLocked={true}
+                currentLimit={memberships.length}
+                maxLimit={permissions.maxLabels}
+                requiredPlan="higher tier"
+              />
+              <p className="text-sm text-muted-foreground pr-28">
+                You've reached your plan limit of {permissions.maxLabels} label(s). Upgrade to create more labels.
+              </p>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="new_label_name">New Label Name</Label>
             <Input 
@@ -316,12 +339,12 @@ const LabelManagementTab = ({
               value={labelName} 
               onChange={e => setLabelName(e.target.value)} 
               className="bg-background/50 border-border" 
-              disabled={!canEditLabel || saving} 
+              disabled={!permissions.canCreateLabels || saving} 
             />
           </div>
-          <Button 
+            <Button 
             onClick={saveLabelName} 
-            disabled={!canEditLabel || saving || !labelName.trim()} 
+            disabled={!permissions.canCreateLabels || saving || !labelName.trim() || (permissions.maxLabels && memberships.length >= permissions.maxLabels)} 
             className="bg-gradient-primary hover:opacity-90"
           >
             {saving ? "Creating..." : "Create Label"}
