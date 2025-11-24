@@ -686,7 +686,7 @@ const UserManagement = () => {
 
                           <Separator className="my-3" />
 
-                          {/* Account Type & Plan Management */}
+                          {/* Account Type Management */}
                           <div className="mb-3 space-y-3">
                             <div>
                               <Label className="text-xs text-muted-foreground mb-2 block">Account Type</Label>
@@ -709,32 +709,7 @@ const UserManagement = () => {
                               </Select>
                             </div>
 
-                            <div>
-                              <Label className="text-xs text-muted-foreground mb-2 block">
-                                {masterUser.account_type === 'label' ? 'Upgrade/Downgrade Label Plan' : 'Upgrade/Downgrade Artist Plan'}
-                              </Label>
-                              <Select
-                                onValueChange={(planId) => assignPlan(masterUser.id, planId)}
-                                defaultValue={masterUser.user_plans?.[0]?.plan_id}
-                                disabled={masterUser.is_banned}
-                              >
-                                <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
-                                  <SelectValue placeholder="Select plan" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-card border-border">
-                                  {getFilteredPlans(masterUser.account_type).map((plan) => (
-                                    <SelectItem key={plan.id} value={plan.id}>
-                                      <div className="flex items-center gap-2">
-                                        <Package className="w-3 h-3" />
-                                        <span className="text-xs">{plan.name}</span>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            {/* Only show label designation for label accounts */}
+                            {/* Show label designation info for label accounts */}
                             {masterUser.account_type === 'label' && (
                               <div>
                                 <Label className="text-xs text-muted-foreground mb-2 block">Label Designation</Label>
@@ -1022,32 +997,7 @@ const UserManagement = () => {
                               </Select>
                             </div>
 
-                            <div>
-                              <Label className="text-xs text-muted-foreground mb-2 block">
-                                {user.account_type === 'label' ? 'Upgrade/Downgrade Label Plan' : 'Upgrade/Downgrade Artist Plan'}
-                              </Label>
-                              <Select
-                                onValueChange={(planId) => assignPlan(user.id, planId)}
-                                defaultValue={user.user_plans?.[0]?.plan_id}
-                                disabled={user.is_banned}
-                              >
-                                <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
-                                  <SelectValue placeholder="Select plan" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-card border-border">
-                                  {getFilteredPlans(user.account_type).map((plan) => (
-                                    <SelectItem key={plan.id} value={plan.id}>
-                                      <div className="flex items-center gap-2">
-                                        <Package className="w-3 h-3" />
-                                        <span className="text-xs">{plan.name}</span>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            {/* Only show label designation for label accounts */}
+                            {/* Show label designation info for label accounts */}
                             {user.account_type === 'label' && (
                               <div>
                                 <Label className="text-xs text-muted-foreground mb-2 block">Label Designation</Label>
