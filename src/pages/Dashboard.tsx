@@ -47,6 +47,7 @@ import SubscriptionWelcomeDialog from "@/components/SubscriptionWelcomeDialog";
 import { ModernSupportTicketSystem } from "@/components/ModernSupportTicketSystem";
 import { SmartLinksTab } from "@/components/SmartLinksTab";
 import { LabelCustomizationTab } from "@/components/LabelCustomizationTab";
+import { LabelInvitationNotification } from "@/components/LabelInvitationNotification";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -626,38 +627,33 @@ const Dashboard = () => {
               </Button>
 
               {/* User Info Display */}
-              <div className="hidden lg:flex flex-col items-end text-right">
-                <p className="text-sm font-medium text-foreground">
-                  {profile?.full_name || profile?.display_name || profile?.artist_name || "User"}
-                </p>
-                {activeLabelDigitId ? (
-                  <p className="text-xs text-muted-foreground">
-                    {profile?.label_name} ID: {activeLabelDigitId}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    ID: {profile?.user_id}
-                  </p>
-                )}
-                {parentAccount && (
-                  <Badge variant="outline" className="text-xs border-primary/30 bg-primary/10 mt-1">
-                    Subaccount of {parentAccount.label_name || parentAccount.display_name || parentAccount.artist_name}
-                  </Badge>
-                )}
-              </div>
+              <ProfileDropdown
+                userEmail={user?.email} 
+                avatarUrl={profile?.avatar_url}
+                artistName={profile?.artist_name}
+                fullName={profile?.full_name}
+                userId={profile?.user_id}
+                labelName={profile?.label_name}
+                labelDigitId={activeLabelDigitId}
+                parentAccount={parentAccount}
+                showAsClickableHeader={true}
+                onSignOut={handleSignOut}
+              />
 
               {/* Notifications Dropdown */}
               <div className="flex items-center gap-3 ml-3" data-tutorial="notifications-icon">
                 <NotificationsDropdown userId={user?.id || ""} />
-                <ProfileDropdown
-                  userEmail={user?.email} 
-                  avatarUrl={profile?.avatar_url}
-                  artistName={profile?.artist_name}
-                  fullName={profile?.full_name}
-                  userId={profile?.user_id}
-                  onSignOut={handleSignOut} 
-                  data-tutorial="profile-dropdown"
-                />
+                <div className="lg:hidden">
+                  <ProfileDropdown
+                    userEmail={user?.email} 
+                    avatarUrl={profile?.avatar_url}
+                    artistName={profile?.artist_name}
+                    fullName={profile?.full_name}
+                    userId={profile?.user_id}
+                    onSignOut={handleSignOut} 
+                    data-tutorial="profile-dropdown"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -666,6 +662,7 @@ const Dashboard = () => {
 
       {user && <AnnouncementDialog userId={user.id} />}
       {user && <ClientInvitationAcceptance userId={user.id} />}
+      <LabelInvitationNotification />
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">

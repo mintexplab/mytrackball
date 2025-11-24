@@ -21,6 +21,10 @@ interface ProfileDropdownProps {
   artistName?: string;
   fullName?: string;
   userId?: string;
+  labelName?: string;
+  labelDigitId?: string;
+  parentAccount?: any;
+  showAsClickableHeader?: boolean;
   onSignOut: () => void;
 }
 
@@ -33,7 +37,18 @@ interface LabelMembership {
   accent_color: string | null;
 }
 
-export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, userId, onSignOut }: ProfileDropdownProps) => {
+export const ProfileDropdown = ({ 
+  userEmail, 
+  avatarUrl, 
+  artistName, 
+  fullName, 
+  userId, 
+  labelName,
+  labelDigitId,
+  parentAccount,
+  showAsClickableHeader = false,
+  onSignOut 
+}: ProfileDropdownProps) => {
   const navigate = useNavigate();
   const [labelMemberships, setLabelMemberships] = useState<LabelMembership[]>([]);
   const [activeLabelId, setActiveLabelId] = useState<string | null>(null);
@@ -144,6 +159,134 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, us
       toast.error(error.message || "Failed to switch label");
     }
   };
+
+  if (showAsClickableHeader) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger className="outline-none hidden lg:block">
+          <div className="flex flex-col items-end text-right cursor-pointer hover:opacity-80 transition-opacity">
+            <p className="text-sm font-medium text-foreground">
+              {fullName || artistName || "User"}
+            </p>
+            {labelDigitId ? (
+              <p className="text-xs text-muted-foreground">
+                {labelName} ID: {labelDigitId}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                ID: {userId}
+              </p>
+            )}
+            {parentAccount && (
+              <Badge variant="outline" className="text-xs border-primary/30 bg-primary/10 mt-1">
+                Subaccount of {parentAccount.label_name || parentAccount.display_name || parentAccount.artist_name}
+              </Badge>
+            )}
+          </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56 bg-card border-border p-0 overflow-hidden">
+          {/* Banner Image */}
+          <div className="w-full h-20 overflow-hidden rounded-t-md">
+            <img 
+              src={customBanner || dropdownBanner} 
+              alt="Banner" 
+              className="w-full h-full object-cover animate-fade-in"
+            />
+          </div>
+          
+          <div className="p-1">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{fullName || "My Account"}</p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {userEmail}
+                </p>
+                {userId && (
+                  <p className="text-xs leading-none text-muted-foreground/70">
+                    ID: {userId}
+                  </p>
+                )}
+              </div>
+            </DropdownMenuLabel>
+          <DropdownMenuSeparator className="bg-border" />
+          <DropdownMenuItem
+            onClick={() => navigate("/subscription")}
+            className="cursor-pointer"
+          >
+            <CreditCard className="mr-2 h-4 w-4" />
+            <span>Manage Subscription</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => navigate("/settings")}
+            className="cursor-pointer"
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Settings</span>
+          </DropdownMenuItem>
+          
+          
+          <DropdownMenuSeparator className="bg-border" />
+          
+          {/* Label Information - Always show if user has labels */}
+          {labelMemberships.length > 0 && (
+            <>
+              {labelMemberships.length === 1 ? (
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col gap-1">
+                    <div className="text-sm font-medium">{labelMemberships[0].label_name}</div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Building2 className="h-3 w-3" />
+                      <span>ID: {labelMemberships[0].five_digit_label_id}</span>
+                      {labelMemberships[0].role === "owner" && (
+                        <Badge variant="outline" className="text-xs">Owner</Badge>
+                      )}
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+              ) : (
+                <>
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">
+                    Switch Label Account
+                  </DropdownMenuLabel>
+                  {labelMemberships.map((membership) => (
+                    <DropdownMenuItem
+                      key={membership.id}
+                      onClick={() => switchLabel(membership.label_id, membership.label_name)}
+                      className="cursor-pointer flex items-center justify-between"
+                      style={membership.accent_color ? { borderLeft: `3px solid ${membership.accent_color}` } : undefined}
+                    >
+                      <div className="flex items-center">
+                        <Building2 className="mr-2 h-4 w-4" />
+                        <span>{membership.label_name} (ID:{membership.five_digit_label_id})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {membership.role === "owner" && (
+                          <Badge variant="outline" className="text-xs">Owner</Badge>
+                        )}
+                        {activeLabelId === membership.label_id && (
+                          <Check className="h-4 w-4 text-primary" />
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
+              <DropdownMenuSeparator className="bg-border" />
+            </>
+          )}
+          
+          <DropdownMenuItem
+            onClick={onSignOut}
+            className="cursor-pointer text-destructive focus:text-destructive data-[highlighted]:bg-destructive/10 data-[highlighted]:text-destructive"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Log off {artistName || "Account"}</span>
+          </DropdownMenuItem>
+          </div>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
 
   return (
     <DropdownMenu>

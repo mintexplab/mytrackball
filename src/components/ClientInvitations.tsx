@@ -19,6 +19,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -51,6 +61,8 @@ const ClientInvitations = () => {
   const [selectedLabelId, setSelectedLabelId] = useState("");
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
+  const [showExistingUserConfirm, setShowExistingUserConfirm] = useState(false);
+  const [existingUserData, setExistingUserData] = useState<any>(null);
 
   useEffect(() => {
     fetchInvitations();
@@ -162,73 +174,10 @@ const ClientInvitations = () => {
           return;
         }
 
-        // Automatically add them to the label
+        // Store data and show confirmation dialog
         const selectedLabel = labels.find(l => l.label_id === validatedData.labelId);
-        
-        const { error: membershipError } = await supabase
-          .from("user_label_memberships")
-          .insert({
-            user_id: existingProfile.id,
-            label_id: validatedData.labelId,
-            label_name: selectedLabel?.label_name || "Label",
-            role: "member"
-          });
-
-        if (membershipError) throw membershipError;
-
-        // Grant permissions to the user
-        const { data: { user } } = await supabase.auth.getUser();
-        if (validatedData.permissions && validatedData.permissions.length > 0) {
-          const permissionsToInsert = validatedData.permissions.map((permission: string) => ({
-            user_id: existingProfile.id,
-            permission: permission,
-            granted_by: user?.id,
-          }));
-
-          const { error: permError } = await supabase
-            .from("user_permissions")
-            .insert(permissionsToInsert);
-
-          if (permError) throw permError;
-        }
-
-        // Create a notification for the user
-        const { error: notificationError } = await supabase
-          .from("notifications")
-          .insert({
-            user_id: existingProfile.id,
-            title: "You've been added to a label",
-            message: `You have been added to ${selectedLabel?.label_name || "a label"} with access to: ${validatedData.permissions.join(", ")}`,
-            type: "info"
-          });
-
-        if (notificationError) console.error("Notification error:", notificationError);
-
-        // Send email notification
-        const { data: userProfile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user?.id)
-          .single();
-
-        await supabase.functions.invoke("send-client-invitation", {
-          body: {
-            inviterName: userProfile?.display_name || userProfile?.full_name || "Trackball User",
-            inviterEmail: userProfile?.email,
-            inviteeEmail: validatedData.email,
-            labelName: selectedLabel?.label_name || "My Trackball",
-            permissions: validatedData.permissions,
-            appUrl: window.location.origin,
-            existingUser: true
-          },
-        });
-
-        toast.success("User added to label successfully!");
-        setDialogOpen(false);
-        setInviteEmail("");
-        setSelectedLabelId("");
-        setSelectedPermissions([]);
-        fetchActiveUsers();
+        setExistingUserData({ existingProfile, validatedData, selectedLabel });
+        setShowExistingUserConfirm(true);
         setSending(false);
         return;
       }
@@ -461,6 +410,61 @@ const ClientInvitations = () => {
     } catch (error: any) {
       console.error("Error deleting user:", error);
       toast.error(error.message || "Failed to delete user");
+    }
+  };
+
+  const confirmExistingUserInvitation = async () => {
+    if (!existingUserData) return;
+
+    try {
+      const { existingProfile, validatedData, selectedLabel } = existingUserData;
+      
+      // Create invitation record for tracking
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { error: inviteError } = await supabase
+        .from("sublabel_invitations")
+        .insert({
+          inviter_id: user?.id,
+          invitee_email: validatedData.email,
+          status: "pending",
+          invitation_type: "client",
+          permissions: validatedData.permissions,
+          label_id: validatedData.labelId,
+        });
+
+      if (inviteError) throw inviteError;
+
+      // Create notification
+      const { data: userProfile } = await supabase
+        .from("profiles")
+        .select("display_name, full_name, label_type")
+        .eq("id", user?.id)
+        .single();
+
+      // Send notification via supabase
+      const { error: notificationError } = await supabase
+        .from("notifications")
+        .insert({
+          user_id: existingProfile.id,
+          title: "Label Invitation",
+          message: `${userProfile?.display_name || userProfile?.full_name || "A label"} has invited you to join their label account`,
+          type: "info"
+        });
+
+      if (notificationError) console.error("Notification error:", notificationError);
+
+      toast.success("Invitation sent successfully!");
+      setDialogOpen(false);
+      setInviteEmail("");
+      setSelectedLabelId("");
+      setSelectedPermissions([]);
+      setShowExistingUserConfirm(false);
+      setExistingUserData(null);
+      fetchInvitations();
+    } catch (error) {
+      console.error("Error sending invitation:", error);
+      toast.error("Failed to send invitation");
     }
   };
 
@@ -732,6 +736,28 @@ const ClientInvitations = () => {
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      <AlertDialog open={showExistingUserConfirm} onOpenChange={setShowExistingUserConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>User Already Registered</AlertDialogTitle>
+            <AlertDialogDescription>
+              This user is already registered on Trackball. Would you like to proceed with sending them an invitation to join your label account?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowExistingUserConfirm(false);
+              setExistingUserData(null);
+            }}>
+              No, Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmExistingUserInvitation}>
+              Yes, Send Invitation
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
