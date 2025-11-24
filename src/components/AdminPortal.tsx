@@ -31,6 +31,7 @@ import { InvoiceDraftsManagement } from "./InvoiceDraftsManagement";
 import LabelDesignationWelcomeDialog from "./LabelDesignationWelcomeDialog";
 import { OnboardingTutorial } from "./OnboardingTutorial";
 import { AdminTicketManagement } from "./AdminTicketManagement";
+import { SubdistributorManagement } from "./SubdistributorManagement";
 import { Bug, GraduationCap, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -321,6 +322,10 @@ const AdminPortal = ({
                     <Building2 className="w-4 h-4 mr-2" />
                     Label Designations
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab("subdistributors")} className="cursor-pointer">
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Subdistributors
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActiveTab("partner-permissions")} className="cursor-pointer">
                     <ShieldAlert className="w-4 h-4 mr-2" />
                     Partner Permissions
@@ -559,6 +564,10 @@ const AdminPortal = ({
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="subdistributors" className="animate-fade-in">
+            <SubdistributorManagement />
           </TabsContent>
         </Tabs>
       </main>

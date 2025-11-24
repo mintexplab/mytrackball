@@ -47,6 +47,7 @@ import SubscriptionWelcomeDialog from "@/components/SubscriptionWelcomeDialog";
 import { ModernSupportTicketSystem } from "@/components/ModernSupportTicketSystem";
 import { SmartLinksTab } from "@/components/SmartLinksTab";
 import { LabelCustomizationTab } from "@/components/LabelCustomizationTab";
+import { SubdistributorCustomization } from "@/components/SubdistributorCustomization";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -80,6 +81,8 @@ const Dashboard = () => {
   const [welcomePlanFeatures, setWelcomePlanFeatures] = useState<string[]>([]);
   const [activeLabelDigitId, setActiveLabelDigitId] = useState<string>("");
   const [activeLabelLogo, setActiveLabelLogo] = useState<string | null>(null);
+  const [dashboardName, setDashboardName] = useState("My Trackball");
+  const [isSubdistributor, setIsSubdistributor] = useState(false);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
@@ -311,30 +314,69 @@ const Dashboard = () => {
     } = await supabase.from("profiles").select("*").eq("id", userId).single();
     setProfile(profileData);
 
-    // Fetch label 5-digit ID, accent color, and logo if user has an active label
-    if (profileData?.active_label_id) {
-      const { data: labelData } = await supabase
-        .from("labels")
-        .select("label_id, accent_color, logo_url")
-        .eq("id", profileData.active_label_id)
+    // Check if user or their parent is a subdistributor master
+    let subdistributorProfile = null;
+    if (profileData?.is_subdistributor_master) {
+      // This user is a subdistributor master
+      subdistributorProfile = profileData;
+    } else if (profileData?.parent_account_id) {
+      // Check if parent is a subdistributor master
+      const { data: parentProfile } = await supabase
+        .from("profiles")
+        .select("is_subdistributor_master, subdistributor_dashboard_name, subdistributor_logo_url, subdistributor_accent_color")
+        .eq("id", profileData.parent_account_id)
         .single();
       
-      if (labelData) {
-        setActiveLabelDigitId(labelData.label_id);
-        setActiveLabelLogo(labelData.logo_url);
-        
-        // Apply accent color globally if it exists
-        if (labelData.accent_color) {
-          applyAccentColor(labelData.accent_color);
-        } else {
-          // Reset to default red if no custom color
-          applyAccentColor("#ef4444");
-        }
+      if (parentProfile?.is_subdistributor_master) {
+        subdistributorProfile = parentProfile;
+      }
+    }
+
+    // Apply subdistributor customization if applicable
+    if (subdistributorProfile) {
+      setIsSubdistributor(true);
+      setDashboardName(subdistributorProfile.subdistributor_dashboard_name || "My Trackball");
+      
+      // Apply subdistributor logo
+      if (subdistributorProfile.subdistributor_logo_url) {
+        setActiveLabelLogo(subdistributorProfile.subdistributor_logo_url);
+      }
+      
+      // Apply subdistributor accent color
+      if (subdistributorProfile.subdistributor_accent_color) {
+        applyAccentColor(subdistributorProfile.subdistributor_accent_color);
+      } else {
+        applyAccentColor("#ef4444");
       }
     } else {
-      // Reset to default if no active label
-      setActiveLabelLogo(null);
-      applyAccentColor("#ef4444");
+      setIsSubdistributor(false);
+      setDashboardName("My Trackball");
+      
+      // Fetch label 5-digit ID, accent color, and logo if user has an active label (only if not subdistributor)
+      if (profileData?.active_label_id) {
+        const { data: labelData } = await supabase
+          .from("labels")
+          .select("label_id, accent_color, logo_url")
+          .eq("id", profileData.active_label_id)
+          .single();
+        
+        if (labelData) {
+          setActiveLabelDigitId(labelData.label_id);
+          setActiveLabelLogo(labelData.logo_url);
+          
+          // Apply accent color globally if it exists
+          if (labelData.accent_color) {
+            applyAccentColor(labelData.accent_color);
+          } else {
+            // Reset to default red if no custom color
+            applyAccentColor("#ef4444");
+          }
+        }
+      } else {
+        // Reset to default if no active label
+        setActiveLabelLogo(null);
+        applyAccentColor("#ef4444");
+      }
     }
 
     // Check if this is a newly assigned plan (subscription_welcome_shown_at is null or old)
@@ -460,7 +502,7 @@ const Dashboard = () => {
       <AnnouncementBar />
       
       {isLoggingOut && <div className="fixed inset-0 z-50 bg-background animate-fade-in flex flex-col items-center justify-center gap-4">
-          <p className="text-lg text-foreground animate-pulse">Signing you out of My Trackball</p>
+          <p className="text-lg text-foreground animate-pulse">Signing you out of {dashboardName}</p>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>}
       
@@ -579,6 +621,12 @@ const Dashboard = () => {
                       <Palette className="w-4 h-4 mr-2" />
                       Label Customization
                     </DropdownMenuItem>
+                    {isSubdistributor && profile?.is_subdistributor_master && (
+                      <DropdownMenuItem onClick={() => setActiveTab("subdistributor-customization")} className="cursor-pointer">
+                        <Building2 className="w-4 h-4 mr-2" />
+                        Platform Customization
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
@@ -826,6 +874,12 @@ const Dashboard = () => {
             <TabsContent value="smartlinks">
               <SmartLinksTab />
             </TabsContent>
+
+            {isSubdistributor && profile?.is_subdistributor_master && (
+              <TabsContent value="subdistributor-customization">
+                <SubdistributorCustomization />
+              </TabsContent>
+            )}
           </Tabs>
       </main>
 
