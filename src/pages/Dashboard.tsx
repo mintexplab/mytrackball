@@ -17,7 +17,7 @@ import { AnnouncementDialog } from "@/components/AnnouncementDialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RoyaltiesTab from "@/components/RoyaltiesTab";
-import ArtistLabelOnboarding from "@/components/ArtistLabelOnboarding";
+
 import ClientInvitations from "@/components/ClientInvitations";
 import ClientInvitationAcceptance from "@/components/ClientInvitationAcceptance";
 import AccountManagerCard from "@/components/AccountManagerCard";
@@ -583,7 +583,6 @@ const Dashboard = () => {
       </header>
 
       {user && <AnnouncementDialog userId={user.id} />}
-      {user && <ArtistLabelOnboarding userId={user.id} userPlan={userPlan} />}
       {user && <ClientInvitationAcceptance userId={user.id} />}
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 relative">
