@@ -34,6 +34,7 @@ import { AdminTicketManagement } from "./AdminTicketManagement";
 import { Bug, GraduationCap, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LabelPartnerServiceConfig } from "./LabelPartnerServiceConfig";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -432,7 +433,10 @@ const AdminPortal = ({
           </TabsContent>
 
           <TabsContent value="partner-permissions">
-            <PartnerPermissionsBreakdown />
+            <div className="space-y-6">
+              <PartnerPermissionsBreakdown />
+              <LabelPartnerServiceConfig />
+            </div>
           </TabsContent>
 
           <TabsContent value="announcements">

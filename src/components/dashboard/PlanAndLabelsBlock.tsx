@@ -19,18 +19,26 @@ interface PlanAndLabelsBlockProps {
 }
 
 const LABEL_TYPE_DISPLAY: Record<string, { label: string; description: string }> = {
-  partner_label: {
-    label: "Partner Label",
-    description: "Custom partner deal with Trackball"
+  "label free": {
+    label: "Label Free",
+    description: "Starter label account with basic access"
   },
-  signature_label: {
-    label: "Signature Label",
-    description: "Premium label with Signature plan"
+  "label lite": {
+    label: "Label Lite",
+    description: "Entry label plan with limited team access"
   },
-  prestige_label: {
-    label: "Prestige Label",
-    description: "Elite label with Prestige plan"
-  }
+  "label signature": {
+    label: "Label Signature",
+    description: "Premium label with enhanced tools and support"
+  },
+  "label prestige": {
+    label: "Label Prestige",
+    description: "Elite label plan with full access and publishing"
+  },
+  "label partner": {
+    label: "Label Partner",
+    description: "Custom partner deal with configurable services"
+  },
 };
 
 export const PlanAndLabelsBlock = ({ userPlan, labelType, labelName }: PlanAndLabelsBlockProps) => {
@@ -61,8 +69,9 @@ export const PlanAndLabelsBlock = ({ userPlan, labelType, labelName }: PlanAndLa
     }
   };
 
-  const hasLabelDesignation = labelType && LABEL_TYPE_DISPLAY[labelType];
-  const designation = hasLabelDesignation ? LABEL_TYPE_DISPLAY[labelType] : null;
+  const normalizedLabelType = labelType ? labelType.toLowerCase() : null;
+  const hasLabelDesignation = normalizedLabelType && LABEL_TYPE_DISPLAY[normalizedLabelType];
+  const designation = hasLabelDesignation ? LABEL_TYPE_DISPLAY[normalizedLabelType] : null;
 
   return (
     <Card className="backdrop-blur-sm bg-card/80 border-primary/20 min-h-[280px] flex flex-col">
@@ -89,7 +98,7 @@ export const PlanAndLabelsBlock = ({ userPlan, labelType, labelName }: PlanAndLa
                   {designation.description}
                 </p>
               </div>
-            ) : userPlan ? (
+            ) : userPlan && !normalizedLabelType ? (
               <>
                 <div className="p-3 rounded-lg bg-gradient-primary/10 border border-primary/20">
                   <h3 className="font-semibold text-lg text-foreground">
@@ -109,6 +118,7 @@ export const PlanAndLabelsBlock = ({ userPlan, labelType, labelName }: PlanAndLa
                 )}
               </>
             ) : (
+
               <div className="text-center py-6">
                 <CreditCard className="w-10 h-10 text-muted-foreground/50 mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">No active plan</p>
