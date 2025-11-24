@@ -7,10 +7,11 @@ interface FloatingAudioPlayerProps {
   src: string;
   title: string;
   artist: string;
+  artworkUrl?: string;
   onClose: () => void;
 }
 
-export const FloatingAudioPlayer = ({ src, title, artist, onClose }: FloatingAudioPlayerProps) => {
+export const FloatingAudioPlayer = ({ src, title, artist, artworkUrl, onClose }: FloatingAudioPlayerProps) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -68,8 +69,16 @@ export const FloatingAudioPlayer = ({ src, title, artist, onClose }: FloatingAud
       
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center gap-4">
-          {/* Album Art Placeholder */}
-          <div className="hidden sm:block w-12 h-12 bg-gradient-primary rounded-lg flex-shrink-0" />
+          {/* Album Art */}
+          {artworkUrl ? (
+            <img 
+              src={artworkUrl} 
+              alt={title}
+              className="hidden sm:block w-12 h-12 rounded-lg object-cover flex-shrink-0"
+            />
+          ) : (
+            <div className="hidden sm:block w-12 h-12 bg-gradient-primary rounded-lg flex-shrink-0" />
+          )}
 
           {/* Track Info */}
           <div className="flex-1 min-w-0">

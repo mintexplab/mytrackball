@@ -73,6 +73,7 @@ const Dashboard = () => {
     src: string;
     title: string;
     artist: string;
+    artworkUrl?: string;
   } | null>(null);
   const [viewAsArtist, setViewAsArtist] = useState(false);
   const [showInitialSetup, setShowInitialSetup] = useState(false);
@@ -809,7 +810,7 @@ const Dashboard = () => {
               <AdvancedCatalogManagement 
                 userId={user.id} 
                 selectedReleaseId={selectedCatalogReleaseId}
-                onFloatingPlayer={(src, title, artist) => setFloatingPlayer({ src, title, artist })}
+                onFloatingPlayer={(src, title, artist, artworkUrl) => setFloatingPlayer({ src, title, artist, artworkUrl })}
               />
             )}
           </TabsContent>
@@ -942,6 +943,7 @@ const Dashboard = () => {
           src={floatingPlayer.src}
           title={floatingPlayer.title}
           artist={floatingPlayer.artist}
+          artworkUrl={floatingPlayer.artworkUrl}
           onClose={() => setFloatingPlayer(null)}
         />
       )}
