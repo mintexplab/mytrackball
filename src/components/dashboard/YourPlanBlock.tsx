@@ -1,9 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
-import { Package } from "lucide-react";
+import { Package, Check, X, Users, Building2, FileText, HelpCircle, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 
 interface YourPlanBlockProps {
   userPlan: any;
@@ -27,7 +28,8 @@ export const YourPlanBlock = ({ userPlan }: YourPlanBlockProps) => {
         return { 
           isSubaccount: false, 
           parentPlan: null,
-          labelType: profile?.label_type 
+          labelType: profile?.label_type,
+          profile 
         };
       }
 
@@ -47,7 +49,8 @@ export const YourPlanBlock = ({ userPlan }: YourPlanBlockProps) => {
       return {
         isSubaccount: true,
         parentPlan: parentPlan,
-        labelType: profile?.label_type
+        labelType: profile?.label_type,
+        profile
       };
     },
   });
@@ -59,6 +62,42 @@ export const YourPlanBlock = ({ userPlan }: YourPlanBlockProps) => {
     labelType.toLowerCase().includes('label signature') || 
     labelType.toLowerCase().includes('label partner')
   );
+
+  // Get permissions for this plan
+  const permissions = usePlanPermissions(displayPlan, accountInfo?.profile);
+
+  const features = [
+    {
+      icon: Users,
+      label: "Users",
+      value: permissions.maxUsers === null ? "Unlimited" : permissions.maxUsers === 1 ? "1 user" : `Up to ${permissions.maxUsers} users`,
+      enabled: permissions.canAddUsers || permissions.maxUsers > 1
+    },
+    {
+      icon: Building2,
+      label: "Labels",
+      value: permissions.maxLabels === null ? "Unlimited" : permissions.maxLabels === 0 ? "No labels" : `Up to ${permissions.maxLabels} label${permissions.maxLabels > 1 ? 's' : ''}`,
+      enabled: permissions.canCreateLabels
+    },
+    {
+      icon: FileText,
+      label: "Publishing",
+      value: permissions.canAccessPublishing ? "Available" : "Not available",
+      enabled: permissions.canAccessPublishing
+    },
+    {
+      icon: HelpCircle,
+      label: "Support Tickets",
+      value: permissions.canAccessTickets ? "Available" : "Not available",
+      enabled: permissions.canAccessTickets
+    },
+    {
+      icon: User,
+      label: "Account Manager",
+      value: permissions.hasAccountManager ? "Dedicated manager" : "Not included",
+      enabled: permissions.hasAccountManager
+    }
+  ];
 
   return (
     <Collapsible defaultOpen>
@@ -75,7 +114,7 @@ export const YourPlanBlock = ({ userPlan }: YourPlanBlockProps) => {
           </CardHeader>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             {accountInfo?.isSubaccount ? (
               <>
                 <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
@@ -91,42 +130,69 @@ export const YourPlanBlock = ({ userPlan }: YourPlanBlockProps) => {
               <>
                 <div className="flex flex-wrap gap-2">
                   {isLabelPlan ? (
-                    <Badge className="bg-gradient-to-r from-accent to-primary text-white px-2 py-1 text-xs">
+                    <Badge className="bg-gradient-to-r from-accent to-primary text-white px-3 py-1 text-xs">
                       {labelType}
                     </Badge>
                   ) : (
-                    <Badge className="bg-gradient-primary text-white px-2 py-1 text-xs">
+                    <Badge className="bg-gradient-primary text-white px-3 py-1 text-xs">
                       {displayPlan?.plan?.name || "Trackball Free"}
                     </Badge>
                   )}
+                  <p className="text-xs text-muted-foreground self-center">
+                    Plans are managed by administrators
+                  </p>
                 </div>
-                {displayPlan ? (
-                  <>
-                    <p className="text-sm text-muted-foreground">{displayPlan.plan.description}</p>
-                    {displayPlan.plan.name === "Trackball Partner" ? (
-                      <div className="pt-3 border-t border-border">
-                        <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
-                          <p className="text-sm text-foreground">
-                            You have a custom partner deal with Trackball Distribution, please ask your label manager about deal offerings
-                          </p>
+
+                {displayPlan?.plan?.description && (
+                  <p className="text-sm text-muted-foreground">{displayPlan.plan.description}</p>
+                )}
+
+                <div className="pt-2 border-t border-border">
+                  <p className="text-xs font-medium mb-3 text-foreground">Plan Capabilities</p>
+                  <div className="grid gap-2">
+                    {features.map((feature, index) => {
+                      const Icon = feature.icon;
+                      return (
+                        <div 
+                          key={index}
+                          className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
+                            feature.enabled 
+                              ? 'bg-accent/10 border border-accent/20' 
+                              : 'bg-muted/30 border border-border/50'
+                          }`}
+                        >
+                          <div className={`p-1.5 rounded ${
+                            feature.enabled ? 'bg-accent/20' : 'bg-muted'
+                          }`}>
+                            <Icon className={`w-3.5 h-3.5 ${
+                              feature.enabled ? 'text-accent' : 'text-muted-foreground'
+                            }`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-foreground">{feature.label}</p>
+                            <p className={`text-xs ${
+                              feature.enabled ? 'text-muted-foreground' : 'text-muted-foreground/70'
+                            }`}>
+                              {feature.value}
+                            </p>
+                          </div>
+                          {feature.enabled ? (
+                            <Check className="w-4 h-4 text-accent flex-shrink-0" />
+                          ) : (
+                            <X className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          )}
                         </div>
-                      </div>
-                    ) : (
-                      <div className="pt-3 border-t border-border">
-                        <p className="text-xs font-medium mb-2">Plan Features:</p>
-                        <ul className="space-y-1 text-xs text-muted-foreground">
-                          {displayPlan.plan.features?.map((feature: string, index: number) => (
-                            <li key={index} className="flex items-start gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 flex-shrink-0" />
-                              <span className="flex-1">{feature}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Basic distribution plan with essential features</p>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {displayPlan?.plan?.name === "Trackball Partner" && (
+                  <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
+                    <p className="text-xs text-foreground">
+                      You have a custom partner deal with Trackball Distribution. Contact your account manager for details.
+                    </p>
+                  </div>
                 )}
               </>
             )}
