@@ -274,6 +274,48 @@ export type Database = {
         }
         Relationships: []
       }
+      label_dropdown_banners: {
+        Row: {
+          banner_url: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          label_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          banner_url: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          label_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          banner_url?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          label_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "label_dropdown_banners_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "label_dropdown_banners_label_id_fkey"
+            columns: ["label_id"]
+            isOneToOne: true
+            referencedRelation: "labels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       label_invitations: {
         Row: {
           accepted_at: string | null
