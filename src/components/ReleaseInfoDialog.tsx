@@ -11,7 +11,7 @@ import { AudioPlayer } from "./AudioPlayer";
 
 interface ReleaseInfoDialogProps {
   releaseId: string;
-  onFloatingPlayer?: (src: string, title: string, artist: string) => void;
+  onFloatingPlayer?: (src: string, title: string, artist: string, artworkUrl?: string) => void;
 }
 
 const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogProps) => {
@@ -128,7 +128,7 @@ const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogPro
                     {onFloatingPlayer && (
                       <Button
                         onClick={() => {
-                          onFloatingPlayer(release.audio_file_url, release.title, release.artist_name);
+                          onFloatingPlayer(release.audio_file_url, release.title, release.artist_name, release.artwork_url);
                           setOpen(false);
                         }}
                         variant="outline"

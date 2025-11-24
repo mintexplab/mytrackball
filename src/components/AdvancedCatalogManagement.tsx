@@ -13,7 +13,7 @@ import ReleaseInfoDialog from "./ReleaseInfoDialog";
 interface AdvancedCatalogManagementProps {
   userId: string;
   selectedReleaseId?: string | null;
-  onFloatingPlayer?: (src: string, title: string, artist: string) => void;
+  onFloatingPlayer?: (src: string, title: string, artist: string, artworkUrl?: string) => void;
 }
 
 // Helper function to get status display info
