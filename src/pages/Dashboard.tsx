@@ -627,12 +627,17 @@ const Dashboard = () => {
                 <Plus className="w-4 h-4" />
               </Button>
 
-              {/* User Info Display - Label Switcher */}
-              <LabelSwitcherDropdown
-                labelName={profile?.label_name}
-                labelDigitId={activeLabelDigitId}
-                parentAccount={parentAccount}
-              />
+              {/* User Info Display - Name and Label Switcher */}
+              <div className="hidden lg:flex flex-col items-end text-right">
+                <p className="text-sm font-medium text-foreground">
+                  {profile?.full_name || profile?.display_name || profile?.artist_name || "User"}
+                </p>
+                <LabelSwitcherDropdown
+                  labelName={profile?.label_name}
+                  labelDigitId={activeLabelDigitId}
+                  parentAccount={parentAccount}
+                />
+              </div>
 
               {/* Notifications Dropdown */}
               <div className="flex items-center gap-3 ml-3" data-tutorial="notifications-icon">
