@@ -77,7 +77,7 @@ const LabelDesignationManagement = () => {
       if (error) throw error;
 
       // Create default royalty splits based on label type
-      if (labelType === "Partner" && !royaltySplits[profileId]) {
+      if (labelType === "Label Partner" && !royaltySplits[profileId]) {
         await supabase
           .from("partner_royalty_splits")
           .insert({
@@ -137,12 +137,12 @@ const LabelDesignationManagement = () => {
     if (!labelType) return <Badge variant="outline">No Designation</Badge>;
     
     switch (labelType) {
-      case "Partner":
-        return <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/30">Partner</Badge>;
-      case "Signature":
-        return <Badge className="bg-purple-500/20 text-purple-500 border-purple-500/30">Signature</Badge>;
-      case "Prestige":
-        return <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30">Prestige</Badge>;
+      case "Label Partner":
+        return <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/30">Label Partner</Badge>;
+      case "Label Signature":
+        return <Badge className="bg-purple-500/20 text-purple-500 border-purple-500/30">Label Signature</Badge>;
+      case "Label Prestige":
+        return <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30">Label Prestige</Badge>;
       case "Label Free":
         return <Badge className="bg-green-500/20 text-green-500 border-green-500/30">Label Free</Badge>;
       case "Label Lite":
@@ -210,7 +210,7 @@ const LabelDesignationManagement = () => {
                     <TableCell>
                       {profile.parent_account_id ? (
                         <span className="text-sm text-muted-foreground">N/A</span>
-                      ) : profile.label_type === "Partner" ? (
+                      ) : profile.label_type === "Label Partner" ? (
                         editingRoyalty === profile.id ? (
                           <div className="flex items-center gap-2">
                             <Input
@@ -255,7 +255,7 @@ const LabelDesignationManagement = () => {
                         <span className="font-medium">70%</span>
                       ) : profile.label_type === "Label Lite" ? (
                         <span className="font-medium">90%</span>
-                      ) : profile.label_type === "Signature" || profile.label_type === "Prestige" ? (
+                      ) : profile.label_type === "Label Signature" || profile.label_type === "Label Prestige" ? (
                         <span className="font-medium text-green-500">100%</span>
                       ) : (
                         <span className="text-sm text-muted-foreground">N/A</span>
@@ -280,9 +280,9 @@ const LabelDesignationManagement = () => {
                           </SelectTrigger>
                           <SelectContent className="bg-card border-border">
                             <SelectItem value="none">No Designation</SelectItem>
-                            <SelectItem value="Partner">Partner</SelectItem>
-                            <SelectItem value="Signature">Signature</SelectItem>
-                            <SelectItem value="Prestige">Prestige</SelectItem>
+                            <SelectItem value="Label Partner">Label Partner</SelectItem>
+                            <SelectItem value="Label Signature">Label Signature</SelectItem>
+                            <SelectItem value="Label Prestige">Label Prestige</SelectItem>
                             <SelectItem value="Label Free">Label Free</SelectItem>
                             <SelectItem value="Label Lite">Label Lite</SelectItem>
                           </SelectContent>
@@ -299,9 +299,9 @@ const LabelDesignationManagement = () => {
         <div className="mt-6 space-y-4 p-4 bg-muted/20 rounded-lg border border-border">
           <h3 className="font-semibold text-sm">Label Designation Types:</h3>
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p><strong className="text-blue-500">Partner:</strong> 50% royalty split - Standard partnership tier</p>
-            <p><strong className="text-purple-500">Signature:</strong> 100% royalty - Premium tier with enhanced features</p>
-            <p><strong className="text-amber-500">Prestige:</strong> 100% royalty - Highest tier with exclusive benefits</p>
+            <p><strong className="text-blue-500">Label Partner:</strong> 50% royalty split - Standard partnership tier</p>
+            <p><strong className="text-purple-500">Label Signature:</strong> 100% royalty - Premium tier with enhanced features</p>
+            <p><strong className="text-amber-500">Label Prestige:</strong> 100% royalty - Highest tier with exclusive benefits</p>
             <p><strong className="text-green-500">Label Free:</strong> 70% royalty split - Entry level label tier</p>
             <p><strong className="text-cyan-500">Label Lite:</strong> 90% royalty split - Advanced label tier</p>
           </div>
