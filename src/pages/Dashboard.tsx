@@ -48,6 +48,7 @@ import { ModernSupportTicketSystem } from "@/components/ModernSupportTicketSyste
 import { SmartLinksTab } from "@/components/SmartLinksTab";
 import { LabelCustomizationTab } from "@/components/LabelCustomizationTab";
 import { LabelInvitationNotification } from "@/components/LabelInvitationNotification";
+import { LabelSwitcherDropdown } from "@/components/LabelSwitcherDropdown";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -626,18 +627,11 @@ const Dashboard = () => {
                 <Plus className="w-4 h-4" />
               </Button>
 
-              {/* User Info Display */}
-              <ProfileDropdown
-                userEmail={user?.email} 
-                avatarUrl={profile?.avatar_url}
-                artistName={profile?.artist_name}
-                fullName={profile?.full_name}
-                userId={profile?.user_id}
+              {/* User Info Display - Label Switcher */}
+              <LabelSwitcherDropdown
                 labelName={profile?.label_name}
                 labelDigitId={activeLabelDigitId}
                 parentAccount={parentAccount}
-                showAsClickableHeader={true}
-                onSignOut={handleSignOut}
               />
 
               {/* Notifications Dropdown */}
