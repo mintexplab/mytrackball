@@ -30,6 +30,7 @@ interface LabelMembership {
   label_name: string;
   role: string;
   five_digit_label_id: string;
+  accent_color: string | null;
 }
 
 export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, userId, onSignOut }: ProfileDropdownProps) => {
@@ -76,7 +77,7 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, us
         }
       }
 
-      // Get all label memberships with 5-digit label IDs from labels table
+      // Get all label memberships with 5-digit label IDs and accent colors from labels table
       const { data: memberships } = await supabase
         .from("user_label_memberships")
         .select(`
@@ -84,19 +85,20 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, us
           label_id, 
           label_name, 
           role,
-          labels!inner(label_id)
+          labels!inner(label_id, accent_color)
         `)
         .eq("user_id", profile?.id || user.id)
         .order("joined_at", { ascending: true });
 
       if (memberships) {
-        // Map the data to include the 5-digit label ID
+        // Map the data to include the 5-digit label ID and accent color
         const mappedMemberships = memberships.map(m => ({
           id: m.id,
           label_id: m.label_id,
           label_name: m.label_name,
           role: m.role,
-          five_digit_label_id: (m.labels as any).label_id
+          five_digit_label_id: (m.labels as any).label_id,
+          accent_color: (m.labels as any).accent_color as string | null,
         }));
         setLabelMemberships(mappedMemberships);
       }
@@ -222,6 +224,7 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, us
                     key={membership.id}
                     onClick={() => switchLabel(membership.label_id, membership.label_name)}
                     className="cursor-pointer flex items-center justify-between"
+                    style={membership.accent_color ? { borderLeft: `3px solid ${membership.accent_color}` } : undefined}
                   >
                     <div className="flex items-center">
                       <Building2 className="mr-2 h-4 w-4" />
