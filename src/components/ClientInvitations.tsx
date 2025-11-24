@@ -61,7 +61,18 @@ const ClientInvitations = () => {
   const fetchLabels = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     
-    const { data, error } = await supabase
+    // First, get labels owned by the user
+    const { data: ownedLabels, error: ownedError } = await supabase
+      .from("labels")
+      .select("*")
+      .eq("user_id", user?.id);
+
+    if (ownedError) {
+      console.error("Error fetching owned labels:", ownedError);
+    }
+
+    // Then get labels from memberships
+    const { data: membershipLabels, error: membershipError } = await supabase
       .from("user_label_memberships")
       .select(`
         *,
@@ -70,16 +81,26 @@ const ClientInvitations = () => {
       .eq("user_id", user?.id)
       .order("joined_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching labels:", error);
-    } else {
-      // Map to include the 5-digit label_id
-      const mappedLabels = (data || []).map(d => ({
+    if (membershipError) {
+      console.error("Error fetching label memberships:", membershipError);
+    }
+
+    // Combine both, mapping owned labels to the same format
+    const allLabels = [
+      ...(ownedLabels || []).map(label => ({
+        label_id: label.id,
+        label_name: label.name,
+        role: "owner",
+        five_digit_label_id: label.label_id,
+        labels: { label_id: label.label_id }
+      })),
+      ...(membershipLabels || []).map(d => ({
         ...d,
         five_digit_label_id: (d.labels as any).label_id
-      }));
-      setLabels(mappedLabels);
-    }
+      }))
+    ];
+
+    setLabels(allLabels);
   };
 
   const fetchInvitations = async () => {
