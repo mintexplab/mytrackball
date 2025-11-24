@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Upload, Building2, Link as LinkIcon, Home, Palette } from "lucide-react";
+import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Building2, Home, Palette } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
@@ -25,7 +25,7 @@ import PublishingTab from "@/components/PublishingTab";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { MaintenanceDialog } from "@/components/MaintenanceDialog";
 import { TerminatedAccountDialog } from "@/components/TerminatedAccountDialog";
-import BulkUploadTab from "@/components/BulkUploadTab";
+
 import { DraftManagement } from "@/components/DraftManagement";
 import { AdvancedCatalogManagement } from "@/components/AdvancedCatalogManagement";
 import { FloatingAudioPlayer } from "@/components/FloatingAudioPlayer";
@@ -45,7 +45,7 @@ import LabelManagementTab from "@/components/LabelManagementTab";
 import LabelDesignationWelcomeDialog from "@/components/LabelDesignationWelcomeDialog";
 import SubscriptionWelcomeDialog from "@/components/SubscriptionWelcomeDialog";
 import { ModernSupportTicketSystem } from "@/components/ModernSupportTicketSystem";
-import { SmartLinksTab } from "@/components/SmartLinksTab";
+
 import { LabelCustomizationTab } from "@/components/LabelCustomizationTab";
 import { LabelInvitationNotification } from "@/components/LabelInvitationNotification";
 import { LabelSwitcherDropdown } from "@/components/LabelSwitcherDropdown";
@@ -525,14 +525,6 @@ const Dashboard = () => {
                     <Package className="w-4 h-4 mr-2" />
                     Catalog
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab("bulk-upload")} className="cursor-pointer" data-tutorial="bulk-upload">
-                    <Upload className="w-4 h-4 mr-2" />
-                    Bulk Upload
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab("smartlinks")} className="cursor-pointer">
-                    <LinkIcon className="w-4 h-4 mr-2" />
-                    Smart Links
-                  </DropdownMenuItem>
                   {profile?.label_type === "prestige_label" && (
                     <DropdownMenuItem onClick={() => setActiveTab("publishing")} className="cursor-pointer" data-tutorial="publishing-tab">
                       <FileMusic className="w-4 h-4 mr-2" />
@@ -729,9 +721,6 @@ const Dashboard = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="bulk-upload" className="animate-fade-in">
-            {user && <BulkUploadTab userId={user.id} />}
-          </TabsContent>
 
           {((userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") ||
             (profile?.label_type && ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type))) && (
@@ -822,9 +811,6 @@ const Dashboard = () => {
               </div>
             </TabsContent>
 
-            <TabsContent value="smartlinks">
-              <SmartLinksTab />
-            </TabsContent>
           </Tabs>
       </main>
 
