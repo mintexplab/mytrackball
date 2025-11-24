@@ -53,7 +53,8 @@ const AcceptInvitation = () => {
 
   const fetchInvitation = async () => {
     try {
-      const { data, error } = await supabase
+      // First try to find it in sublabel_invitations (client type)
+      const { data: sublabelData, error: sublabelError } = await supabase
         .from("sublabel_invitations")
         .select(`
           *,
@@ -63,21 +64,51 @@ const AcceptInvitation = () => {
         .eq("status", "pending")
         .eq("invitation_type", "client")
         .gt("expires_at", new Date().toISOString())
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
-        toast.error("Invitation not found or expired");
-        navigate("/auth");
+      if (sublabelData) {
+        setInvitation({ ...sublabelData, type: 'sublabel' });
+        setEmail(sublabelData.invitee_email);
+        
+        // Set inviter's accent color if they're a subdistributor
+        if (sublabelData.inviter?.is_subdistributor_master && sublabelData.inviter?.subdistributor_accent_color) {
+          setInviterAccentColor(sublabelData.inviter.subdistributor_accent_color);
+        }
+        setLoadingInvitation(false);
         return;
       }
 
-      setInvitation(data);
-      setEmail(data.invitee_email);
-      
-      // Set inviter's accent color if they're a subdistributor
-      if (data.inviter?.is_subdistributor_master && data.inviter?.subdistributor_accent_color) {
-        setInviterAccentColor(data.inviter.subdistributor_accent_color);
+      // If not found in sublabel_invitations, try artist_invitations
+      const { data: artistData, error: artistError } = await supabase
+        .from("artist_invitations")
+        .select("*")
+        .eq("id", token)
+        .eq("status", "pending")
+        .gt("expires_at", new Date().toISOString())
+        .maybeSingle();
+
+      if (artistData) {
+        // Fetch inviter profile separately
+        const { data: inviterProfile } = await supabase
+          .from("profiles")
+          .select("display_name, full_name, label_name, email, subdistributor_accent_color, is_subdistributor_master")
+          .eq("id", artistData.invited_by)
+          .single();
+
+        setInvitation({ ...artistData, type: 'artist', inviter: inviterProfile });
+        setEmail(artistData.email);
+        
+        // Set inviter's accent color if they're a subdistributor
+        if (inviterProfile?.is_subdistributor_master && inviterProfile?.subdistributor_accent_color) {
+          setInviterAccentColor(inviterProfile.subdistributor_accent_color);
+        }
+        setLoadingInvitation(false);
+        return;
       }
+
+      // If not found in either table
+      toast.error("Invitation not found or expired");
+      navigate("/auth");
     } catch (error) {
       console.error("Error fetching invitation:", error);
       toast.error("Failed to load invitation");
@@ -111,43 +142,57 @@ const AcceptInvitation = () => {
       if (signUpError) throw signUpError;
       if (!authData.user) throw new Error("Failed to create account");
 
-      // Accept the invitation
-      const { error: inviteError } = await supabase
-        .from("sublabel_invitations")
-        .update({ 
-          status: "accepted",
-          accepted_at: new Date().toISOString()
-        })
-        .eq("id", token);
+      // Accept the invitation based on type
+      if (invitation.type === 'sublabel') {
+        const { error: inviteError } = await supabase
+          .from("sublabel_invitations")
+          .update({ 
+            status: "accepted",
+            accepted_at: new Date().toISOString()
+          })
+          .eq("id", token);
 
-      if (inviteError) throw inviteError;
+        if (inviteError) throw inviteError;
 
-      // Grant permissions
-      if (invitation.permissions && invitation.permissions.length > 0) {
-        const permissionsToInsert = invitation.permissions.map((permission: string) => ({
-          user_id: authData.user.id,
-          permission: permission,
-          granted_by: invitation.inviter_id,
-        }));
+        // Grant permissions for sublabel invitations
+        if (invitation.permissions && invitation.permissions.length > 0) {
+          const permissionsToInsert = invitation.permissions.map((permission: string) => ({
+            user_id: authData.user.id,
+            permission: permission,
+            granted_by: invitation.inviter_id,
+          }));
 
-        const { error: permError } = await supabase
-          .from("user_permissions")
-          .insert(permissionsToInsert);
+          const { error: permError } = await supabase
+            .from("user_permissions")
+            .insert(permissionsToInsert);
 
-        if (permError) throw permError;
+          if (permError) throw permError;
+        }
+      } else {
+        // Artist invitation
+        const { error: inviteError } = await supabase
+          .from("artist_invitations")
+          .update({ 
+            status: "accepted",
+            accepted_at: new Date().toISOString()
+          })
+          .eq("id", token);
+
+        if (inviteError) throw inviteError;
       }
 
       // Update profile with parent account and label info
+      const inviterId = invitation.type === 'sublabel' ? invitation.inviter_id : invitation.invited_by;
       const { data: inviterProfile } = await supabase
         .from("profiles")
         .select("label_name, id")
-        .eq("id", invitation.inviter_id)
+        .eq("id", inviterId)
         .single();
 
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
-          parent_account_id: invitation.inviter_id,
+          parent_account_id: inviterId,
           label_name: inviterProfile?.label_name || null,
           artist_name: validatedData.fullName,
         })
@@ -230,7 +275,7 @@ const AcceptInvitation = () => {
               <p className="text-sm text-muted-foreground">{invitation.inviter.email}</p>
             )}
             
-            {invitation.permissions && invitation.permissions.length > 0 && (
+            {invitation.type === 'sublabel' && invitation.permissions && invitation.permissions.length > 0 && (
               <div className="mt-4">
                 <p className="text-sm text-muted-foreground mb-2">You'll have access to:</p>
                 <div className="flex flex-wrap gap-2">
