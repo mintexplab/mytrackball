@@ -136,6 +136,10 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
+    // Add fade-in animation on mount
+    document.body.style.transition = "opacity 0.3s ease-in";
+    document.body.style.opacity = "1";
+
     const {
       data: {
         subscription
@@ -477,13 +481,14 @@ const Dashboard = () => {
                 profile={profile}
               />
               <div 
-                className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer hover:opacity-80 transition-all duration-300 hover:scale-105"
                 onClick={() => setActiveTab("landing")}
               >
                 <img 
                   src={activeLabelLogo || trackballLogo} 
                   alt={activeLabelLogo ? "Label Logo" : "Trackball Logo"} 
-                  className="w-full h-full object-cover" 
+                  className="w-full h-full object-cover transition-all duration-300" 
+                  key={activeLabelLogo || "default"}
                 />
               </div>
             </div>

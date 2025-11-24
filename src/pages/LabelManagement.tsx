@@ -104,6 +104,10 @@ const LabelManagement = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Add fade-out animation to page
+      document.body.style.transition = "opacity 0.3s ease-out";
+      document.body.style.opacity = "0";
+
       const { error } = await supabase
         .from("profiles")
         .update({ 
@@ -115,9 +119,15 @@ const LabelManagement = () => {
       if (error) throw error;
 
       setActiveLabelId(labelId);
-      toast.success(`Switched to ${labelName}`);
-      navigate("/dashboard");
+      
+      // Wait for fade-out to complete, then navigate
+      setTimeout(() => {
+        toast.success(`Switched to ${labelName}`);
+        navigate("/dashboard");
+      }, 300);
     } catch (error: any) {
+      // Reset opacity on error
+      document.body.style.opacity = "1";
       toast.error(error.message || "Failed to switch label");
     }
   };
