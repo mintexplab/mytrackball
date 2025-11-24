@@ -59,7 +59,14 @@ export const useBrandingData = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        setBranding(prev => ({ ...prev, loading: false }));
+        setBranding({
+          dashboardName: "My Trackball",
+          footerText: "© 2025 XZ1 Recording Ventures. All rights reserved.",
+          logoUrl: null,
+          bannerUrl: null,
+          accentColor: "#ef4444",
+          loading: false,
+        });
         return;
       }
 
