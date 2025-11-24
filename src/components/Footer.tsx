@@ -4,6 +4,7 @@ import { useBranding } from "@/hooks/useBrandingContext";
 
 const Footer = () => {
   const [version, setVersion] = useState("1.16.0");
+  const [isSubdistributorOrChild, setIsSubdistributorOrChild] = useState(false);
   const { footerText } = useBranding();
 
   useEffect(() => {
@@ -21,7 +22,30 @@ const Footer = () => {
       }
     };
 
+    const checkUserType = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_subdistributor_master, parent_account_id")
+          .eq("id", user.id)
+          .single();
+
+        if (profile) {
+          setIsSubdistributorOrChild(
+            profile.is_subdistributor_master === true || 
+            profile.parent_account_id !== null
+          );
+        }
+      } catch (error) {
+        console.error("Error checking user type:", error);
+      }
+    };
+
     fetchVersion();
+    checkUserType();
 
     // Subscribe to version changes
     const channel = supabase
@@ -58,13 +82,19 @@ const Footer = () => {
             {footerText}
           </p>
           <p className="text-sm text-muted-foreground">
-            Need help? Shoot us an{" "}
-            <a 
-              href="mailto:contact@trackball.cc" 
-              className="text-primary hover:underline transition-colors"
-            >
-              email
-            </a>
+            {isSubdistributorOrChild ? (
+              "Please contact your distributor for assistance"
+            ) : (
+              <>
+                Need help? Shoot us an{" "}
+                <a 
+                  href="mailto:contact@trackball.cc" 
+                  className="text-primary hover:underline transition-colors"
+                >
+                  email
+                </a>
+              </>
+            )}
           </p>
         </div>
       </div>
