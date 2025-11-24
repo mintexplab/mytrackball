@@ -4,7 +4,6 @@ import { Check, X, Package, Users, Building2, FileText, HelpCircle, User, Settin
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
-import { LabelPartnerServiceConfig } from "./LabelPartnerServiceConfig";
 
 interface SubscriptionManagementTabProps {
   userPlan: any;
@@ -210,10 +209,6 @@ export const SubscriptionManagementTab = ({ userPlan, profile }: SubscriptionMan
           )}
         </CardContent>
       </Card>
-
-      {isLabelPartner && !accountInfo?.isSubaccount && (
-        <LabelPartnerServiceConfig />
-      )}
     </div>
   );
 };
