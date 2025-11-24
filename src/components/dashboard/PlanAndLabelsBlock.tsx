@@ -83,7 +83,29 @@ export const PlanAndLabelsBlock = ({ userPlan, labelType, labelName }: PlanAndLa
           </TabsList>
           
           <TabsContent value="plan" className="space-y-3 mt-4">
-            {userPlan ? (
+            {hasLabelDesignation ? (
+              <>
+                <div className="p-3 rounded-lg bg-gradient-primary/10 border border-primary/20">
+                  <h3 className="font-semibold text-lg text-foreground">
+                    {designation.label}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {designation.description}
+                  </p>
+                </div>
+                
+                <div className="pt-2">
+                  <Button
+                    onClick={() => navigate('/subscription')}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                  >
+                    View Details
+                  </Button>
+                </div>
+              </>
+            ) : userPlan ? (
               <>
                 <div className="p-3 rounded-lg bg-gradient-primary/10 border border-primary/20">
                   <h3 className="font-semibold text-lg text-foreground">
