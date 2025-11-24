@@ -10,7 +10,7 @@ interface YourPlanBlockProps {
 }
 
 export const YourPlanBlock = ({ userPlan }: YourPlanBlockProps) => {
-  // Check if user is a subaccount and fetch parent plan
+  // Check if user is a subaccount and fetch parent plan + label type
   const { data: accountInfo } = useQuery({
     queryKey: ["planBlockAccountInfo"],
     queryFn: async () => {
@@ -19,12 +19,16 @@ export const YourPlanBlock = ({ userPlan }: YourPlanBlockProps) => {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("parent_account_id")
+        .select("parent_account_id, label_type")
         .eq("id", user.id)
         .single();
 
       if (!profile?.parent_account_id) {
-        return { isSubaccount: false, parentPlan: null };
+        return { 
+          isSubaccount: false, 
+          parentPlan: null,
+          labelType: profile?.label_type 
+        };
       }
 
       // Fetch parent account's plan
@@ -42,12 +46,20 @@ export const YourPlanBlock = ({ userPlan }: YourPlanBlockProps) => {
 
       return {
         isSubaccount: true,
-        parentPlan: parentPlan
+        parentPlan: parentPlan,
+        labelType: profile?.label_type
       };
     },
   });
 
   const displayPlan = accountInfo?.isSubaccount ? accountInfo.parentPlan : userPlan;
+  const labelType = accountInfo?.labelType;
+  const isLabelPlan = labelType && (
+    labelType.toLowerCase().includes('label prestige') || 
+    labelType.toLowerCase().includes('label signature') || 
+    labelType.toLowerCase().includes('label partner')
+  );
+
   return (
     <Collapsible defaultOpen>
       <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
@@ -77,10 +89,15 @@ export const YourPlanBlock = ({ userPlan }: YourPlanBlockProps) => {
               </>
             ) : (
               <>
-                <div>
+                <div className="flex flex-wrap gap-2">
                   <Badge className="bg-gradient-primary text-white px-2 py-1 text-xs">
                     {displayPlan?.plan?.name || "Trackball Free"}
                   </Badge>
+                  {isLabelPlan && (
+                    <Badge className="bg-gradient-to-r from-accent to-primary text-white px-2 py-1 text-xs">
+                      {labelType}
+                    </Badge>
+                  )}
                 </div>
                 {displayPlan ? (
                   <>
