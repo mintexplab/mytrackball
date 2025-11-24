@@ -17,7 +17,6 @@ import { AnnouncementDialog } from "@/components/AnnouncementDialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RoyaltiesTab from "@/components/RoyaltiesTab";
-import { useBrandingData, BrandingContext, useBranding } from "@/hooks/useBrandingContext";
 
 import ClientInvitations from "@/components/ClientInvitations";
 import ClientInvitationAcceptance from "@/components/ClientInvitationAcceptance";
@@ -48,11 +47,8 @@ import SubscriptionWelcomeDialog from "@/components/SubscriptionWelcomeDialog";
 import { ModernSupportTicketSystem } from "@/components/ModernSupportTicketSystem";
 import { SmartLinksTab } from "@/components/SmartLinksTab";
 import { LabelCustomizationTab } from "@/components/LabelCustomizationTab";
-import { SubdistributorCustomization } from "@/components/SubdistributorCustomization";
-import { SubdistributorArtistInvitation } from "@/components/SubdistributorArtistInvitation";
 
 const Dashboard = () => {
-  const branding = useBrandingData();
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -84,12 +80,8 @@ const Dashboard = () => {
   const [welcomePlanFeatures, setWelcomePlanFeatures] = useState<string[]>([]);
   const [activeLabelDigitId, setActiveLabelDigitId] = useState<string>("");
   const [activeLabelLogo, setActiveLabelLogo] = useState<string | null>(null);
-  const [isSubdistributor, setIsSubdistributor] = useState(false);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-
-  // Use dashboard name from branding context
-  const dashboardName = branding.dashboardName;
 
   // Function to apply accent color globally
   const applyAccentColor = (color: string) => {
@@ -319,67 +311,30 @@ const Dashboard = () => {
     } = await supabase.from("profiles").select("*").eq("id", userId).single();
     setProfile(profileData);
 
-    // Check if user or their parent is a subdistributor master
-    let subdistributorProfile = null;
-    if (profileData?.is_subdistributor_master) {
-      // This user is a subdistributor master
-      subdistributorProfile = profileData;
-    } else if (profileData?.parent_account_id) {
-      // Check if parent is a subdistributor master
-      const { data: parentProfile } = await supabase
-        .from("profiles")
-        .select("is_subdistributor_master, subdistributor_dashboard_name, subdistributor_logo_url, subdistributor_accent_color")
-        .eq("id", profileData.parent_account_id)
+    // Fetch label 5-digit ID, accent color, and logo if user has an active label
+    if (profileData?.active_label_id) {
+      const { data: labelData } = await supabase
+        .from("labels")
+        .select("label_id, accent_color, logo_url")
+        .eq("id", profileData.active_label_id)
         .single();
       
-      if (parentProfile?.is_subdistributor_master) {
-        subdistributorProfile = parentProfile;
-      }
-    }
-
-    // Apply subdistributor customization if applicable
-    if (subdistributorProfile) {
-      setIsSubdistributor(true);
-      
-      // Apply subdistributor logo
-      if (subdistributorProfile.subdistributor_logo_url) {
-        setActiveLabelLogo(subdistributorProfile.subdistributor_logo_url);
-      }
-      
-      // Apply subdistributor accent color
-      if (subdistributorProfile.subdistributor_accent_color) {
-        applyAccentColor(subdistributorProfile.subdistributor_accent_color);
-      } else {
-        applyAccentColor("#ef4444");
+      if (labelData) {
+        setActiveLabelDigitId(labelData.label_id);
+        setActiveLabelLogo(labelData.logo_url);
+        
+        // Apply accent color globally if it exists
+        if (labelData.accent_color) {
+          applyAccentColor(labelData.accent_color);
+        } else {
+          // Reset to default red if no custom color
+          applyAccentColor("#ef4444");
+        }
       }
     } else {
-      setIsSubdistributor(false);
-      
-      // Fetch label 5-digit ID, accent color, and logo if user has an active label (only if not subdistributor)
-      if (profileData?.active_label_id) {
-        const { data: labelData } = await supabase
-          .from("labels")
-          .select("label_id, accent_color, logo_url")
-          .eq("id", profileData.active_label_id)
-          .single();
-        
-        if (labelData) {
-          setActiveLabelDigitId(labelData.label_id);
-          setActiveLabelLogo(labelData.logo_url);
-          
-          // Apply accent color globally if it exists
-          if (labelData.accent_color) {
-            applyAccentColor(labelData.accent_color);
-          } else {
-            // Reset to default red if no custom color
-            applyAccentColor("#ef4444");
-          }
-        }
-      } else {
-        // Reset to default if no active label
-        setActiveLabelLogo(null);
-        applyAccentColor("#ef4444");
-      }
+      // Reset to default if no active label
+      setActiveLabelLogo(null);
+      applyAccentColor("#ef4444");
     }
 
     // Check if this is a newly assigned plan (subscription_welcome_shown_at is null or old)
@@ -501,13 +456,11 @@ const Dashboard = () => {
       </div>
     );
   }
-  return (
-    <BrandingContext.Provider value={branding}>
-      <div className="min-h-screen bg-background relative">
+  return <div className="min-h-screen bg-background relative">
       <AnnouncementBar />
       
       {isLoggingOut && <div className="fixed inset-0 z-50 bg-background animate-fade-in flex flex-col items-center justify-center gap-4">
-          <p className="text-lg text-foreground animate-pulse">Signing you out of {dashboardName}</p>
+          <p className="text-lg text-foreground animate-pulse">Signing you out of My Trackball</p>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>}
       
@@ -625,30 +578,6 @@ const Dashboard = () => {
                     <DropdownMenuItem onClick={() => setActiveTab("label-customization")} className="cursor-pointer">
                       <Palette className="w-4 h-4 mr-2" />
                       Label Customization
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-
-              {isSubdistributor && profile?.is_subdistributor_master && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="gap-1">
-                      <Palette className="w-4 h-4" />
-                      <span className="hidden sm:inline">Branding</span>
-                      <ChevronDown className="w-3 h-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 bg-card border-border z-50">
-                    <DropdownMenuLabel>Branding Management</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setActiveTab("subdistributor-customization")} className="cursor-pointer">
-                      <Palette className="w-4 h-4 mr-2" />
-                      Platform Branding
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setActiveTab("subdistributor-artists")} className="cursor-pointer">
-                      <Users className="w-4 h-4 mr-2" />
-                      Invite Artists
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -897,18 +826,6 @@ const Dashboard = () => {
             <TabsContent value="smartlinks">
               <SmartLinksTab />
             </TabsContent>
-
-            {isSubdistributor && profile?.is_subdistributor_master && (
-              <>
-                <TabsContent value="subdistributor-customization">
-                  <SubdistributorCustomization />
-                </TabsContent>
-                
-                <TabsContent value="subdistributor-artists">
-                  <SubdistributorArtistInvitation />
-                </TabsContent>
-              </>
-            )}
           </Tabs>
       </main>
 
@@ -986,8 +903,6 @@ const Dashboard = () => {
           labelType={labelDesignationType}
         />
       )}
-    </div>
-    </BrandingContext.Provider>
-  );
+    </div>;
 };
 export default Dashboard;

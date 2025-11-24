@@ -53,45 +53,18 @@ export const ProfileDropdown = ({ userEmail, avatarUrl, artistName, fullName, us
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get user's profile to see active label and subdistributor info
+      // Get user's profile to see active label
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id, active_label_id, is_subdistributor_master, subdistributor_banner_url, parent_account_id")
+        .select("id, active_label_id")
         .eq("id", user.id)
         .single();
 
       if (profile) {
         setActiveLabelId(profile.active_label_id);
         
-        // Priority 1: Check if user is subdistributor master with custom banner
-        if (profile.is_subdistributor_master && profile.subdistributor_banner_url) {
-          setCustomBanner(profile.subdistributor_banner_url);
-        }
-        // Priority 2: Check if user's parent is subdistributor master with custom banner
-        else if (profile.parent_account_id) {
-          const { data: parentProfile } = await supabase
-            .from("profiles")
-            .select("is_subdistributor_master, subdistributor_banner_url")
-            .eq("id", profile.parent_account_id)
-            .single();
-
-          if (parentProfile?.is_subdistributor_master && parentProfile.subdistributor_banner_url) {
-            setCustomBanner(parentProfile.subdistributor_banner_url);
-          } else if (profile.active_label_id) {
-            // Priority 3: Fetch custom banner for active label
-            const { data: banner } = await supabase
-              .from("label_dropdown_banners")
-              .select("banner_url")
-              .eq("label_id", profile.active_label_id)
-              .maybeSingle();
-            
-            if (banner) {
-              setCustomBanner(banner.banner_url);
-            }
-          }
-        }
-        // Priority 3: Fetch custom banner for active label if no subdistributor
-        else if (profile.active_label_id) {
+        // Fetch custom banner for active label
+        if (profile.active_label_id) {
           const { data: banner } = await supabase
             .from("label_dropdown_banners")
             .select("banner_url")

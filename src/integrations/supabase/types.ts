@@ -640,7 +640,6 @@ export type Database = {
           id: string
           is_banned: boolean | null
           is_locked: boolean | null
-          is_subdistributor_master: boolean | null
           label_designation_welcome_shown: boolean | null
           label_id: string | null
           label_name: string | null
@@ -650,11 +649,6 @@ export type Database = {
           parent_account_id: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
-          subdistributor_accent_color: string | null
-          subdistributor_banner_url: string | null
-          subdistributor_dashboard_name: string | null
-          subdistributor_footer_text: string | null
-          subdistributor_logo_url: string | null
           subscription_welcome_shown_at: string | null
           user_id: string
           user_timezone: string | null
@@ -676,7 +670,6 @@ export type Database = {
           id: string
           is_banned?: boolean | null
           is_locked?: boolean | null
-          is_subdistributor_master?: boolean | null
           label_designation_welcome_shown?: boolean | null
           label_id?: string | null
           label_name?: string | null
@@ -686,11 +679,6 @@ export type Database = {
           parent_account_id?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
-          subdistributor_accent_color?: string | null
-          subdistributor_banner_url?: string | null
-          subdistributor_dashboard_name?: string | null
-          subdistributor_footer_text?: string | null
-          subdistributor_logo_url?: string | null
           subscription_welcome_shown_at?: string | null
           user_id: string
           user_timezone?: string | null
@@ -712,7 +700,6 @@ export type Database = {
           id?: string
           is_banned?: boolean | null
           is_locked?: boolean | null
-          is_subdistributor_master?: boolean | null
           label_designation_welcome_shown?: boolean | null
           label_id?: string | null
           label_name?: string | null
@@ -722,11 +709,6 @@ export type Database = {
           parent_account_id?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
-          subdistributor_accent_color?: string | null
-          subdistributor_banner_url?: string | null
-          subdistributor_dashboard_name?: string | null
-          subdistributor_footer_text?: string | null
-          subdistributor_logo_url?: string | null
           subscription_welcome_shown_at?: string | null
           user_id?: string
           user_timezone?: string | null

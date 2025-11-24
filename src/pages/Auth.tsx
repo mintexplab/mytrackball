@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { TrackballBeads } from "@/components/TrackballBeads";
-import { useBrandingData, BrandingContext } from "@/hooks/useBrandingContext";
 
 import trackballLogo from "@/assets/trackball-logo.png";
 const Auth = () => {
@@ -18,7 +17,6 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [isZooming, setIsZooming] = useState(false);
   const navigate = useNavigate();
-  const branding = useBrandingData();
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Auth submit", {
@@ -152,9 +150,7 @@ const Auth = () => {
   };
   
   
-  return (
-    <BrandingContext.Provider value={branding}>
-      <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
+  return <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
       <div className="absolute inset-0">
         <TrackballBeads />
       </div>
@@ -173,7 +169,7 @@ const Auth = () => {
           <div>
             <CardTitle className="text-3xl bg-gradient-primary bg-clip-text text-transparent font-normal font-sans text-center">Trackball Distribution</CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
-              {isLogin ? `Sign in to ${branding.dashboardName} using your Google or Trackball account` : "Create your artist account"}
+              {isLogin ? "Sign in to My Trackball using your Google or Trackball account" : "Create your artist account"}
             </CardDescription>
           </div>
         </CardHeader>
@@ -236,8 +232,7 @@ const Auth = () => {
           </form>
         </CardContent>
       </Card>
-    </div>
-    </BrandingContext.Provider>
-  );
+
+    </div>;
 };
 export default Auth;

@@ -3,11 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { FileMusic, Upload, DollarSign, Image as ImageIcon, Music, Calendar, Shield, Archive, AlertTriangle, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useBranding } from "@/hooks/useBrandingContext";
 
 export const DocumentationSection = () => {
-  const { dashboardName } = useBranding();
-  
   return (
     <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
       <CardHeader>
@@ -28,9 +25,9 @@ export const DocumentationSection = () => {
             </AccordionTrigger>
             <AccordionContent className="space-y-4 pt-4">
               <div className="space-y-3">
-                <h4 className="font-medium text-sm">Welcome to {dashboardName}</h4>
+                <h4 className="font-medium text-sm">Welcome to My Trackball</h4>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {dashboardName} is your complete music distribution platform. Submit releases, track royalties, 
+                  My Trackball is your complete music distribution platform. Submit releases, track royalties, 
                   manage your catalog, and get your music on all major streaming platforms including Spotify, 
                   Apple Music, YouTube Music, and more.
                 </p>

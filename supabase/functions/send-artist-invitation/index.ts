@@ -1,9 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +9,6 @@ const corsHeaders = {
 
 interface InvitationRequest {
   email: string;
-  inviterName: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -21,67 +17,13 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, inviterName }: InvitationRequest = await req.json();
+    const { email }: InvitationRequest = await req.json();
 
     if (!email) {
       throw new Error("Email is required");
     }
 
-    // Get authorization header
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) throw new Error('No authorization header');
-
-    // Create Supabase client with user's auth
-    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    
-    // Get user from auth header
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
-    
-    if (userError || !user) throw new Error('Unauthorized');
-
-    // Fetch subdistributor branding
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('subdistributor_dashboard_name, subdistributor_footer_text, subdistributor_logo_url, subdistributor_accent_color, is_subdistributor_master, label_name')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError) throw profileError;
-
-    // Use subdistributor branding if available, otherwise default branding
-    const dashboardName = profile?.is_subdistributor_master 
-      ? (profile.subdistributor_dashboard_name || 'My Trackball')
-      : 'My Trackball';
-    
-    const footerText = profile?.is_subdistributor_master
-      ? (profile.subdistributor_footer_text || '© 2025 XZ1 Recording Ventures. All rights reserved.')
-      : '© 2025 XZ1 Recording Ventures. All rights reserved.';
-    
-    const logoUrl = profile?.is_subdistributor_master 
-      ? profile.subdistributor_logo_url 
-      : null;
-    
-    const accentColor = profile?.is_subdistributor_master
-      ? (profile.subdistributor_accent_color || '#ef4444')
-      : '#ef4444';
-
-    const distributorName = profile?.label_name || inviterName || 'Trackball Distribution';
-
-    // Create invitation record in database
-    const { data: invitationData, error: invitationError } = await supabaseClient
-      .from('artist_invitations')
-      .insert({
-        email: email,
-        invited_by: user.id,
-      })
-      .select()
-      .single();
-
-    if (invitationError) throw invitationError;
-
-    // Use the deployed app domain with invitation token
-    const signupUrl = `https://mytrackball.lovable.app/accept-invitation?token=${invitationData.id}`;
+    const signupUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || 'https://trackball.lovable.app'}/auth`;
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -105,20 +47,13 @@ const handler = async (req: Request): Promise<Response> => {
               margin-bottom: 30px;
             }
             .header h1 {
-              color: ${accentColor};
+              color: #ef4444;
               font-size: 32px;
               margin: 0;
             }
-            .logo {
-              width: 100px;
-              height: 100px;
-              margin: 0 auto 20px;
-              display: block;
-              object-fit: contain;
-            }
             .content {
               background-color: #1a1a1a;
-              border: 1px solid ${accentColor};
+              border: 1px solid #ef4444;
               border-radius: 8px;
               padding: 30px;
               margin-bottom: 20px;
@@ -129,7 +64,7 @@ const handler = async (req: Request): Promise<Response> => {
             }
             .button {
               display: inline-block;
-              background-color: ${accentColor};
+              background-color: #ef4444;
               color: #ffffff;
               text-decoration: none;
               padding: 12px 30px;
@@ -138,7 +73,7 @@ const handler = async (req: Request): Promise<Response> => {
               margin: 20px 0;
             }
             .button:hover {
-              opacity: 0.9;
+              background-color: #dc2626;
             }
             .footer {
               text-align: center;
@@ -146,21 +81,16 @@ const handler = async (req: Request): Promise<Response> => {
               font-size: 14px;
               margin-top: 30px;
             }
-            .footer a {
-              color: ${accentColor};
-              text-decoration: none;
-            }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              ${logoUrl ? `<img src="${logoUrl}" alt="${dashboardName} Logo" class="logo" />` : ''}
-              <h1>${dashboardName}</h1>
+              <h1>My Trackball</h1>
             </div>
             <div class="content">
-              <p><strong>${distributorName} has invited you to join ${dashboardName}</strong></p>
-              <p>You've been invited to create an account on ${dashboardName}, the music distribution platform that puts artists first.</p>
+              <p><strong>Trackball Distribution has invited you to join My Trackball</strong></p>
+              <p>You've been invited to create an account on My Trackball, the music distribution platform that puts artists first.</p>
               <p>Click the button below to get started:</p>
               <div style="text-align: center;">
                 <a href="${signupUrl}" class="button">Create Your Account</a>
@@ -174,8 +104,8 @@ const handler = async (req: Request): Promise<Response> => {
               </ul>
             </div>
             <div class="footer">
-              <p>${footerText}</p>
-              <p>Need help? Contact your distributor for assistance</p>
+              <p>&copy; 2025 XZ1 Recording Ventures. All rights reserved.</p>
+              <p>Need help? Contact us at <a href="mailto:contact@trackball.cc" style="color: #ef4444;">contact@trackball.cc</a></p>
             </div>
           </div>
         </body>
@@ -189,9 +119,9 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: `${dashboardName} <noreply@trackball.cc>`,
+        from: "Trackball Distribution <noreply@trackball.cc>",
         to: [email],
-        subject: `You've been invited to ${dashboardName}`,
+        subject: "You've been invited to My Trackball",
         html: emailHtml,
       }),
     });

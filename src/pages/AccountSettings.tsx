@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TwoFactorAuth } from "@/components/TwoFactorAuth";
 import { useS3Upload } from "@/hooks/useS3Upload";
 import LabelDesignationWelcomeDialog from "@/components/LabelDesignationWelcomeDialog";
-import { useBranding } from "@/hooks/useBrandingContext";
 const TIMEZONES = [{
   value: "America/New_York",
   label: "Eastern Time (ET)"
@@ -52,7 +51,6 @@ const AccountSettings = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const { uploadFile, deleteFile, uploading } = useS3Upload();
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
-  const { dashboardName } = useBranding();
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -490,7 +488,7 @@ const AccountSettings = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Need a refresher on how to use {dashboardName}? Restart the guided tutorial to walk through all features step-by-step.
+              Need a refresher on how to use My Trackball? Restart the guided tutorial to walk through all features step-by-step.
             </p>
             <Button 
               onClick={async () => {

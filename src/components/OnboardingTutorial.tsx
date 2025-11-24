@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, X, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useBranding } from "@/hooks/useBrandingContext";
 
 interface OnboardingTutorialProps {
   onComplete: () => void;
@@ -12,15 +11,10 @@ interface OnboardingTutorialProps {
   isLabelAccount?: boolean;
 }
 
-export const OnboardingTutorial = ({ onComplete, onSkip, isLabelAccount = false }: OnboardingTutorialProps) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [highlightStyle, setHighlightStyle] = useState<any>({});
-  const { dashboardName } = useBranding();
-
-  const tutorialSteps = [
+const tutorialSteps = [
   {
-    title: `Welcome to ${dashboardName}`,
-    description: `Welcome to your music distribution dashboard! Let's take a comprehensive tour of all the features available to help you succeed. You can skip this tutorial at any time by clicking the X button, or restart it later from your account settings.`,
+    title: "Welcome to My Trackball",
+    description: "Welcome to your music distribution dashboard! Let's take a comprehensive tour of all the features available to help you succeed. You can skip this tutorial at any time by clicking the X button, or restart it later from your account settings.",
     position: "center",
     highlightElement: null,
   },
@@ -80,11 +74,15 @@ export const OnboardingTutorial = ({ onComplete, onSkip, isLabelAccount = false 
   },
   {
     title: "You're All Set!",
-    description: `Congratulations! You're now ready to start distributing your music to the world. Remember, you can always restart this tutorial from your account settings if you need a refresher. Welcome to ${dashboardName} - let's get your music heard!`,
+    description: "Congratulations! You're now ready to start distributing your music to the world. Remember, you can always restart this tutorial from your account settings if you need a refresher. Welcome to My Trackball - let's get your music heard!",
     position: "center",
     highlightElement: null,
   },
 ];
+
+export const OnboardingTutorial = ({ onComplete, onSkip, isLabelAccount = false }: OnboardingTutorialProps) => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [highlightStyle, setHighlightStyle] = useState<any>({});
 
   useEffect(() => {
     // Use requestAnimationFrame to ensure DOM is ready

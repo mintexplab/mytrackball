@@ -10,7 +10,6 @@ import { UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import { TrackballBeads } from "@/components/TrackballBeads";
-import { useBrandingData, BrandingContext } from "@/hooks/useBrandingContext";
 import trackballLogo from "@/assets/trackball-logo.png";
 
 const signupSchema = z.object({
@@ -36,10 +35,8 @@ const AcceptInvitation = () => {
   const [loading, setLoading] = useState(false);
   const [loadingInvitation, setLoadingInvitation] = useState(true);
   const [invitation, setInvitation] = useState<any>(null);
-  const [inviterAccentColor, setInviterAccentColor] = useState<string>("#ef4444");
   const navigate = useNavigate();
   const token = searchParams.get("token");
-  const branding = useBrandingData();
 
   useEffect(() => {
     if (!token) {
@@ -53,62 +50,26 @@ const AcceptInvitation = () => {
 
   const fetchInvitation = async () => {
     try {
-      // First try to find it in sublabel_invitations (client type)
-      const { data: sublabelData, error: sublabelError } = await supabase
+      const { data, error } = await supabase
         .from("sublabel_invitations")
         .select(`
           *,
-          inviter:profiles!sublabel_invitations_inviter_id_fkey(display_name, full_name, label_name, email, subdistributor_accent_color, is_subdistributor_master)
+          inviter:profiles!sublabel_invitations_inviter_id_fkey(display_name, full_name, label_name, email)
         `)
         .eq("id", token)
         .eq("status", "pending")
         .eq("invitation_type", "client")
         .gt("expires_at", new Date().toISOString())
-        .maybeSingle();
+        .single();
 
-      if (sublabelData) {
-        setInvitation({ ...sublabelData, type: 'sublabel' });
-        setEmail(sublabelData.invitee_email);
-        
-        // Set inviter's accent color if they're a subdistributor
-        if (sublabelData.inviter?.is_subdistributor_master && sublabelData.inviter?.subdistributor_accent_color) {
-          setInviterAccentColor(sublabelData.inviter.subdistributor_accent_color);
-        }
-        setLoadingInvitation(false);
+      if (error || !data) {
+        toast.error("Invitation not found or expired");
+        navigate("/auth");
         return;
       }
 
-      // If not found in sublabel_invitations, try artist_invitations
-      const { data: artistData, error: artistError } = await supabase
-        .from("artist_invitations")
-        .select("*")
-        .eq("id", token)
-        .eq("status", "pending")
-        .gt("expires_at", new Date().toISOString())
-        .maybeSingle();
-
-      if (artistData) {
-        // Fetch inviter profile separately
-        const { data: inviterProfile } = await supabase
-          .from("profiles")
-          .select("display_name, full_name, label_name, email, subdistributor_accent_color, is_subdistributor_master")
-          .eq("id", artistData.invited_by)
-          .single();
-
-        setInvitation({ ...artistData, type: 'artist', inviter: inviterProfile });
-        setEmail(artistData.email);
-        
-        // Set inviter's accent color if they're a subdistributor
-        if (inviterProfile?.is_subdistributor_master && inviterProfile?.subdistributor_accent_color) {
-          setInviterAccentColor(inviterProfile.subdistributor_accent_color);
-        }
-        setLoadingInvitation(false);
-        return;
-      }
-
-      // If not found in either table
-      toast.error("Invitation not found or expired");
-      navigate("/auth");
+      setInvitation(data);
+      setEmail(data.invitee_email);
     } catch (error) {
       console.error("Error fetching invitation:", error);
       toast.error("Failed to load invitation");
@@ -142,57 +103,43 @@ const AcceptInvitation = () => {
       if (signUpError) throw signUpError;
       if (!authData.user) throw new Error("Failed to create account");
 
-      // Accept the invitation based on type
-      if (invitation.type === 'sublabel') {
-        const { error: inviteError } = await supabase
-          .from("sublabel_invitations")
-          .update({ 
-            status: "accepted",
-            accepted_at: new Date().toISOString()
-          })
-          .eq("id", token);
+      // Accept the invitation
+      const { error: inviteError } = await supabase
+        .from("sublabel_invitations")
+        .update({ 
+          status: "accepted",
+          accepted_at: new Date().toISOString()
+        })
+        .eq("id", token);
 
-        if (inviteError) throw inviteError;
+      if (inviteError) throw inviteError;
 
-        // Grant permissions for sublabel invitations
-        if (invitation.permissions && invitation.permissions.length > 0) {
-          const permissionsToInsert = invitation.permissions.map((permission: string) => ({
-            user_id: authData.user.id,
-            permission: permission,
-            granted_by: invitation.inviter_id,
-          }));
+      // Grant permissions
+      if (invitation.permissions && invitation.permissions.length > 0) {
+        const permissionsToInsert = invitation.permissions.map((permission: string) => ({
+          user_id: authData.user.id,
+          permission: permission,
+          granted_by: invitation.inviter_id,
+        }));
 
-          const { error: permError } = await supabase
-            .from("user_permissions")
-            .insert(permissionsToInsert);
+        const { error: permError } = await supabase
+          .from("user_permissions")
+          .insert(permissionsToInsert);
 
-          if (permError) throw permError;
-        }
-      } else {
-        // Artist invitation
-        const { error: inviteError } = await supabase
-          .from("artist_invitations")
-          .update({ 
-            status: "accepted",
-            accepted_at: new Date().toISOString()
-          })
-          .eq("id", token);
-
-        if (inviteError) throw inviteError;
+        if (permError) throw permError;
       }
 
       // Update profile with parent account and label info
-      const inviterId = invitation.type === 'sublabel' ? invitation.inviter_id : invitation.invited_by;
       const { data: inviterProfile } = await supabase
         .from("profiles")
         .select("label_name, id")
-        .eq("id", inviterId)
+        .eq("id", invitation.inviter_id)
         .single();
 
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
-          parent_account_id: inviterId,
+          parent_account_id: invitation.inviter_id,
           label_name: inviterProfile?.label_name || null,
           artist_name: validatedData.fullName,
         })
@@ -227,40 +174,27 @@ const AcceptInvitation = () => {
   }
 
   return (
-    <BrandingContext.Provider value={branding}>
-      <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
       <div className="absolute inset-0">
         <TrackballBeads />
       </div>
       
       <Card 
-        className="w-full max-w-md relative backdrop-blur-sm bg-black"
+        className="w-full max-w-md relative backdrop-blur-sm bg-black border-primary/30"
         style={{
-          borderColor: `${inviterAccentColor}30`,
-          boxShadow: `0 0 40px ${inviterAccentColor}30, 0 0 80px ${inviterAccentColor}15`
+          boxShadow: '0 0 40px rgba(239, 68, 68, 0.3), 0 0 80px rgba(239, 68, 68, 0.15)'
         }}
       >
         <CardHeader className="space-y-4 text-center">
-          <div 
-            className="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden"
-            style={{
-              background: `linear-gradient(135deg, ${inviterAccentColor}, ${inviterAccentColor}dd)`,
-              boxShadow: `0 0 30px ${inviterAccentColor}40`
-            }}
-          >
+          <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-glow overflow-hidden">
             <img src={trackballLogo} alt="Trackball Logo" className="w-full h-full object-cover" />
           </div>
           <div>
-            <CardTitle 
-              className="text-3xl bg-clip-text text-transparent font-normal font-sans text-center"
-              style={{
-                backgroundImage: `linear-gradient(135deg, ${inviterAccentColor}, ${inviterAccentColor}dd)`,
-              }}
-            >
+            <CardTitle className="text-3xl bg-gradient-primary bg-clip-text text-transparent font-normal font-sans text-center">
               You're Invited!
             </CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
-              Join {invitation.inviter.label_name || invitation.inviter.display_name} on {branding.dashboardName}
+              Join {invitation.inviter.label_name || invitation.inviter.display_name} on My Trackball
             </CardDescription>
           </div>
         </CardHeader>
@@ -275,19 +209,12 @@ const AcceptInvitation = () => {
               <p className="text-sm text-muted-foreground">{invitation.inviter.email}</p>
             )}
             
-            {invitation.type === 'sublabel' && invitation.permissions && invitation.permissions.length > 0 && (
+            {invitation.permissions && invitation.permissions.length > 0 && (
               <div className="mt-4">
                 <p className="text-sm text-muted-foreground mb-2">You'll have access to:</p>
                 <div className="flex flex-wrap gap-2">
                   {invitation.permissions.map((perm: string) => (
-                    <Badge 
-                      key={perm} 
-                      variant="outline" 
-                      style={{
-                        backgroundColor: `${inviterAccentColor}10`,
-                        borderColor: `${inviterAccentColor}30`
-                      }}
-                    >
+                    <Badge key={perm} variant="outline" className="bg-primary/10">
                       {perm.charAt(0).toUpperCase() + perm.slice(1)}
                     </Badge>
                   ))}
@@ -299,19 +226,14 @@ const AcceptInvitation = () => {
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
-                <Input
+              <Input
                 id="fullName"
                 type="text"
                 placeholder="John Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
-                className="bg-background/50 border-border transition-colors"
-                style={{
-                  '--focus-color': inviterAccentColor
-                } as React.CSSProperties}
-                onFocus={(e) => e.currentTarget.style.borderColor = inviterAccentColor}
-                onBlur={(e) => e.currentTarget.style.borderColor = ''}
+                className="bg-background/50 border-border focus:border-primary transition-colors"
               />
             </div>
             
@@ -329,7 +251,7 @@ const AcceptInvitation = () => {
             
             <div className="space-y-2">
               <Label htmlFor="password">Create Password</Label>
-                <Input
+              <Input
                 id="password"
                 type="password"
                 placeholder="••••••••"
@@ -337,23 +259,14 @@ const AcceptInvitation = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={8}
-                  className="bg-background/50 border-border transition-colors"
-                  style={{
-                    '--focus-color': inviterAccentColor
-                  } as React.CSSProperties}
-                  onFocus={(e) => e.currentTarget.style.borderColor = inviterAccentColor}
-                  onBlur={(e) => e.currentTarget.style.borderColor = ''}
+                  className="bg-background/50 border-border focus:border-primary transition-colors"
               />
             </div>
             
             <Button
               type="submit"
-              className="w-full hover:opacity-90 transition-opacity"
+              className="w-full bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow"
               disabled={loading}
-              style={{
-                background: `linear-gradient(135deg, ${inviterAccentColor}, ${inviterAccentColor}dd)`,
-                boxShadow: `0 0 30px ${inviterAccentColor}40`
-              }}
             >
               {loading ? "Creating Account..." : "Accept Invitation & Create Account"}
             </Button>
@@ -362,8 +275,7 @@ const AcceptInvitation = () => {
               <button
                 type="button"
                 onClick={() => navigate("/auth")}
-                className="transition-all duration-300 hover:scale-105"
-                style={{ color: inviterAccentColor }}
+                className="text-primary hover:text-primary/80 transition-all duration-300 hover:scale-105"
               >
                 Already have an account? Sign in
               </button>
@@ -372,7 +284,6 @@ const AcceptInvitation = () => {
         </CardContent>
       </Card>
     </div>
-    </BrandingContext.Provider>
   );
 };
 
