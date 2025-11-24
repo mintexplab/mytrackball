@@ -252,15 +252,15 @@ export const LabelCustomizationTab = () => {
   };
 
   // Determine feature access based on plan
+  // Only Label Prestige and Partner plans have full customization access
   const planName = userPlan?.plan?.name || "";
-  const isLabelFree = planName === "Label Free";
-  const isLabelLite = planName === "Label Lite";
-  const hasFullAccess = planName === "Label Signature" || planName === "Label Prestige" || 
-                        labelType === "partner_label" || labelType === "signature_label" || labelType === "prestige_label";
+  const hasFullAccess = planName === "Label Prestige" || 
+                        labelType === "partner_label" || 
+                        labelType === "prestige_label";
 
-  const canCustomizeLogo = !isLabelFree;
-  const canCustomizeAccentColor = !isLabelFree;
-  const canCustomizeBanner = !isLabelFree;
+  const canCustomizeLogo = hasFullAccess;
+  const canCustomizeAccentColor = hasFullAccess;
+  const canCustomizeBanner = hasFullAccess;
 
   if (labels.length === 0) {
     return (
@@ -286,19 +286,11 @@ export const LabelCustomizationTab = () => {
           <CardDescription>
             Customize the branding for your labels. Changes will apply to all subaccounts under each label.
           </CardDescription>
-          {isLabelFree && (
+          {!hasFullAccess && (
             <Alert className="mt-4 border-muted">
               <Lock className="h-4 w-4" />
               <AlertDescription>
-                Label Free is limited to label name only. Upgrade to Label Lite or higher for additional customization options.
-              </AlertDescription>
-            </Alert>
-          )}
-          {isLabelLite && (
-            <Alert className="mt-4 border-muted">
-              <Lock className="h-4 w-4" />
-              <AlertDescription>
-                Label Lite allows dropdown banner customization. Upgrade to Label Signature or higher for full branding control.
+                Label customization is only available on Label Prestige and Label Partner plans. Upgrade to customize your label branding.
               </AlertDescription>
             </Alert>
           )}
@@ -357,7 +349,7 @@ export const LabelCustomizationTab = () => {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   This color will be applied to all buttons, accents, and branding throughout your label's organization. Changes apply after saving and refreshing.
-                  {!canCustomizeAccentColor && " (Upgrade to Label Lite or higher)"}
+                  {!canCustomizeAccentColor && " (Upgrade to Label Prestige or Partner)"}
                 </p>
               </div>
 
@@ -370,11 +362,37 @@ export const LabelCustomizationTab = () => {
                 {selectedLabel.logo_url && !logoFile && (
                   <div className="mb-3 p-4 border border-border rounded-lg bg-muted/20">
                     <p className="text-sm text-muted-foreground mb-2">Current Logo:</p>
-                    <img
-                      src={selectedLabel.logo_url}
-                      alt="Current logo"
-                      className="max-h-24 rounded-lg border border-border"
-                    />
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={selectedLabel.logo_url}
+                        alt="Current logo"
+                        className="max-h-24 rounded-lg border border-border"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          setLoading(true);
+                          try {
+                            const { error } = await supabase
+                              .from("labels")
+                              .update({ logo_url: null })
+                              .eq("id", selectedLabel.id);
+                            if (error) throw error;
+                            toast.success("Logo removed! Refresh to see changes.");
+                            await fetchLabels();
+                          } catch (error) {
+                            toast.error("Failed to remove logo");
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        disabled={!canCustomizeLogo || loading}
+                      >
+                        Remove
+                      </Button>
+                    </div>
                   </div>
                 )}
                 <div className="flex items-center gap-3">
@@ -415,7 +433,7 @@ export const LabelCustomizationTab = () => {
                 )}
                 <p className="text-xs text-muted-foreground">
                   Upload a square logo (recommended: 256x256px, max 5MB)
-                  {!canCustomizeLogo && " (Upgrade to Label Lite or higher)"}
+                  {!canCustomizeLogo && " (Upgrade to Label Prestige or Partner)"}
                 </p>
               </div>
 
@@ -428,11 +446,39 @@ export const LabelCustomizationTab = () => {
                 {banner && !bannerFile && (
                   <div className="mb-3 p-4 border border-border rounded-lg bg-muted/20">
                     <p className="text-sm text-muted-foreground mb-2">Current Banner:</p>
-                    <img
-                      src={banner.banner_url}
-                      alt="Current banner"
-                      className="w-full max-h-32 object-cover rounded-lg border border-border"
-                    />
+                    <div className="flex flex-col gap-2">
+                      <img
+                        src={banner.banner_url}
+                        alt="Current banner"
+                        className="w-full max-h-32 object-cover rounded-lg border border-border"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          setLoading(true);
+                          try {
+                            const { error } = await supabase
+                              .from("label_dropdown_banners")
+                              .delete()
+                              .eq("id", banner.id);
+                            if (error) throw error;
+                            toast.success("Banner removed!");
+                            setBanner(null);
+                            await fetchLabels();
+                          } catch (error) {
+                            toast.error("Failed to remove banner");
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        disabled={!canCustomizeBanner || loading}
+                        className="w-fit"
+                      >
+                        Remove Banner
+                      </Button>
+                    </div>
                   </div>
                 )}
                 <div className="flex items-center gap-3">
@@ -473,7 +519,7 @@ export const LabelCustomizationTab = () => {
                 )}
                 <p className="text-xs text-muted-foreground">
                   Recommended size: 1200x300px (max 5MB)
-                  {!canCustomizeBanner && " (Upgrade to Label Lite or higher)"}
+                  {!canCustomizeBanner && " (Upgrade to Label Prestige or Partner)"}
                 </p>
               </div>
 
