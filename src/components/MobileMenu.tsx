@@ -268,6 +268,31 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false,
               </>
             )}
 
+            {profile?.is_subdistributor_master && (
+              <>
+                <Separator className="my-4" />
+                <p className="text-xs text-muted-foreground px-3 font-medium">Branding</p>
+                
+                <Button
+                  variant={activeTab === "subdistributor-customization" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => handleTabChange("subdistributor-customization")}
+                >
+                  <Palette className="w-4 h-4 mr-2" />
+                  Platform Branding
+                </Button>
+
+                <Button
+                  variant={activeTab === "subdistributor-artists" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => handleTabChange("subdistributor-artists")}
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Invite Artists
+                </Button>
+              </>
+            )}
+
             <Separator className="my-4" />
             <Button
               variant={activeTab === "help" ? "default" : "ghost"}
