@@ -17,6 +17,7 @@ import { AnnouncementDialog } from "@/components/AnnouncementDialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RoyaltiesTab from "@/components/RoyaltiesTab";
+import { useBrandingData, BrandingContext, useBranding } from "@/hooks/useBrandingContext";
 
 import ClientInvitations from "@/components/ClientInvitations";
 import ClientInvitationAcceptance from "@/components/ClientInvitationAcceptance";
@@ -51,6 +52,7 @@ import { SubdistributorCustomization } from "@/components/SubdistributorCustomiz
 import { SubdistributorArtistInvitation } from "@/components/SubdistributorArtistInvitation";
 
 const Dashboard = () => {
+  const branding = useBrandingData();
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -82,10 +84,12 @@ const Dashboard = () => {
   const [welcomePlanFeatures, setWelcomePlanFeatures] = useState<string[]>([]);
   const [activeLabelDigitId, setActiveLabelDigitId] = useState<string>("");
   const [activeLabelLogo, setActiveLabelLogo] = useState<string | null>(null);
-  const [dashboardName, setDashboardName] = useState("My Trackball");
   const [isSubdistributor, setIsSubdistributor] = useState(false);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+
+  // Use dashboard name from branding context
+  const dashboardName = branding.dashboardName;
 
   // Function to apply accent color globally
   const applyAccentColor = (color: string) => {
@@ -336,7 +340,6 @@ const Dashboard = () => {
     // Apply subdistributor customization if applicable
     if (subdistributorProfile) {
       setIsSubdistributor(true);
-      setDashboardName(subdistributorProfile.subdistributor_dashboard_name || "My Trackball");
       
       // Apply subdistributor logo
       if (subdistributorProfile.subdistributor_logo_url) {
@@ -351,7 +354,6 @@ const Dashboard = () => {
       }
     } else {
       setIsSubdistributor(false);
-      setDashboardName("My Trackball");
       
       // Fetch label 5-digit ID, accent color, and logo if user has an active label (only if not subdistributor)
       if (profileData?.active_label_id) {
@@ -499,7 +501,9 @@ const Dashboard = () => {
       </div>
     );
   }
-  return <div className="min-h-screen bg-background relative">
+  return (
+    <BrandingContext.Provider value={branding}>
+      <div className="min-h-screen bg-background relative">
       <AnnouncementBar />
       
       {isLoggingOut && <div className="fixed inset-0 z-50 bg-background animate-fade-in flex flex-col items-center justify-center gap-4">
@@ -982,6 +986,8 @@ const Dashboard = () => {
           labelType={labelDesignationType}
         />
       )}
-    </div>;
+    </div>
+    </BrandingContext.Provider>
+  );
 };
 export default Dashboard;

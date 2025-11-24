@@ -10,6 +10,7 @@ import { UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import { TrackballBeads } from "@/components/TrackballBeads";
+import { useBrandingData, BrandingContext } from "@/hooks/useBrandingContext";
 import trackballLogo from "@/assets/trackball-logo.png";
 
 const signupSchema = z.object({
@@ -37,6 +38,7 @@ const AcceptInvitation = () => {
   const [invitation, setInvitation] = useState<any>(null);
   const navigate = useNavigate();
   const token = searchParams.get("token");
+  const branding = useBrandingData();
 
   useEffect(() => {
     if (!token) {
@@ -174,7 +176,8 @@ const AcceptInvitation = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
+    <BrandingContext.Provider value={branding}>
+      <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
       <div className="absolute inset-0">
         <TrackballBeads />
       </div>
@@ -194,7 +197,7 @@ const AcceptInvitation = () => {
               You're Invited!
             </CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
-              Join {invitation.inviter.label_name || invitation.inviter.display_name} on My Trackball
+              Join {invitation.inviter.label_name || invitation.inviter.display_name} on {branding.dashboardName}
             </CardDescription>
           </div>
         </CardHeader>
@@ -284,6 +287,7 @@ const AcceptInvitation = () => {
         </CardContent>
       </Card>
     </div>
+    </BrandingContext.Provider>
   );
 };
 

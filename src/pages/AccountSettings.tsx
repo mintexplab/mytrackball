@@ -488,7 +488,7 @@ const AccountSettings = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Need a refresher on how to use My Trackball? Restart the guided tutorial to walk through all features step-by-step.
+              Need a refresher on how to use the platform? Restart the guided tutorial to walk through all features step-by-step.
             </p>
             <Button 
               onClick={async () => {
