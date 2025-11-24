@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TwoFactorAuth } from "@/components/TwoFactorAuth";
 import { useS3Upload } from "@/hooks/useS3Upload";
 import LabelDesignationWelcomeDialog from "@/components/LabelDesignationWelcomeDialog";
-import { LabelDropdownBannerManagement } from "@/components/LabelDropdownBannerManagement";
 const TIMEZONES = [{
   value: "America/New_York",
   label: "Eastern Time (ET)"
@@ -481,8 +480,6 @@ const AccountSettings = () => {
         )}
 
         <TwoFactorAuth />
-
-        <LabelDropdownBannerManagement />
 
         <Card className="border-border">
           <CardHeader>
