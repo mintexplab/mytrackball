@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { UserPlus, Ban, Lock, Unlock, Trash2, Mail, User, RotateCcw } from "lucide-react";
+import { Package, UserPlus, Ban, Lock, Unlock, Trash2, Mail, User, RotateCcw } from "lucide-react";
 import { z } from "zod";
 import SendNotificationDialog from "./SendNotificationDialog";
 import { Separator } from "@/components/ui/separator";
@@ -23,6 +23,7 @@ const createUserSchema = z.object({
 
 const UserManagement = () => {
   const [users, setUsers] = useState<any[]>([]);
+  const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -34,6 +35,7 @@ const UserManagement = () => {
 
   useEffect(() => {
     fetchUsers();
+    fetchPlans();
   }, []);
 
   const fetchUsers = async () => {
@@ -128,6 +130,15 @@ const UserManagement = () => {
 
     setUsers(usersWithPlans);
     setLoading(false);
+  };
+
+  const fetchPlans = async () => {
+    const { data } = await supabase
+      .from("plans")
+      .select("*")
+      .order("price", { ascending: true });
+
+    setPlans(data || []);
   };
 
   const createUser = async () => {
@@ -260,6 +271,64 @@ const UserManagement = () => {
     } catch (error: any) {
       console.error('Delete error:', error);
       toast.error(error.message || "Failed to delete user");
+    }
+  };
+
+  const assignPlan = async (userId: string, planId: string) => {
+    try {
+      const selectedPlan = plans.find(p => p.id === planId);
+      
+      // First, try to update existing plan
+      const { data: existingPlan } = await supabase
+        .from("user_plans")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (existingPlan) {
+        // Update existing plan
+        const { error } = await supabase
+          .from("user_plans")
+          .update({
+            plan_id: planId,
+            plan_name: selectedPlan?.name || 'Trackball Free',
+            status: "active",
+          })
+          .eq("user_id", userId);
+
+        if (error) throw error;
+      } else {
+        // Insert new plan
+        const { error } = await supabase
+          .from("user_plans")
+          .insert({
+            user_id: userId,
+            plan_id: planId,
+            plan_name: selectedPlan?.name || 'Trackball Free',
+            status: "active",
+          });
+
+        if (error) throw error;
+      }
+
+      // Create welcome notification for the user
+      const planFeatures = selectedPlan?.features || [];
+      const benefitsText = planFeatures.map((f: string) => `• ${f}`).join('\n');
+      
+      await supabase
+        .from("notifications")
+        .insert({
+          user_id: userId,
+          title: `Welcome to ${selectedPlan?.name || 'Trackball Free'}!`,
+          message: `You've been enrolled in ${selectedPlan?.name || 'Trackball Free'}.\n\nYour Plan Benefits:\n${benefitsText}`,
+          type: "plan_upgrade",
+        });
+
+      toast.success("Plan updated successfully");
+      fetchUsers();
+    } catch (error: any) {
+      console.error("Plan assignment error:", error);
+      toast.error("Failed to update plan: " + error.message);
     }
   };
 
@@ -579,9 +648,33 @@ const UserManagement = () => {
 
                           <Separator className="my-3" />
 
-                          {/* Label Designation */}
-                          <div className="mb-3">
-                            <Label className="text-xs text-muted-foreground mb-2 block">Label Designation</Label>
+                          {/* Plan Management */}
+                          <div className="mb-3 space-y-3">
+                            <div>
+                              <Label className="text-xs text-muted-foreground mb-2 block">Upgrade/Downgrade Plan</Label>
+                              <Select
+                                onValueChange={(planId) => assignPlan(masterUser.id, planId)}
+                                defaultValue={masterUser.user_plans?.[0]?.plan_id}
+                                disabled={masterUser.is_banned}
+                              >
+                                <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
+                                  <SelectValue placeholder="Select plan" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-card border-border">
+                                  {plans.map((plan) => (
+                                    <SelectItem key={plan.id} value={plan.id}>
+                                      <div className="flex items-center gap-2">
+                                        <Package className="w-3 h-3" />
+                                        <span className="text-xs">{plan.name}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs text-muted-foreground mb-2 block">Label Designation</Label>
                               <Select
                                 onValueChange={(value) => assignLabelDesignation(masterUser.id, value === "none" ? null : value)}
                                 defaultValue={masterUser.label_type || "none"}
@@ -606,6 +699,7 @@ const UserManagement = () => {
                               </SelectContent>
                             </Select>
                           </div>
+                        </div>
 
                           <Separator className="my-3" />
 
@@ -862,9 +956,32 @@ const UserManagement = () => {
 
                           <Separator className="my-3" />
 
-                          {/* Label Designation */}
-                          <div className="mb-3">
-                            <Label className="text-xs text-muted-foreground mb-2 block">Label Designation</Label>
+                          <div className="mb-3 space-y-3">
+                            <div>
+                              <Label className="text-xs text-muted-foreground mb-2 block">Upgrade/Downgrade Plan</Label>
+                              <Select
+                                onValueChange={(planId) => assignPlan(user.id, planId)}
+                                defaultValue={user.user_plans?.[0]?.plan_id}
+                                disabled={user.is_banned}
+                              >
+                                <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
+                                  <SelectValue placeholder="Select plan" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-card border-border">
+                                  {plans.map((plan) => (
+                                    <SelectItem key={plan.id} value={plan.id}>
+                                      <div className="flex items-center gap-2">
+                                        <Package className="w-3 h-3" />
+                                        <span className="text-xs">{plan.name}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs text-muted-foreground mb-2 block">Label Designation</Label>
                               <Select
                                 onValueChange={(value) => assignLabelDesignation(user.id, value === "none" ? null : value)}
                                 defaultValue={user.label_type || "none"}
@@ -889,6 +1006,7 @@ const UserManagement = () => {
                               </SelectContent>
                             </Select>
                           </div>
+                        </div>
 
                           <Separator className="my-3" />
 
