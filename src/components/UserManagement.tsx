@@ -513,7 +513,7 @@ const UserManagement = () => {
           const labelAccounts = users.filter(u => {
             if (u.roles?.includes('admin')) return false;
             const hasLabelDesignation = u.label_type && 
-              ['partner_label', 'signature_label', 'prestige_label'].includes(u.label_type);
+              ['Label Partner', 'Label Signature', 'Label Prestige', 'Label Free', 'Label Lite'].includes(u.label_type);
             const hasCreatedLabels = u.user_labels && u.user_labels.length > 0;
             return hasLabelDesignation || hasCreatedLabels || u.is_master_account;
           });
@@ -522,7 +522,7 @@ const UserManagement = () => {
             if (u.roles?.includes('admin')) return false;
             if (u.parent_account_id) return false; // Skip subaccounts
             const hasLabelDesignation = u.label_type && 
-              ['partner_label', 'signature_label', 'prestige_label'].includes(u.label_type);
+              ['Label Partner', 'Label Signature', 'Label Prestige', 'Label Free', 'Label Lite'].includes(u.label_type);
             const hasCreatedLabels = u.user_labels && u.user_labels.length > 0;
             return !hasLabelDesignation && !hasCreatedLabels && !u.is_master_account;
           });
@@ -590,7 +590,7 @@ const UserManagement = () => {
                 const subaccounts = users.filter(u => u.parent_account_id === masterUser.id);
                 const masterLabel = masterUser.user_labels?.[0];
                 const hasLabelDesignation = masterUser.label_type && 
-                  ['partner_label', 'signature_label', 'prestige_label'].includes(masterUser.label_type);
+                  ['Label Partner', 'Label Signature', 'Label Prestige', 'Label Free', 'Label Lite'].includes(masterUser.label_type);
                 const isLabelUnconfigured = hasLabelDesignation && !masterLabel;
                 
                 return (
@@ -734,39 +734,16 @@ const UserManagement = () => {
                               </Select>
                             </div>
 
-                            <div>
-                              <Label className="text-xs text-muted-foreground mb-2 block">Label Designation</Label>
-                              <Select
-                                onValueChange={(value) => assignLabelDesignation(masterUser.id, value === "none" ? null : value)}
-                                defaultValue={masterUser.label_type || "none"}
-                                disabled={masterUser.is_banned}
-                              >
-                                <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
-                                  <SelectValue placeholder="Select designation" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-card border-border">
-                                  <SelectItem value="none">
-                                    <span className="text-xs">No Designation</span>
-                                  </SelectItem>
-                                  <SelectItem value="label_free">
-                                    <span className="text-xs">Label Free (70/30 split)</span>
-                                  </SelectItem>
-                                  <SelectItem value="label_lite">
-                                    <span className="text-xs">Label Lite (90/10 split)</span>
-                                  </SelectItem>
-                                  <SelectItem value="partner_label">
-                                    <span className="text-xs">Partner Label</span>
-                                  </SelectItem>
-                                  <SelectItem value="signature_label">
-                                    <span className="text-xs">Signature Label</span>
-                                  </SelectItem>
-                                  <SelectItem value="prestige_label">
-                                    <span className="text-xs">Prestige Label</span>
-                                  </SelectItem>
-                                </SelectContent>
-                            </Select>
+                            {/* Only show label designation for label accounts */}
+                            {masterUser.account_type === 'label' && (
+                              <div>
+                                <Label className="text-xs text-muted-foreground mb-2 block">Label Designation</Label>
+                                <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded border border-border">
+                                  Manage label designations in the Label Designation tab
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </div>
 
                           <Separator className="my-3" />
 
@@ -1070,39 +1047,16 @@ const UserManagement = () => {
                               </Select>
                             </div>
 
-                            <div>
-                              <Label className="text-xs text-muted-foreground mb-2 block">Label Designation</Label>
-                              <Select
-                                onValueChange={(value) => assignLabelDesignation(user.id, value === "none" ? null : value)}
-                                defaultValue={user.label_type || "none"}
-                                disabled={user.is_banned}
-                              >
-                                <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
-                                  <SelectValue placeholder="Select designation" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-card border-border">
-                                  <SelectItem value="none">
-                                    <span className="text-xs">No Designation</span>
-                                  </SelectItem>
-                                  <SelectItem value="label_free">
-                                    <span className="text-xs">Label Free (70/30 split)</span>
-                                  </SelectItem>
-                                  <SelectItem value="label_lite">
-                                    <span className="text-xs">Label Lite (90/10 split)</span>
-                                  </SelectItem>
-                                  <SelectItem value="partner_label">
-                                    <span className="text-xs">Partner Label</span>
-                                  </SelectItem>
-                                  <SelectItem value="signature_label">
-                                    <span className="text-xs">Signature Label</span>
-                                  </SelectItem>
-                                  <SelectItem value="prestige_label">
-                                    <span className="text-xs">Prestige Label</span>
-                                  </SelectItem>
-                                </SelectContent>
-                            </Select>
+                            {/* Only show label designation for label accounts */}
+                            {user.account_type === 'label' && (
+                              <div>
+                                <Label className="text-xs text-muted-foreground mb-2 block">Label Designation</Label>
+                                <div className="text-xs text-muted-foreground p-2 bg-muted/30 rounded border border-border">
+                                  Manage label designations in the Label Designation tab
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </div>
 
                           <Separator className="my-3" />
 
