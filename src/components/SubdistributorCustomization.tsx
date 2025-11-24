@@ -11,7 +11,7 @@ import { useS3Upload } from "@/hooks/useS3Upload";
 export const SubdistributorCustomization = () => {
   const [loading, setLoading] = useState(false);
   const [dashboardName, setDashboardName] = useState("My Trackball");
-  const [footerText, setFooterText] = useState("© 2025 My Trackball. All rights reserved.");
+  const [footerText, setFooterText] = useState("© 2025 XZ1 Recording Ventures. All rights reserved.");
   const [accentColor, setAccentColor] = useState("#ef4444");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
@@ -36,7 +36,7 @@ export const SubdistributorCustomization = () => {
 
       if (data && data.is_subdistributor_master) {
         setDashboardName(data.subdistributor_dashboard_name || "My Trackball");
-        setFooterText(data.subdistributor_footer_text || "© 2025 My Trackball. All rights reserved.");
+        setFooterText(data.subdistributor_footer_text || "© 2025 XZ1 Recording Ventures. All rights reserved.");
         setAccentColor(data.subdistributor_accent_color || "#ef4444");
         setCurrentLogoUrl(data.subdistributor_logo_url);
       }
@@ -68,7 +68,7 @@ export const SubdistributorCustomization = () => {
         .from("profiles")
         .update({
           subdistributor_dashboard_name: dashboardName.trim() || "My Trackball",
-          subdistributor_footer_text: footerText.trim() || "© 2025 My Trackball. All rights reserved.",
+          subdistributor_footer_text: footerText.trim() || "© 2025 XZ1 Recording Ventures. All rights reserved.",
           subdistributor_logo_url: logoUrl,
           subdistributor_accent_color: accentColor,
         })
@@ -170,7 +170,7 @@ export const SubdistributorCustomization = () => {
             type="text"
             value={footerText}
             onChange={(e) => setFooterText(e.target.value)}
-            placeholder="© 2025 My Trackball. All rights reserved."
+            placeholder="© 2025 XZ1 Recording Ventures. All rights reserved."
             maxLength={100}
             className="bg-background/50 border-border"
           />
