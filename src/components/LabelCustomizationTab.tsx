@@ -252,11 +252,11 @@ export const LabelCustomizationTab = () => {
   };
 
   // Determine feature access based on plan
-  // Only Label Prestige and Partner plans have full customization access
+  // Only Trackball Prestige and Label Partner/Prestige have full customization access
   const planName = userPlan?.plan?.name || "";
-  const hasFullAccess = planName === "Label Prestige" || 
-                        labelType === "partner_label" || 
-                        labelType === "prestige_label";
+  const hasFullAccess = planName === "Trackball Prestige" || 
+                        labelType === "Label Partner" || 
+                        labelType === "Label Prestige";
 
   const canCustomizeLogo = hasFullAccess;
   const canCustomizeAccentColor = hasFullAccess;
