@@ -76,14 +76,28 @@ const LabelDesignationManagement = () => {
 
       if (error) throw error;
 
-      // If setting to partner label and no royalty split exists, create one with 70% default
-      if (labelType === "partner_label" && !royaltySplits[profileId]) {
+      // Create default royalty splits based on label type
+      if (labelType === "Partner" && !royaltySplits[profileId]) {
         await supabase
           .from("partner_royalty_splits")
           .insert({
             user_id: profileId,
-            royalty_split_percentage: 70
+            royalty_split_percentage: 50
           });
+      } else if (labelType === "Label Free") {
+        await supabase
+          .from("partner_royalty_splits")
+          .upsert({
+            user_id: profileId,
+            royalty_split_percentage: 70
+          }, { onConflict: 'user_id' });
+      } else if (labelType === "Label Lite") {
+        await supabase
+          .from("partner_royalty_splits")
+          .upsert({
+            user_id: profileId,
+            royalty_split_percentage: 90
+          }, { onConflict: 'user_id' });
       }
 
       toast.success("Label designation updated successfully");
@@ -123,12 +137,16 @@ const LabelDesignationManagement = () => {
     if (!labelType) return <Badge variant="outline">No Designation</Badge>;
     
     switch (labelType) {
-      case "partner_label":
-        return <Badge className="bg-purple-500/20 text-purple-500 border-purple-500/30">Partner Label</Badge>;
-      case "signature_label":
-        return <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/30">Signature Label</Badge>;
-      case "prestige_label":
-        return <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30">Prestige Label</Badge>;
+      case "Partner":
+        return <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/30">Partner</Badge>;
+      case "Signature":
+        return <Badge className="bg-purple-500/20 text-purple-500 border-purple-500/30">Signature</Badge>;
+      case "Prestige":
+        return <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30">Prestige</Badge>;
+      case "Label Free":
+        return <Badge className="bg-green-500/20 text-green-500 border-green-500/30">Label Free</Badge>;
+      case "Label Lite":
+        return <Badge className="bg-cyan-500/20 text-cyan-500 border-cyan-500/30">Label Lite</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }
@@ -192,7 +210,7 @@ const LabelDesignationManagement = () => {
                     <TableCell>
                       {profile.parent_account_id ? (
                         <span className="text-sm text-muted-foreground">N/A</span>
-                      ) : profile.label_type === "partner_label" ? (
+                      ) : profile.label_type === "Partner" ? (
                         editingRoyalty === profile.id ? (
                           <div className="flex items-center gap-2">
                             <Input
@@ -220,20 +238,24 @@ const LabelDesignationManagement = () => {
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">{royaltySplits[profile.id] || 70}%</span>
+                            <span className="font-medium">{royaltySplits[profile.id] || 50}%</span>
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => {
                                 setEditingRoyalty(profile.id);
-                                setTempRoyalty(String(royaltySplits[profile.id] || 70));
+                                setTempRoyalty(String(royaltySplits[profile.id] || 50));
                               }}
                             >
                               Edit
                             </Button>
                           </div>
                         )
-                      ) : profile.label_type === "signature_label" || profile.label_type === "prestige_label" ? (
+                      ) : profile.label_type === "Label Free" ? (
+                        <span className="font-medium">70%</span>
+                      ) : profile.label_type === "Label Lite" ? (
+                        <span className="font-medium">90%</span>
+                      ) : profile.label_type === "Signature" || profile.label_type === "Prestige" ? (
                         <span className="font-medium text-green-500">100%</span>
                       ) : (
                         <span className="text-sm text-muted-foreground">N/A</span>
@@ -258,9 +280,11 @@ const LabelDesignationManagement = () => {
                           </SelectTrigger>
                           <SelectContent className="bg-card border-border">
                             <SelectItem value="none">No Designation</SelectItem>
-                            <SelectItem value="partner_label">Partner Label</SelectItem>
-                            <SelectItem value="signature_label">Signature Label</SelectItem>
-                            <SelectItem value="prestige_label">Prestige Label</SelectItem>
+                            <SelectItem value="Partner">Partner</SelectItem>
+                            <SelectItem value="Signature">Signature</SelectItem>
+                            <SelectItem value="Prestige">Prestige</SelectItem>
+                            <SelectItem value="Label Free">Label Free</SelectItem>
+                            <SelectItem value="Label Lite">Label Lite</SelectItem>
                           </SelectContent>
                         </Select>
                       )}
@@ -275,9 +299,11 @@ const LabelDesignationManagement = () => {
         <div className="mt-6 space-y-4 p-4 bg-muted/20 rounded-lg border border-border">
           <h3 className="font-semibold text-sm">Label Designation Types:</h3>
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p><strong className="text-purple-500">Partner Label:</strong> Label with a custom partner deal arrangement</p>
-            <p><strong className="text-blue-500">Signature Label:</strong> Label holding an active Trackball Signature subscription plan</p>
-            <p><strong className="text-amber-500">Prestige Label:</strong> Label holding an active Trackball Prestige subscription plan</p>
+            <p><strong className="text-blue-500">Partner:</strong> 50% royalty split - Standard partnership tier</p>
+            <p><strong className="text-purple-500">Signature:</strong> 100% royalty - Premium tier with enhanced features</p>
+            <p><strong className="text-amber-500">Prestige:</strong> 100% royalty - Highest tier with exclusive benefits</p>
+            <p><strong className="text-green-500">Label Free:</strong> 70% royalty split - Entry level label tier</p>
+            <p><strong className="text-cyan-500">Label Lite:</strong> 90% royalty split - Advanced label tier</p>
           </div>
         </div>
       </CardContent>
