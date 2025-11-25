@@ -222,7 +222,7 @@ const ArtistInvitationManagement = () => {
                   <span className="text-sm text-muted-foreground">%</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Trackball received {100 - royaltySplit}%
+                  Trackball receives {100 - royaltySplit}%
                 </p>
               </div>
             )}
