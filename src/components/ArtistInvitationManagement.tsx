@@ -174,7 +174,7 @@ const ArtistInvitationManagement = () => {
               <Label htmlFor="plan-select">
                 {assignmentType === "artist_plan" ? "Select Artist Plan" : "Select Label Designation"}
               </Label>
-              <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+              <Select key={assignmentType} value={selectedPlan} onValueChange={setSelectedPlan}>
                 <SelectTrigger id="plan-select">
                   <SelectValue placeholder={assignmentType === "artist_plan" ? "Choose a plan..." : "Choose a designation..."} />
                 </SelectTrigger>
