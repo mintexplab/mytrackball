@@ -85,10 +85,11 @@ export const OnboardingTutorial = ({ onComplete, onSkip, isLabelAccount = false 
   const [highlightStyle, setHighlightStyle] = useState<any>({});
 
   useEffect(() => {
-    // Use requestAnimationFrame to ensure DOM is ready
+    // Delay initial load to ensure dashboard is fully loaded
+    const initialDelay = currentStep === 0 ? 800 : 100;
     const timer = setTimeout(() => {
       updateHighlight();
-    }, 100);
+    }, initialDelay);
     
     // Update on window resize or scroll
     const handleUpdate = () => updateHighlight();
