@@ -207,7 +207,7 @@ const ArtistInvitationManagement = () => {
 
             {selectedPlan === "partner_label" && (
               <div className="space-y-2">
-                <Label htmlFor="royalty-split">Royalty Split Percentage (Artist's Share)</Label>
+                <Label htmlFor="royalty-split">Royalty Split Percentage (Partner's Share)</Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id="royalty-split"
@@ -222,7 +222,7 @@ const ArtistInvitationManagement = () => {
                   <span className="text-sm text-muted-foreground">%</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Label receives {100 - royaltySplit}%
+                  Trackball received {100 - royaltySplit}%
                 </p>
               </div>
             )}
