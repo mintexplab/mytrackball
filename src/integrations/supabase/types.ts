@@ -157,6 +157,7 @@ export type Database = {
           id: string
           invited_by: string
           plan_features: Json | null
+          royalty_split_percentage: number | null
           status: string
         }
         Insert: {
@@ -169,6 +170,7 @@ export type Database = {
           id?: string
           invited_by: string
           plan_features?: Json | null
+          royalty_split_percentage?: number | null
           status?: string
         }
         Update: {
@@ -181,6 +183,7 @@ export type Database = {
           id?: string
           invited_by?: string
           plan_features?: Json | null
+          royalty_split_percentage?: number | null
           status?: string
         }
         Relationships: []
