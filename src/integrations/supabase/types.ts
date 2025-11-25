@@ -149,29 +149,38 @@ export type Database = {
       artist_invitations: {
         Row: {
           accepted_at: string | null
+          assigned_plan_name: string | null
+          assigned_plan_type: string | null
           created_at: string | null
           email: string
           expires_at: string | null
           id: string
           invited_by: string
+          plan_features: Json | null
           status: string
         }
         Insert: {
           accepted_at?: string | null
+          assigned_plan_name?: string | null
+          assigned_plan_type?: string | null
           created_at?: string | null
           email: string
           expires_at?: string | null
           id?: string
           invited_by: string
+          plan_features?: Json | null
           status?: string
         }
         Update: {
           accepted_at?: string | null
+          assigned_plan_name?: string | null
+          assigned_plan_type?: string | null
           created_at?: string | null
           email?: string
           expires_at?: string | null
           id?: string
           invited_by?: string
+          plan_features?: Json | null
           status?: string
         }
         Relationships: []
