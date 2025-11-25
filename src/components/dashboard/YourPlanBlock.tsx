@@ -187,7 +187,8 @@ export const YourPlanBlock = ({ userPlan }: YourPlanBlockProps) => {
                   </div>
                 </div>
 
-                {displayPlan?.plan?.name === "Trackball Partner" && (
+                {/* Label Partner users have custom partner deals */}
+                {accountInfo?.labelType === "Label Partner" && (
                   <div className="p-3 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20">
                     <p className="text-xs text-foreground">
                       You have a custom partner deal with Trackball Distribution. Contact your account manager for details.

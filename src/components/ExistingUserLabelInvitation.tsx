@@ -166,7 +166,7 @@ export const ExistingUserLabelInvitation = () => {
                 Master Account
               </Badge>
             )}
-            {invitation.subscription_tier === "Trackball Partner" && invitation.custom_royalty_split && (
+            {invitation.subscription_tier === "Label Partner" && invitation.custom_royalty_split && (
               <Badge variant="outline" className="border-primary/30">
                 {invitation.custom_royalty_split}% Royalty Split
               </Badge>
