@@ -13,6 +13,7 @@ import { ArrowLeft, Upload, Plus, X, Check, Save, Music, Disc3, Album as AlbumIc
 import { z } from "zod";
 import { useS3Upload } from "@/hooks/useS3Upload";
 import { Confetti } from "@/components/Confetti";
+import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 
 type ReleaseType = "single" | "ep" | "album" | null;
 
@@ -141,27 +142,43 @@ const CreateRelease = () => {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [userLabelName, setUserLabelName] = useState<string>("");
+  const [profile, setProfile] = useState<any>(null);
+  const [userPlan, setUserPlan] = useState<any>(null);
   
-  // Fetch user's active label name
+  // Fetch user's active label name and permissions
   useEffect(() => {
-    const fetchUserLabel = async () => {
+    const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: profile } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
-        .select("label_name, label_type")
+        .select("label_name, label_type, account_type")
         .eq("id", user.id)
         .single();
 
-      if (profile?.label_name && profile?.label_type) {
-        setUserLabelName(profile.label_name);
-        setFormData(prev => ({ ...prev, label: profile.label_name }));
+      const { data: planData } = await supabase
+        .from("user_plans")
+        .select(`
+          *,
+          plan:plans(*)
+        `)
+        .eq("user_id", user.id)
+        .single();
+
+      setProfile(profileData);
+      setUserPlan(planData);
+
+      if (profileData?.label_name && profileData?.label_type) {
+        setUserLabelName(profileData.label_name);
+        setFormData(prev => ({ ...prev, label: profileData.label_name }));
       }
     };
 
-    fetchUserLabel();
+    fetchUserData();
   }, []);
+
+  const permissions = usePlanPermissions(userPlan, profile);
   
   // Removed confetti trigger from step change - now only triggers on successful submission
   
@@ -818,12 +835,14 @@ const CreateRelease = () => {
                   value={formData.label}
                   onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                   placeholder="Label name"
-                  disabled={true}
-                  className="bg-muted"
+                  disabled={permissions.canCreateLabels}
+                  className={permissions.canCreateLabels ? "bg-muted" : "bg-background"}
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Label is locked to your active label
-                </p>
+                {permissions.canCreateLabels && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Label is locked to your active label
+                  </p>
+                )}
               </div>
 
               <div className="space-y-4">

@@ -602,7 +602,8 @@ const Dashboard = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {(permissions.canAddUsers || permissions.canCreateLabels) && (
+              {/* Team Dropdown - Only show if user has any team management permissions */}
+              {(permissions.canAddUsers || permissions.canCreateLabels || permissions.canCustomizeLabels) && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="gap-1">
