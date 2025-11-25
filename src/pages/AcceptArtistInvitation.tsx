@@ -301,9 +301,9 @@ const AcceptArtistInvitation = () => {
             {invitation.royalty_split_percentage !== null && invitation.assigned_plan_name === "Label Partner" && (
               <div className="mt-3 pt-3 border-t border-border">
                 <p className="text-sm">
-                  <span className="font-medium">Royalty Split:</span>{" "}
-                  <span className="text-primary">{invitation.royalty_split_percentage}%</span> (Artist) / 
-                  <span className="text-primary"> {100 - invitation.royalty_split_percentage}%</span> (Label)
+                  <span className="font-medium">Royalty Split:</span> Partner gets{" "}
+                  <span className="text-primary">{invitation.royalty_split_percentage}%</span> and Trackball gets
+                  <span className="text-primary"> {100 - invitation.royalty_split_percentage}%</span>
                 </p>
               </div>
             )}
@@ -311,7 +311,7 @@ const AcceptArtistInvitation = () => {
 
           <Tabs defaultValue="signup" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signup">Create Account</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
               <TabsTrigger value="login">I have an account</TabsTrigger>
             </TabsList>
             
