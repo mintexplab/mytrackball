@@ -298,12 +298,21 @@ const AcceptArtistInvitation = () => {
                 </li>
               ))}
             </ul>
-            {invitation.royalty_split_percentage !== null && invitation.assigned_plan_name === "Label Partner" && (
+            {invitation.royalty_split_percentage !== null && (
               <div className="mt-3 pt-3 border-t border-border">
                 <p className="text-sm">
-                  <span className="font-medium">Royalty Split:</span> Partner gets{" "}
-                  <span className="text-primary">{invitation.royalty_split_percentage}%</span> and Trackball gets
-                  <span className="text-primary"> {100 - invitation.royalty_split_percentage}%</span>
+                  <span className="font-medium">Royalty Split:</span>{" "}
+                  {invitation.assigned_plan_type === "artist_plan" ? (
+                    <>
+                      Artist gets <span className="text-primary">{invitation.royalty_split_percentage}%</span> and Trackball gets
+                      <span className="text-primary"> {100 - invitation.royalty_split_percentage}%</span>
+                    </>
+                  ) : (
+                    <>
+                      Partner gets <span className="text-primary">{invitation.royalty_split_percentage}%</span> and Trackball gets
+                      <span className="text-primary"> {100 - invitation.royalty_split_percentage}%</span>
+                    </>
+                  )}
                 </p>
               </div>
             )}
