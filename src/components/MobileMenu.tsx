@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 
 interface MobileMenuProps {
   activeTab: string;
@@ -15,6 +16,7 @@ interface MobileMenuProps {
 
 export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false, profile }: MobileMenuProps) => {
   const [open, setOpen] = useState(false);
+  const permissions = usePlanPermissions(userPlan, profile);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -210,7 +212,7 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false,
               Smart Links
             </Button>
 
-            {userPlan?.plan.name === "Trackball Prestige" && (
+            {permissions.canAccessPublishing && (
               <Button
                 variant={activeTab === "publishing" ? "default" : "ghost"}
                 className="w-full justify-start"
@@ -233,38 +235,43 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false,
               Royalties
             </Button>
 
-            {((userPlan?.plan.name === "Trackball Signature" || userPlan?.plan.name === "Trackball Prestige") ||
-              (profile?.label_type && ['partner_label', 'signature_label', 'prestige_label'].includes(profile.label_type))) && (
+            {(permissions.canAddUsers || permissions.canCreateLabels || permissions.canCustomizeLabels) && (
               <>
                 <Separator className="my-4" />
                 <p className="text-xs text-muted-foreground px-3 font-medium">Team</p>
                 
-                <Button
-                  variant={activeTab === "clients" ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => handleTabChange("clients")}
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  Users
-                </Button>
+                {permissions.canAddUsers && (
+                  <Button
+                    variant={activeTab === "clients" ? "default" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => handleTabChange("clients")}
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Users
+                  </Button>
+                )}
 
-                <Button
-                  variant={activeTab === "labels" ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => handleTabChange("labels")}
-                >
-                  <Building2 className="w-4 h-4 mr-2" />
-                  Labels
-                </Button>
+                {permissions.canCreateLabels && (
+                  <Button
+                    variant={activeTab === "labels" ? "default" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => handleTabChange("labels")}
+                  >
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Labels
+                  </Button>
+                )}
 
-                <Button
-                  variant={activeTab === "label-customization" ? "default" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => handleTabChange("label-customization")}
-                >
-                  <Palette className="w-4 h-4 mr-2" />
-                  Label Customization
-                </Button>
+                {permissions.canCustomizeLabels && (
+                  <Button
+                    variant={activeTab === "label-customization" ? "default" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => handleTabChange("label-customization")}
+                  >
+                    <Palette className="w-4 h-4 mr-2" />
+                    Label Customization
+                  </Button>
+                )}
               </>
             )}
 
