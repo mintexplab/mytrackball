@@ -372,21 +372,17 @@ const UserManagement = () => {
   // Filter plans based on account type
   const getFilteredPlans = (accountType: string | null) => {
     if (accountType === 'label') {
-      // Label plans: those with "Label" or specific label-related names
-      return plans.filter(p => 
-        p.name.toLowerCase().includes('label') || 
-        p.name.toLowerCase().includes('partner') ||
-        p.name.toLowerCase().includes('signature') ||
-        p.name.toLowerCase().includes('prestige')
-      );
+      // Label designations only: Partner Label, Signature Label, Prestige Label, Label Free
+      return plans.filter(p => {
+        const nameLower = p.name.toLowerCase();
+        return nameLower.includes('label') && !nameLower.includes('trackball');
+      });
     } else {
-      // Artist plans: everything else
-      return plans.filter(p => 
-        !p.name.toLowerCase().includes('label') && 
-        !p.name.toLowerCase().includes('partner') &&
-        !p.name.toLowerCase().includes('signature') &&
-        !p.name.toLowerCase().includes('prestige')
-      );
+      // Artist plans only: Trackball Free, Trackball Lite, Trackball Signature, Trackball Prestige
+      return plans.filter(p => {
+        const nameLower = p.name.toLowerCase();
+        return nameLower.includes('trackball');
+      });
     }
   };
 
