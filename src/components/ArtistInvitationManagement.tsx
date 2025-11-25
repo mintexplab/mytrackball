@@ -18,17 +18,17 @@ const ArtistInvitationManagement = () => {
 
   const artistPlans = [
     { value: "trackball_free", label: "Trackball Free", features: ["Basic release management", "Release submission", "Catalog viewing"] },
-    { value: "trackball_lite", label: "Trackball Lite", features: ["Basic release management", "Release submission", "Catalog viewing", "Bulk upload"] },
-    { value: "trackball_signature", label: "Trackball Signature", features: ["Basic release management", "Release submission", "Catalog viewing", "Bulk upload", "Support tickets", "Dedicated account manager"] },
-    { value: "trackball_prestige", label: "Trackball Prestige", features: ["Up to 3 users", "Publishing submissions", "Basic release management", "Release submission", "Catalog viewing", "Bulk upload", "SmartLinks", "Up to 1 label (no branding)", "Support tickets", "Dedicated account manager"] },
+    { value: "trackball_lite", label: "Trackball Lite", features: ["Basic release management", "Release submission", "Catalog viewing"] },
+    { value: "trackball_signature", label: "Trackball Signature", features: ["Basic release management", "Release submission", "Catalog viewing", "Support tickets", "Dedicated account manager"] },
+    { value: "trackball_prestige", label: "Trackball Prestige", features: ["Up to 3 users", "Publishing submissions", "Basic release management", "Release submission", "Catalog viewing", "Up to 1 label (no branding)", "Support tickets", "Dedicated account manager"] },
   ];
 
   const labelDesignations = [
     { value: "free", label: "Label Free", features: ["Max 1 user", "Max 1 label", "Basic release management", "Release submission", "Catalog viewing"] },
-    { value: "lite", label: "Label Lite", features: ["Max 2 users", "Max 1 label", "Basic release management", "Release submission", "Catalog viewing", "Bulk upload"] },
-    { value: "signature_label", label: "Label Signature", features: ["Max 2 users", "Max 2 labels", "Basic release management", "Release submission", "Catalog viewing", "Bulk upload", "SmartLinks", "Support tickets", "Dedicated account manager"] },
-    { value: "prestige_label", label: "Label Prestige", features: ["Unlimited users", "Unlimited labels", "Publishing submissions", "Full catalog management", "Bulk upload", "SmartLinks", "Support tickets", "Dedicated account manager", "Label customization & branding"] },
-    { value: "partner_label", label: "Label Partner", features: ["Unlimited users", "Unlimited labels", "Publishing submissions", "Full catalog management", "Bulk upload", "SmartLinks", "Support tickets", "Dedicated account manager", "Label customization & branding", "Custom royalty split arrangement"] },
+    { value: "lite", label: "Label Lite", features: ["Max 2 users", "Max 1 label", "Basic release management", "Release submission", "Catalog viewing"] },
+    { value: "signature_label", label: "Label Signature", features: ["Max 2 users", "Max 2 labels", "Basic release management", "Release submission", "Catalog viewing", "Support tickets", "Dedicated account manager"] },
+    { value: "prestige_label", label: "Label Prestige", features: ["Unlimited users", "Unlimited labels", "Publishing submissions", "Full catalog management", "Support tickets", "Dedicated account manager", "Label customization & branding"] },
+    { value: "partner_label", label: "Label Partner", features: ["Unlimited users", "Unlimited labels", "Publishing submissions", "Full catalog management", "Support tickets", "Dedicated account manager", "Label customization & branding", "Custom royalty split arrangement"] },
   ];
 
   const handleSendInvitation = async () => {
