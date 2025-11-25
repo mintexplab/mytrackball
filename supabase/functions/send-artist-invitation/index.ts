@@ -13,6 +13,7 @@ interface InvitationRequest {
   planType: 'artist_plan' | 'label_designation';
   planName: string;
   planFeatures: string[];
+  royaltySplit?: number | null;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -21,7 +22,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, invitationId, planType, planName, planFeatures }: InvitationRequest = await req.json();
+    const { email, invitationId, planType, planName, planFeatures, royaltySplit }: InvitationRequest = await req.json();
 
     if (!email || !invitationId || !planType || !planName || !planFeatures) {
       throw new Error("Missing required fields");
@@ -29,11 +30,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     const signupUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || 'https://trackball.lovable.app'}/accept-artist-invitation?token=${invitationId}`;
 
-    const isLabelPartner = planType === 'label_designation';
+    const isLabelPartner = planType === 'label_designation' && planName === 'Label Partner';
     
-    const introText = isLabelPartner 
-      ? "As per your contract, you will be invited as a Label Partner. This grants you:"
-      : `Trackball Distribution has invited you to create an account on My Trackball. You have been assigned <strong>${planName}</strong> based on the plan you have purchased.<br><br>Your included services are:`;
+    let introText = '';
+    if (isLabelPartner && royaltySplit !== null && royaltySplit !== undefined) {
+      introText = `As per your contract, you will be invited as a <strong>Label Partner</strong> with a <strong>${royaltySplit}/${100 - royaltySplit}</strong> royalty split.<br><br>This grants you:`;
+    } else if (planType === 'label_designation') {
+      introText = `As per your contract, you will be invited as a <strong>${planName}</strong>.<br><br>This grants you:`;
+    } else {
+      introText = `Trackball Distribution has invited you to create an account on My Trackball. You have been assigned <strong>${planName}</strong> based on the plan you have purchased.<br><br>Your included services are:`;
+    }
 
     const featuresList = planFeatures.map(feature => `<li>${feature}</li>`).join('');
 

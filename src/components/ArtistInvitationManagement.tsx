@@ -14,6 +14,7 @@ const ArtistInvitationManagement = () => {
   const [loading, setLoading] = useState(false);
   const [assignmentType, setAssignmentType] = useState<"artist_plan" | "label_designation">("artist_plan");
   const [selectedPlan, setSelectedPlan] = useState("");
+  const [royaltySplit, setRoyaltySplit] = useState<number>(50);
   const { toast } = useToast();
 
   const artistPlans = [
@@ -77,15 +78,22 @@ const ArtistInvitationManagement = () => {
       }
 
       // Create invitation record
+      const insertData: any = {
+        email,
+        invited_by: user.id,
+        assigned_plan_type: assignmentType,
+        assigned_plan_name: planInfo.label,
+        plan_features: planInfo.features,
+      };
+
+      // Add royalty split if Partner Label
+      if (selectedPlan === "partner_label") {
+        insertData.royalty_split_percentage = royaltySplit;
+      }
+
       const { data: invitationData, error: insertError } = await supabase
         .from("artist_invitations")
-        .insert({
-          email,
-          invited_by: user.id,
-          assigned_plan_type: assignmentType,
-          assigned_plan_name: planInfo.label,
-          plan_features: planInfo.features,
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -99,6 +107,7 @@ const ArtistInvitationManagement = () => {
           planType: assignmentType,
           planName: planInfo.label,
           planFeatures: planInfo.features,
+          royaltySplit: selectedPlan === "partner_label" ? royaltySplit : null,
         },
       });
 
@@ -195,6 +204,28 @@ const ArtistInvitationManagement = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {selectedPlan === "partner_label" && (
+              <div className="space-y-2">
+                <Label htmlFor="royalty-split">Royalty Split Percentage (Artist's Share)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="royalty-split"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={royaltySplit}
+                    onChange={(e) => setRoyaltySplit(Number(e.target.value))}
+                    disabled={loading}
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-muted-foreground">%</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Label receives {100 - royaltySplit}%
+                </p>
+              </div>
+            )}
 
             {selectedPlan && (
               <div className="p-4 rounded-lg bg-muted/50 border border-border">

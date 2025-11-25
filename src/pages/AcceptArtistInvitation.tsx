@@ -171,15 +171,33 @@ const AcceptArtistInvitation = () => {
     // Assign plan based on invitation
     if (invitation.assigned_plan_type === "label_designation") {
       // Assign label designation
+      const labelTypeMap: Record<string, string> = {
+        "Label Free": "free",
+        "Label Lite": "lite",
+        "Label Signature": "signature_label",
+        "Label Prestige": "prestige_label",
+        "Label Partner": "partner_label",
+      };
+
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
-          label_type: invitation.assigned_plan_name.toLowerCase().replace(' ', '_'),
+          label_type: labelTypeMap[invitation.assigned_plan_name] || invitation.assigned_plan_name.toLowerCase().replace(' ', '_'),
           artist_name: name || null,
         })
         .eq("id", userId);
 
       if (profileError) throw profileError;
+
+      // Save royalty split if Partner Label
+      if (invitation.assigned_plan_name === "Label Partner" && invitation.royalty_split_percentage !== null) {
+        await supabase
+          .from("partner_royalty_splits")
+          .upsert({
+            user_id: userId,
+            royalty_split_percentage: invitation.royalty_split_percentage,
+          });
+      }
     } else if (invitation.assigned_plan_type === "artist_plan") {
       // Assign artist plan
       const planMapping: Record<string, string> = {
@@ -254,18 +272,23 @@ const AcceptArtistInvitation = () => {
               You're Invited!
             </CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
-              {isLabelPartner 
-                ? "As per your contract, you will be invited as a Label Partner. This grants you:"
+              {invitation.assigned_plan_type === "label_designation" && invitation.assigned_plan_name === "Label Partner" && invitation.royalty_split_percentage !== null
+                ? `As per your contract, you will be invited as a Label Partner with a ${invitation.royalty_split_percentage}/${100 - invitation.royalty_split_percentage} royalty split. This grants you:`
+                : invitation.assigned_plan_type === "label_designation"
+                ? `As per your contract, you will be invited as a ${invitation.assigned_plan_name}. This grants you:`
                 : `Trackball Distribution has invited you to create an account on My Trackball. You have been assigned ${invitation.assigned_plan_name} based on the plan you have purchased.`
               }
             </CardDescription>
+            <Badge className="mt-3 bg-primary/20 text-primary border-primary/30">
+              Plan: {invitation.assigned_plan_name}
+            </Badge>
           </div>
         </CardHeader>
         
         <CardContent>
           <div className="mb-6 p-4 rounded-lg bg-muted/50 border border-border">
             <p className="text-sm font-medium mb-2">
-              {isLabelPartner ? "Your included features:" : "Your included services are:"}
+              {invitation.assigned_plan_type === "label_designation" ? "Your included features:" : "Your included services are:"}
             </p>
             <ul className="space-y-1">
               {invitation.plan_features?.map((feature: string, idx: number) => (
@@ -275,6 +298,15 @@ const AcceptArtistInvitation = () => {
                 </li>
               ))}
             </ul>
+            {invitation.royalty_split_percentage !== null && invitation.assigned_plan_name === "Label Partner" && (
+              <div className="mt-3 pt-3 border-t border-border">
+                <p className="text-sm">
+                  <span className="font-medium">Royalty Split:</span>{" "}
+                  <span className="text-primary">{invitation.royalty_split_percentage}%</span> (Artist) / 
+                  <span className="text-primary"> {100 - invitation.royalty_split_percentage}%</span> (Label)
+                </p>
+              </div>
+            )}
           </div>
 
           <Tabs defaultValue="signup" className="w-full">
