@@ -178,7 +178,7 @@ const ArtistInvitationManagement = () => {
                 <SelectTrigger id="plan-select">
                   <SelectValue placeholder={assignmentType === "artist_plan" ? "Choose a plan..." : "Choose a designation..."} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-card border-border z-50">
                   {assignmentType === "artist_plan" ? (
                     artistPlans.map((plan) => (
                       <SelectItem key={plan.value} value={plan.value}>
