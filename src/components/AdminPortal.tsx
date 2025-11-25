@@ -316,7 +316,7 @@ const AdminPortal = ({
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setActiveTab("invite-artists")} className="cursor-pointer">
                 <UserPlus className="w-4 h-4 mr-2" />
-                Invite Artists
+                Invite Users
               </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActiveTab("label-designations")} className="cursor-pointer">
                     <Building2 className="w-4 h-4 mr-2" />
@@ -379,7 +379,7 @@ const AdminPortal = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-card border-border">
                 <DropdownMenuItem onClick={() => setActiveTab("managers")}>Managers</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab("invite-artists")}>Invite Artists</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("invite-artists")}>Invite Users</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("label-designations")}>Label Designations</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("partner-permissions")}>Partner Permissions</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("takedowns")}>Takedowns</DropdownMenuItem>

@@ -24,7 +24,11 @@ const ArtistInvitationManagement = () => {
   ];
 
   const labelDesignations = [
-    { value: "partner_label", label: "Label Partner", features: ["Unlimited users", "Unlimited labels", "Publishing submissions", "Full catalog management", "Bulk upload", "SmartLinks", "Support tickets", "Dedicated account manager", "Label customization & branding"] },
+    { value: "free", label: "Label Free", features: ["Max 1 user", "Max 1 label", "Basic release management", "Release submission", "Catalog viewing"] },
+    { value: "lite", label: "Label Lite", features: ["Max 2 users", "Max 1 label", "Basic release management", "Release submission", "Catalog viewing", "Bulk upload"] },
+    { value: "signature_label", label: "Label Signature", features: ["Max 2 users", "Max 2 labels", "Basic release management", "Release submission", "Catalog viewing", "Bulk upload", "SmartLinks", "Support tickets", "Dedicated account manager"] },
+    { value: "prestige_label", label: "Label Prestige", features: ["Unlimited users", "Unlimited labels", "Publishing submissions", "Full catalog management", "Bulk upload", "SmartLinks", "Support tickets", "Dedicated account manager", "Label customization & branding"] },
+    { value: "partner_label", label: "Label Partner", features: ["Unlimited users", "Unlimited labels", "Publishing submissions", "Full catalog management", "Bulk upload", "SmartLinks", "Support tickets", "Dedicated account manager", "Label customization & branding", "Custom royalty split arrangement"] },
   ];
 
   const handleSendInvitation = async () => {
@@ -125,20 +129,20 @@ const ArtistInvitationManagement = () => {
         <CardHeader>
           <CardTitle className="text-2xl font-bold flex items-center gap-2">
             <Mail className="w-6 h-6 text-primary" />
-            Invite Artists
+            Invite Users
           </CardTitle>
           <CardDescription>
-            Send invitations to artists to join My Trackball
+            Send invitations to users to join My Trackball with pre-assigned plans
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="artist-email">Artist Email Address</Label>
+              <Label htmlFor="user-email">User Email Address</Label>
               <Input
-                id="artist-email"
+                id="user-email"
                 type="email"
-                placeholder="artist@example.com"
+                placeholder="user@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}

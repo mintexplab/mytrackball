@@ -6,29 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Package, UserPlus, Ban, Lock, Unlock, Trash2, Mail, User, RotateCcw } from "lucide-react";
-import { z } from "zod";
+import { Package, Ban, Lock, Unlock, Trash2, Mail, User, RotateCcw } from "lucide-react";
 import SendNotificationDialog from "./SendNotificationDialog";
 import { Separator } from "@/components/ui/separator";
-
-const createUserSchema = z.object({
-  email: z.string().email("Invalid email address").max(255),
-  password: z.string().min(8, "Password must be at least 8 characters").max(100),
-  full_name: z.string().trim().min(1, "Name is required").max(100),
-});
 
 const UserManagement = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserPassword, setNewUserPassword] = useState("");
-  const [newUserName, setNewUserName] = useState("");
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [banReason, setBanReason] = useState("");
@@ -139,49 +128,6 @@ const UserManagement = () => {
       .order("price", { ascending: true });
 
     setPlans(data || []);
-  };
-
-  const createUser = async () => {
-    try {
-      // Validate input
-      const validatedData = createUserSchema.parse({
-        email: newUserEmail,
-        password: newUserPassword,
-        full_name: newUserName,
-      });
-
-      // Create user via Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email: validatedData.email,
-        password: validatedData.password,
-        options: {
-          data: {
-            full_name: validatedData.full_name,
-          },
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-        },
-      });
-
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
-
-      toast.success("User created successfully");
-      setCreateDialogOpen(false);
-      setNewUserEmail("");
-      setNewUserPassword("");
-      setNewUserName("");
-      
-      // Refresh user list after a short delay to allow database trigger to complete
-      setTimeout(fetchUsers, 1000);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
-      } else {
-        toast.error("Failed to create user");
-      }
-    }
   };
 
   const toggleBanUser = async (userId: string, currentBanStatus: boolean) => {
@@ -402,57 +348,6 @@ const UserManagement = () => {
             <CardTitle className="text-2xl font-bold">USER MANAGEMENT</CardTitle>
             <CardDescription>Manage user accounts and assign distribution plans</CardDescription>
           </div>
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-primary hover:opacity-90">
-                <UserPlus className="w-4 h-4 mr-2" />
-                Create User
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-card border-border">
-              <DialogHeader>
-                <DialogTitle className="font-bold">Create New User</DialogTitle>
-                <DialogDescription>Add a new user account to the system</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="John Doe"
-                    value={newUserName}
-                    onChange={(e) => setNewUserName(e.target.value)}
-                    className="bg-background border-border"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="user@example.com"
-                    value={newUserEmail}
-                    onChange={(e) => setNewUserEmail(e.target.value)}
-                    className="bg-background border-border"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Minimum 8 characters"
-                    value={newUserPassword}
-                    onChange={(e) => setNewUserPassword(e.target.value)}
-                    className="bg-background border-border"
-                  />
-                </div>
-                <Button onClick={createUser} className="w-full bg-gradient-primary hover:opacity-90">
-                  Create User
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
 
           <Dialog open={banDialogOpen} onOpenChange={setBanDialogOpen}>
             <DialogContent className="bg-card border-border">
