@@ -717,31 +717,6 @@ const UserManagement = () => {
 
                           <Separator className="my-3" />
 
-                          {/* Plan Assignment for Label Accounts */}
-                          {masterUser.account_type === 'label' && (
-                            <>
-                              <div className="mb-3">
-                                <Label className="text-xs text-muted-foreground mb-2 block">Assign Plan</Label>
-                                <Select
-                                  onValueChange={(value) => assignPlan(masterUser.id, value)}
-                                  defaultValue={masterUser.user_plans?.[0]?.plan_id}
-                                  disabled={masterUser.is_banned}
-                                >
-                                  <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
-                                    <SelectValue placeholder="Select plan" />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-card border-border">
-                                    {getFilteredPlans(masterUser.account_type).map((plan) => (
-                                      <SelectItem key={plan.id} value={plan.id} className="text-xs">
-                                        {plan.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <Separator className="my-3" />
-                            </>
-                          )}
 
                           {/* Actions - using masterUser instead of user */}
                           <div className="space-y-2">
@@ -1032,27 +1007,32 @@ const UserManagement = () => {
                           <Separator className="my-3" />
 
                           {/* Plan Assignment for Artist Accounts */}
-                          <div className="mb-3">
-                            <Label className="text-xs text-muted-foreground mb-2 block">Assign Plan</Label>
-                            <Select
-                              onValueChange={(value) => assignPlan(user.id, value)}
-                              defaultValue={user.user_plans?.[0]?.plan_id}
-                              disabled={user.is_banned}
-                            >
-                              <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
-                                <SelectValue placeholder="Select plan" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-card border-border">
-                                {getFilteredPlans(user.account_type).map((plan) => (
-                                  <SelectItem key={plan.id} value={plan.id} className="text-xs">
-                                    {plan.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
+                          {user.account_type !== 'label' && (
+                            <>
+                              <div className="mb-3">
+                                <Label className="text-xs text-muted-foreground mb-2 block">Assign Plan</Label>
+                                <Select
+                                  onValueChange={(value) => assignPlan(user.id, value)}
+                                  defaultValue={user.user_plans?.[0]?.plan_id}
+                                  disabled={user.is_banned}
+                                >
+                                  <SelectTrigger className="w-full bg-background/50 border-border h-8 text-xs">
+                                    <SelectValue placeholder="Select plan" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-card border-border">
+                                    {getFilteredPlans(user.account_type).map((plan) => (
+                                      <SelectItem key={plan.id} value={plan.id} className="text-xs">
+                                        {plan.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
 
-                          <Separator className="my-3" />
+                              <Separator className="my-3" />
+                            </>
+                          )}
+
 
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
