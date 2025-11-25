@@ -481,7 +481,10 @@ const UserManagement = () => {
                 const masterLabel = masterUser.user_labels?.[0];
                 const hasLabelDesignation = masterUser.label_type && 
                   ['Label Partner', 'Label Signature', 'Label Prestige', 'Label Free', 'Label Lite'].includes(masterUser.label_type);
-                const isLabelUnconfigured = hasLabelDesignation && !masterLabel && masterUser.account_type === 'label';
+                // Show label name from profile if no actual label created yet
+                const displayLabelName = masterLabel?.label_name || masterUser.label_name;
+                const displayLabelId = masterLabel?.label_id_code;
+                const isLabelUnconfigured = hasLabelDesignation && !displayLabelName && masterUser.account_type === 'label';
                 
                 return (
                   <div key={masterUser.id} className="space-y-4">
@@ -489,19 +492,26 @@ const UserManagement = () => {
                       <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary">
                         Label Account
                       </Badge>
-                      {isLabelUnconfigured ? (
+                      {displayLabelName ? (
+                        <>
+                          <span className="text-sm font-semibold text-foreground">
+                            {displayLabelName}
+                          </span>
+                          {displayLabelId && (
+                            <span className="text-sm text-muted-foreground">
+                              ID: <span className="font-mono text-foreground">{displayLabelId}</span>
+                            </span>
+                          )}
+                          {masterUser.label_type && (
+                            <Badge variant="outline" className="text-xs bg-gradient-primary text-white">
+                              {masterUser.label_type.replace('_', ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                            </Badge>
+                          )}
+                        </>
+                      ) : isLabelUnconfigured ? (
                         <span className="text-sm text-yellow-500 font-semibold">
                           Label unconfigured
                         </span>
-                      ) : masterLabel ? (
-                        <>
-                          <span className="text-sm font-semibold text-foreground">
-                            {masterLabel.label_name}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            ID: <span className="font-mono text-foreground">{masterLabel.label_id_code}</span>
-                          </span>
-                        </>
                       ) : null}
                       <span className="text-xs text-muted-foreground">
                         {subaccounts.length} subaccount{subaccounts.length !== 1 ? 's' : ''}
