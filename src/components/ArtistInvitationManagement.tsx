@@ -157,6 +157,8 @@ const ArtistInvitationManagement = () => {
       if (insertError) throw insertError;
 
       // Send invitation email
+      const acceptUrl = `${window.location.origin}/accept-artist-invitation?token=${invitationData.id}`;
+
       const { error: emailError } = await supabase.functions.invoke("send-artist-invitation", {
         body: { 
           email,
@@ -165,7 +167,7 @@ const ArtistInvitationManagement = () => {
           planName: planInfo.label,
           planFeatures: planInfo.features,
           royaltySplit: selectedPlan === "partner_label" ? royaltySplit : null,
-          origin: window.location.origin,
+          acceptUrl,
         },
       });
 
