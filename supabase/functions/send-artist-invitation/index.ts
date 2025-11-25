@@ -9,6 +9,10 @@ const corsHeaders = {
 
 interface InvitationRequest {
   email: string;
+  invitationId: string;
+  planType: 'artist_plan' | 'label_designation';
+  planName: string;
+  planFeatures: string[];
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -17,13 +21,21 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email }: InvitationRequest = await req.json();
+    const { email, invitationId, planType, planName, planFeatures }: InvitationRequest = await req.json();
 
-    if (!email) {
-      throw new Error("Email is required");
+    if (!email || !invitationId || !planType || !planName || !planFeatures) {
+      throw new Error("Missing required fields");
     }
 
-    const signupUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || 'https://trackball.lovable.app'}/auth`;
+    const signupUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || 'https://trackball.lovable.app'}/accept-artist-invitation?token=${invitationId}`;
+
+    const isLabelPartner = planType === 'label_designation';
+    
+    const introText = isLabelPartner 
+      ? "As per your contract, you will be invited as a Label Partner. This grants you:"
+      : `Trackball Distribution has invited you to create an account on My Trackball. You have been assigned <strong>${planName}</strong> based on the plan you have purchased.<br><br>Your included services are:`;
+
+    const featuresList = planFeatures.map(feature => `<li>${feature}</li>`).join('');
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -62,6 +74,13 @@ const handler = async (req: Request): Promise<Response> => {
               line-height: 1.6;
               margin: 15px 0;
             }
+            .content ul {
+              margin: 15px 0;
+              padding-left: 20px;
+            }
+            .content li {
+              margin: 8px 0;
+            }
             .button {
               display: inline-block;
               background-color: #ef4444;
@@ -74,6 +93,13 @@ const handler = async (req: Request): Promise<Response> => {
             }
             .button:hover {
               background-color: #dc2626;
+            }
+            .login-link {
+              color: #ef4444;
+              text-decoration: none;
+            }
+            .login-link:hover {
+              text-decoration: underline;
             }
             .footer {
               text-align: center;
@@ -89,19 +115,16 @@ const handler = async (req: Request): Promise<Response> => {
               <h1>My Trackball</h1>
             </div>
             <div class="content">
-              <p><strong>Trackball Distribution has invited you to join My Trackball</strong></p>
-              <p>You've been invited to create an account on My Trackball, the music distribution platform that puts artists first.</p>
-              <p>Click the button below to get started:</p>
-              <div style="text-align: center;">
+              <p>${introText}</p>
+              <ul>
+                ${featuresList}
+              </ul>
+              <div style="text-align: center; margin-top: 30px;">
                 <a href="${signupUrl}" class="button">Create Your Account</a>
               </div>
-              <p>Once you create your account, you'll be able to:</p>
-              <ul>
-                <li>Submit your music for distribution</li>
-                <li>Track your releases and royalties</li>
-                <li>Manage your artist profile</li>
-                <li>Access support and resources</li>
-              </ul>
+              <p style="text-align: center; margin-top: 20px; font-size: 14px;">
+                Already have an account? <a href="${signupUrl}" class="login-link">Log in here</a>
+              </p>
             </div>
             <div class="footer">
               <p>&copy; 2025 XZ1 Recording Ventures. All rights reserved.</p>

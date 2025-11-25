@@ -32,7 +32,7 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-const AcceptInvitation = () => {
+const AcceptArtistInvitation = () => {
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -58,14 +58,10 @@ const AcceptInvitation = () => {
   const fetchInvitation = async () => {
     try {
       const { data, error } = await supabase
-        .from("sublabel_invitations")
-        .select(`
-          *,
-          inviter:profiles!sublabel_invitations_inviter_id_fkey(display_name, full_name, label_name, email)
-        `)
+        .from("artist_invitations")
+        .select("*")
         .eq("id", token)
         .eq("status", "pending")
-        .eq("invitation_type", "client")
         .gt("expires_at", new Date().toISOString())
         .single();
 
@@ -76,7 +72,7 @@ const AcceptInvitation = () => {
       }
 
       setInvitation(data);
-      setEmail(data.invitee_email);
+      setEmail(data.email);
     } catch (error) {
       console.error("Error fetching invitation:", error);
       toast.error("Failed to load invitation");
@@ -91,13 +87,8 @@ const AcceptInvitation = () => {
     setLoading(true);
 
     try {
-      // Validate input
-      const validatedData = signupSchema.parse({
-        fullName,
-        email,
-        password
-      });
-      // Create the account
+      const validatedData = signupSchema.parse({ fullName, email, password });
+
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: validatedData.email,
         password: validatedData.password,
@@ -110,51 +101,9 @@ const AcceptInvitation = () => {
       if (signUpError) throw signUpError;
       if (!authData.user) throw new Error("Failed to create account");
 
-      // Accept the invitation
-      const { error: inviteError } = await supabase
-        .from("sublabel_invitations")
-        .update({ 
-          status: "accepted",
-          accepted_at: new Date().toISOString()
-        })
-        .eq("id", token);
+      await processInvitationAcceptance(authData.user.id, validatedData.fullName);
 
-      if (inviteError) throw inviteError;
-
-      // Grant permissions
-      if (invitation.permissions && invitation.permissions.length > 0) {
-        const permissionsToInsert = invitation.permissions.map((permission: string) => ({
-          user_id: authData.user.id,
-          permission: permission,
-          granted_by: invitation.inviter_id,
-        }));
-
-        const { error: permError } = await supabase
-          .from("user_permissions")
-          .insert(permissionsToInsert);
-
-        if (permError) throw permError;
-      }
-
-      // Update profile with parent account and label info
-      const { data: inviterProfile } = await supabase
-        .from("profiles")
-        .select("label_name, id")
-        .eq("id", invitation.inviter_id)
-        .single();
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          parent_account_id: invitation.inviter_id,
-          label_name: inviterProfile?.label_name || null,
-          artist_name: validatedData.fullName,
-        })
-        .eq("id", authData.user.id);
-
-      if (profileError) throw profileError;
-
-      toast.success(`Account created! You're now part of ${inviterProfile?.label_name || "the label"}!`);
+      toast.success("Account created successfully!");
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Error:", error);
@@ -184,57 +133,16 @@ const AcceptInvitation = () => {
       if (!authData.user) throw new Error("Login failed");
 
       // Check if email matches invitation
-      if (authData.user.email !== invitation.invitee_email) {
+      if (authData.user.email !== invitation.email) {
         toast.error("This invitation was sent to a different email address");
         await supabase.auth.signOut();
         setLoading(false);
         return;
       }
 
-      // Accept the invitation
-      const { error: inviteError } = await supabase
-        .from("sublabel_invitations")
-        .update({ 
-          status: "accepted",
-          accepted_at: new Date().toISOString()
-        })
-        .eq("id", token);
+      await processInvitationAcceptance(authData.user.id);
 
-      if (inviteError) throw inviteError;
-
-      // Grant permissions
-      if (invitation.permissions && invitation.permissions.length > 0) {
-        const permissionsToInsert = invitation.permissions.map((permission: string) => ({
-          user_id: authData.user.id,
-          permission: permission,
-          granted_by: invitation.inviter_id,
-        }));
-
-        const { error: permError } = await supabase
-          .from("user_permissions")
-          .insert(permissionsToInsert);
-
-        if (permError) throw permError;
-      }
-
-      // Update profile with parent account and label info
-      const { data: inviterProfile } = await supabase
-        .from("profiles")
-        .select("label_name, id")
-        .eq("id", invitation.inviter_id)
-        .single();
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          parent_account_id: invitation.inviter_id,
-          label_name: inviterProfile?.label_name || null,
-        })
-        .eq("id", authData.user.id);
-
-      if (profileError) throw profileError;
-
-      toast.success(`Invitation accepted! You're now part of ${inviterProfile?.label_name || "the label"}!`);
+      toast.success("Invitation accepted!");
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Error:", error);
@@ -245,6 +153,69 @@ const AcceptInvitation = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const processInvitationAcceptance = async (userId: string, name?: string) => {
+    // Mark invitation as accepted
+    const { error: inviteError } = await supabase
+      .from("artist_invitations")
+      .update({ 
+        status: "accepted",
+        accepted_at: new Date().toISOString()
+      })
+      .eq("id", token);
+
+    if (inviteError) throw inviteError;
+
+    // Assign plan based on invitation
+    if (invitation.assigned_plan_type === "label_designation") {
+      // Assign label designation
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          label_type: invitation.assigned_plan_name.toLowerCase().replace(' ', '_'),
+          artist_name: name || null,
+        })
+        .eq("id", userId);
+
+      if (profileError) throw profileError;
+    } else if (invitation.assigned_plan_type === "artist_plan") {
+      // Assign artist plan
+      const planMapping: Record<string, string> = {
+        "Trackball Free": "Trackball Free",
+        "Trackball Lite": "Trackball Lite",
+        "Trackball Signature": "Trackball Signature",
+        "Trackball Prestige": "Trackball Prestige",
+      };
+
+      const planName = planMapping[invitation.assigned_plan_name];
+      
+      if (planName) {
+        const { data: plan } = await supabase
+          .from("plans")
+          .select("id")
+          .eq("name", planName)
+          .single();
+
+        if (plan) {
+          await supabase
+            .from("user_plans")
+            .upsert({
+              user_id: userId,
+              plan_id: plan.id,
+              plan_name: planName,
+              status: "active",
+            });
+        }
+      }
+
+      if (name) {
+        await supabase
+          .from("profiles")
+          .update({ artist_name: name })
+          .eq("id", userId);
+      }
     }
   };
 
@@ -259,6 +230,8 @@ const AcceptInvitation = () => {
   if (!invitation) {
     return null;
   }
+
+  const isLabelPartner = invitation.assigned_plan_type === "label_designation";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black p-4 relative overflow-hidden">
@@ -281,33 +254,27 @@ const AcceptInvitation = () => {
               You're Invited!
             </CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
-              Join {invitation.inviter.label_name || invitation.inviter.display_name} on My Trackball
+              {isLabelPartner 
+                ? "As per your contract, you will be invited as a Label Partner. This grants you:"
+                : `Trackball Distribution has invited you to create an account on My Trackball. You have been assigned ${invitation.assigned_plan_name} based on the plan you have purchased.`
+              }
             </CardDescription>
           </div>
         </CardHeader>
         
         <CardContent>
           <div className="mb-6 p-4 rounded-lg bg-muted/50 border border-border">
-            <p className="text-sm text-muted-foreground mb-2">Invited by:</p>
-            <p className="font-semibold">
-              {invitation.inviter.label_name || invitation.inviter.display_name || invitation.inviter.full_name}
+            <p className="text-sm font-medium mb-2">
+              {isLabelPartner ? "Your included features:" : "Your included services are:"}
             </p>
-            {invitation.inviter?.email && (
-              <p className="text-sm text-muted-foreground">{invitation.inviter.email}</p>
-            )}
-            
-            {invitation.permissions && invitation.permissions.length > 0 && (
-              <div className="mt-4">
-                <p className="text-sm text-muted-foreground mb-2">You'll have access to:</p>
-                <div className="flex flex-wrap gap-2">
-                  {invitation.permissions.map((perm: string) => (
-                    <Badge key={perm} variant="outline" className="bg-primary/10">
-                      {perm.charAt(0).toUpperCase() + perm.slice(1)}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+            <ul className="space-y-1">
+              {invitation.plan_features?.map((feature: string, idx: number) => (
+                <li key={idx} className="text-sm flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
           <Tabs defaultValue="signup" className="w-full">
@@ -411,4 +378,4 @@ const AcceptInvitation = () => {
   );
 };
 
-export default AcceptInvitation;
+export default AcceptArtistInvitation;
