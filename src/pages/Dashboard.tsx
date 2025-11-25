@@ -78,6 +78,7 @@ const Dashboard = () => {
   const [viewAsArtist, setViewAsArtist] = useState(false);
   const [showInitialSetup, setShowInitialSetup] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showOnboardingOverlay, setShowOnboardingOverlay] = useState(false);
   const [showLabelDesignationWelcome, setShowLabelDesignationWelcome] = useState(false);
   const [labelDesignationType, setLabelDesignationType] = useState<"partner_label" | "signature_label" | "prestige_label" | "label_free" | null>(null);
   const [showSubscriptionWelcome, setShowSubscriptionWelcome] = useState(false);
@@ -438,6 +439,19 @@ const Dashboard = () => {
 
     return () => clearInterval(interval);
   }, [user?.id]);
+
+  // Delay showing onboarding tutorial until after loader has finished
+  useEffect(() => {
+    if (showOnboarding && !showInitialSetup && !showLoader) {
+      const timer = setTimeout(() => {
+        setShowOnboardingOverlay(true);
+      }, 3000); // wait 3 seconds after dashboard is visible
+
+      return () => clearTimeout(timer);
+    } else {
+      setShowOnboardingOverlay(false);
+    }
+  }, [showOnboarding, showInitialSetup, showLoader]);
   const fetchReleaseCount = async (userId: string) => {
     const {
       count
@@ -966,10 +980,11 @@ const Dashboard = () => {
       )}
 
       {/* Onboarding Tutorial - Shows after initial setup */}
-      {showOnboarding && !showInitialSetup && (
+      {showOnboardingOverlay && !showInitialSetup && (
         <OnboardingTutorial
           onComplete={async () => {
             setShowOnboarding(false);
+            setShowOnboardingOverlay(false);
             // If label account, show label designation welcome after tutorial
             if (profile?.account_type === 'label' && profile?.label_type === 'Label Free') {
               setLabelDesignationType('label_free');
@@ -978,6 +993,7 @@ const Dashboard = () => {
           }}
           onSkip={async () => {
             setShowOnboarding(false);
+            setShowOnboardingOverlay(false);
             // If label account, show label designation welcome after skipping tutorial
             if (profile?.account_type === 'label' && profile?.label_type === 'Label Free') {
               setLabelDesignationType('label_free');
