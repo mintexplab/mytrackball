@@ -85,8 +85,8 @@ export const OnboardingTutorial = ({ onComplete, onSkip, isLabelAccount = false 
   const [highlightStyle, setHighlightStyle] = useState<any>({});
 
   useEffect(() => {
-    // Delay initial load to ensure dashboard is fully loaded
-    const initialDelay = currentStep === 0 ? 3500 : 100;
+    // Short delay to ensure highlighted elements are rendered
+    const initialDelay = currentStep === 0 ? 500 : 100;
     const timer = setTimeout(() => {
       updateHighlight();
     }, initialDelay);
