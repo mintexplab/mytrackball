@@ -14,6 +14,7 @@ interface InvitationRequest {
   planName: string;
   planFeatures: string[];
   royaltySplit?: number | null;
+  origin?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -22,13 +23,13 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, invitationId, planType, planName, planFeatures, royaltySplit }: InvitationRequest = await req.json();
+    const { email, invitationId, planType, planName, planFeatures, royaltySplit, origin }: InvitationRequest = await req.json();
 
     if (!email || !invitationId || !planType || !planName || !planFeatures) {
       throw new Error("Missing required fields");
     }
 
-    const signupUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || 'https://trackball.lovable.app'}/accept-artist-invitation?token=${invitationId}`;
+    const signupUrl = `${origin || 'https://my.trackball.cc'}/accept-artist-invitation?token=${invitationId}`;
 
     const isLabelPartner = planType === 'label_designation' && planName === 'Label Partner';
     

@@ -165,6 +165,7 @@ const ArtistInvitationManagement = () => {
           planName: planInfo.label,
           planFeatures: planInfo.features,
           royaltySplit: selectedPlan === "partner_label" ? royaltySplit : null,
+          origin: window.location.origin,
         },
       });
 
