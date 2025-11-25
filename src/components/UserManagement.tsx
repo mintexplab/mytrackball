@@ -736,13 +736,8 @@ const UserManagement = () => {
                                   </SelectTrigger>
                                   <SelectContent className="bg-card border-border">
                                     {getFilteredPlans(masterUser.account_type).map((plan) => (
-                                      <SelectItem key={plan.id} value={plan.id}>
-                                        <div className="flex items-center justify-between w-full gap-2">
-                                          <span className="text-xs">{plan.name}</span>
-                                          <Badge variant="outline" className="text-xs ml-2">
-                                            ${plan.price}/mo
-                                          </Badge>
-                                        </div>
+                                      <SelectItem key={plan.id} value={plan.id} className="text-xs">
+                                        {plan.name}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -1053,13 +1048,8 @@ const UserManagement = () => {
                               </SelectTrigger>
                               <SelectContent className="bg-card border-border">
                                 {getFilteredPlans(user.account_type).map((plan) => (
-                                  <SelectItem key={plan.id} value={plan.id}>
-                                    <div className="flex items-center justify-between w-full gap-2">
-                                      <span className="text-xs">{plan.name}</span>
-                                      <Badge variant="outline" className="text-xs ml-2">
-                                        ${plan.price}/mo
-                                      </Badge>
-                                    </div>
+                                  <SelectItem key={plan.id} value={plan.id} className="text-xs">
+                                    {plan.name}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
