@@ -167,6 +167,8 @@ export const usePlanPermissions = (
         planTier: "prestige",
       };
     }
+
+    // Note: "Partner" only exists as "Label Partner" designation, not as an artist plan
     
     // Default/fallback (treat as free)
     return {
