@@ -138,8 +138,6 @@ const Auth = () => {
           error
         });
         if (error) throw error;
-        
-        toast.success("A verification link has been sent to your email. Verify your email using that link in order to continue with onboarding.");
       }
     } catch (error: any) {
       console.error("Auth error", error);
