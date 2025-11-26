@@ -79,6 +79,7 @@ const Dashboard = () => {
   const [showInitialSetup, setShowInitialSetup] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showOnboardingOverlay, setShowOnboardingOverlay] = useState(false);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [showLabelDesignationWelcome, setShowLabelDesignationWelcome] = useState(false);
   const [labelDesignationType, setLabelDesignationType] = useState<"partner_label" | "signature_label" | "prestige_label" | "label_free" | null>(null);
   const [showSubscriptionWelcome, setShowSubscriptionWelcome] = useState(false);
@@ -440,18 +441,29 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, [user?.id]);
 
-  // Delay showing onboarding tutorial until after loader has finished
+  // Show onboarding tutorial after user first clicks something (after loader finishes)
   useEffect(() => {
-    if (showOnboarding && !showInitialSetup && !showLoader) {
-      const timer = setTimeout(() => {
-        setShowOnboardingOverlay(true);
-      }, 3000); // wait 3 seconds after dashboard is visible
-
-      return () => clearTimeout(timer);
+    if (showOnboarding && !showInitialSetup && !showLoader && hasUserInteracted) {
+      setShowOnboardingOverlay(true);
     } else {
       setShowOnboardingOverlay(false);
     }
-  }, [showOnboarding, showInitialSetup, showLoader]);
+  }, [showOnboarding, showInitialSetup, showLoader, hasUserInteracted]);
+
+  // Track first user interaction to trigger onboarding
+  useEffect(() => {
+    if (showOnboarding && !showInitialSetup && !showLoader && !hasUserInteracted) {
+      const handleFirstClick = () => {
+        setHasUserInteracted(true);
+      };
+
+      document.addEventListener('click', handleFirstClick, { once: true });
+
+      return () => {
+        document.removeEventListener('click', handleFirstClick);
+      };
+    }
+  }, [showOnboarding, showInitialSetup, showLoader, hasUserInteracted]);
   const fetchReleaseCount = async (userId: string) => {
     const {
       count
