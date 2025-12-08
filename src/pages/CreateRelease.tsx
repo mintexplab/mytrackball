@@ -15,6 +15,7 @@ import { z } from "zod";
 import { useS3Upload } from "@/hooks/useS3Upload";
 import { Confetti } from "@/components/Confetti";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
+import { ReleasePaymentForm } from "@/components/ReleasePaymentForm";
 
 // Pricing constants (CAD)
 const TRACK_FEE = 5;
@@ -151,6 +152,12 @@ const CreateRelease = () => {
   const [userPlan, setUserPlan] = useState<any>(null);
   const [showPricingConfirm, setShowPricingConfirm] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [paymentData, setPaymentData] = useState<{
+    clientSecret: string;
+    paymentIntentId: string;
+    releaseId: string;
+  } | null>(null);
   
   // Calculate pricing
   const trackCount = tracks.length;
@@ -586,9 +593,9 @@ const CreateRelease = () => {
 
       await supabase.from("tracks").insert(trackData);
 
-      // Create Stripe checkout session
-      const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke(
-        'create-release-checkout',
+      // Create PaymentIntent for embedded payment
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
+        'create-payment-intent',
         {
           body: {
             trackCount: tracks.length,
@@ -598,16 +605,18 @@ const CreateRelease = () => {
         }
       );
 
-      if (checkoutError) throw checkoutError;
+      if (paymentError) throw paymentError;
 
-      if (checkoutData?.url) {
-        localStorage.removeItem('release-draft');
-        window.open(checkoutData.url, '_blank');
-        toast.success("Redirecting to payment...");
+      if (paymentData?.clientSecret) {
+        setPaymentData({
+          clientSecret: paymentData.clientSecret,
+          paymentIntentId: paymentData.paymentIntentId,
+          releaseId: release.id,
+        });
         setShowPricingConfirm(false);
-        navigate("/dashboard");
+        setShowPaymentForm(true);
       } else {
-        throw new Error("No checkout URL received");
+        throw new Error("Failed to initialize payment");
       }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -620,6 +629,19 @@ const CreateRelease = () => {
       setLoading(false);
       setCheckoutLoading(false);
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    localStorage.removeItem('release-draft');
+    setShowPaymentForm(false);
+    setPaymentData(null);
+    navigate("/dashboard?release_submitted=true");
+  };
+
+  const handlePaymentCancel = () => {
+    setShowPaymentForm(false);
+    setPaymentData(null);
+    toast.info("Payment cancelled. Your release is saved as draft.");
   };
 
   const steps = [
@@ -1637,6 +1659,23 @@ const CreateRelease = () => {
               )}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Form Dialog */}
+      <Dialog open={showPaymentForm} onOpenChange={setShowPaymentForm}>
+        <DialogContent className="sm:max-w-[500px]">
+          {paymentData && (
+            <ReleasePaymentForm
+              clientSecret={paymentData.clientSecret}
+              releaseId={paymentData.releaseId}
+              paymentIntentId={paymentData.paymentIntentId}
+              trackCount={trackCount}
+              releaseTitle={formData.songTitle}
+              onSuccess={handlePaymentSuccess}
+              onCancel={handlePaymentCancel}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
