@@ -12,12 +12,14 @@ import { Loader2, CreditCard, Check, Shield } from "lucide-react";
 import { toast } from "@/lib/toast-with-sound";
 import { supabase } from "@/integrations/supabase/client";
 
-// Get the Stripe publishable key - you need to add VITE_STRIPE_PUBLISHABLE_KEY to your .env
-const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+// Get the Stripe publishable key from environment
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string;
 
 const stripePromise = STRIPE_PUBLISHABLE_KEY 
   ? loadStripe(STRIPE_PUBLISHABLE_KEY) 
   : null;
+
+console.log('Stripe key available:', !!STRIPE_PUBLISHABLE_KEY);
 
 interface PaymentFormProps {
   clientSecret: string;

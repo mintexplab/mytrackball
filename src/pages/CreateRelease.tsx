@@ -557,8 +557,6 @@ const CreateRelease = () => {
       const failedUploads = uploadedTracks.filter(t => !t || !t.audioUrl);
       if (failedUploads.length > 0) throw new Error("Some audio uploads failed");
 
-      setShowConfetti(true);
-
       // Create release with pending_payment status
       const { data: release, error: releaseError } = await supabase.from("releases").insert({
         user_id: user.id,
@@ -632,16 +630,30 @@ const CreateRelease = () => {
   };
 
   const handlePaymentSuccess = () => {
+    setShowConfetti(true);
+    toast.success("Release submitted successfully!");
     localStorage.removeItem('release-draft');
     setShowPaymentForm(false);
     setPaymentData(null);
-    navigate("/dashboard?release_submitted=true");
+    setTimeout(() => {
+      navigate("/dashboard?release_submitted=true");
+    }, 2000);
   };
 
   const handlePaymentCancel = () => {
     setShowPaymentForm(false);
     setPaymentData(null);
     toast.info("Payment cancelled. Your release is saved as draft.");
+  };
+
+  const [showPayLaterConfirm, setShowPayLaterConfirm] = useState(false);
+
+  const handlePayLater = async () => {
+    setShowPayLaterConfirm(false);
+    setShowPricingConfirm(false);
+    toast.info("Your release has been saved. You will receive a payment link within 3 business days.");
+    localStorage.removeItem('release-draft');
+    navigate("/dashboard");
   };
 
   const steps = [
@@ -1632,31 +1644,41 @@ const CreateRelease = () => {
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowPricingConfirm(false)}
+                disabled={checkoutLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleProceedToPayment}
+                disabled={checkoutLoading}
+                className="flex-1 bg-gradient-primary hover:opacity-90"
+              >
+                {checkoutLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Pay ${totalCost.toFixed(2)} CAD
+                  </>
+                )}
+              </Button>
+            </div>
             <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => setShowPricingConfirm(false)}
+              variant="ghost"
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => setShowPayLaterConfirm(true)}
               disabled={checkoutLoading}
             >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleProceedToPayment}
-              disabled={checkoutLoading}
-              className="flex-1 bg-gradient-primary hover:opacity-90"
-            >
-              {checkoutLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Pay ${totalCost.toFixed(2)} CAD
-                </>
-              )}
+              Pay Later
             </Button>
           </div>
         </DialogContent>
@@ -1676,6 +1698,46 @@ const CreateRelease = () => {
               onCancel={handlePaymentCancel}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Pay Later Confirmation Dialog */}
+      <Dialog open={showPayLaterConfirm} onOpenChange={setShowPayLaterConfirm}>
+        <DialogContent className="sm:max-w-[450px] bg-card border-destructive/30">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-destructive">
+              Pay Later Warning
+            </DialogTitle>
+            <DialogDescription className="text-foreground">
+              Are you sure you want to pay later?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-sm">
+            <p className="text-foreground">
+              You will be given a link to pay for this release within <strong>3 business days</strong>.
+            </p>
+            <p className="mt-2 text-destructive font-medium">
+              Failure to pay will result in your release not being submitted or account termination.
+            </p>
+          </div>
+
+          <div className="flex gap-3 mt-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setShowPayLaterConfirm(false)}
+            >
+              Go Back
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={handlePayLater}
+            >
+              Confirm Pay Later
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
