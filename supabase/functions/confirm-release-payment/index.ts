@@ -38,27 +38,101 @@ serve(async (req) => {
     if (!user) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
 
-    const { paymentIntentId, releaseId } = await req.json();
-    if (!paymentIntentId) throw new Error("Payment intent ID is required");
+    const { paymentIntentId, releaseId, usedTrackAllowance, trackCount: passedTrackCount } = await req.json();
+    if (!paymentIntentId && !usedTrackAllowance) throw new Error("Payment intent ID is required");
     if (!releaseId) throw new Error("Release ID is required");
-    logStep("Request data received", { paymentIntentId, releaseId });
+    logStep("Request data received", { paymentIntentId, releaseId, usedTrackAllowance, passedTrackCount });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Verify payment was successful
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-    logStep("PaymentIntent retrieved", { status: paymentIntent.status });
+    // Get track count for the release
+    const { data: tracks } = await supabaseClient
+      .from('tracks')
+      .select('id')
+      .eq('release_id', releaseId);
 
-    if (paymentIntent.status !== 'succeeded') {
-      throw new Error(`Payment not successful. Status: ${paymentIntent.status}`);
+    const trackCount = passedTrackCount || tracks?.length || 1;
+    logStep("Track count determined", { trackCount });
+
+    // If using track allowance, update usage
+    if (usedTrackAllowance) {
+      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+      
+      // Get or create usage record
+      const { data: existingUsage } = await supabaseClient
+        .from('track_allowance_usage')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('month_year', currentMonth)
+        .single();
+
+      if (existingUsage) {
+        const newTrackCount = existingUsage.track_count + trackCount;
+        await supabaseClient
+          .from('track_allowance_usage')
+          .update({ 
+            track_count: newTrackCount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingUsage.id);
+        logStep("Updated track allowance usage", { newTrackCount });
+
+        // Check if user is at 80% or above and send notification
+        const usagePercentage = (newTrackCount / existingUsage.tracks_allowed) * 100;
+        if (usagePercentage >= 80) {
+          try {
+            await fetch(
+              `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-track-allowance-notification`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+                },
+                body: JSON.stringify({
+                  email: user.email,
+                  userName: user.user_metadata?.full_name || user.email?.split('@')[0],
+                  tracksUsed: newTrackCount,
+                  tracksAllowed: existingUsage.tracks_allowed,
+                  tracksRemaining: Math.max(0, existingUsage.tracks_allowed - newTrackCount),
+                  usagePercentage,
+                }),
+              }
+            );
+            logStep("Sent track allowance notification");
+          } catch (notifError) {
+            logStep("Failed to send notification (non-blocking)", { error: notifError });
+          }
+        }
+      } else {
+        // Create new usage record (shouldn't happen normally but handle it)
+        await supabaseClient
+          .from('track_allowance_usage')
+          .insert({
+            user_id: user.id,
+            month_year: currentMonth,
+            track_count: trackCount,
+            tracks_allowed: 0, // Will be updated by subscription webhook
+          });
+        logStep("Created new track allowance usage record");
+      }
     }
 
-    // Verify metadata matches
-    if (paymentIntent.metadata.release_id !== releaseId) {
-      throw new Error("Payment intent does not match release");
-    }
-    if (paymentIntent.metadata.user_id !== user.id) {
-      throw new Error("Payment intent does not belong to user");
+    // If there was a payment (not using track allowance), verify it
+    if (paymentIntentId) {
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      logStep("PaymentIntent retrieved", { status: paymentIntent.status });
+
+      if (paymentIntent.status !== 'succeeded') {
+        throw new Error(`Payment not successful. Status: ${paymentIntent.status}`);
+      }
+
+      if (paymentIntent.metadata.release_id !== releaseId) {
+        throw new Error("Payment intent does not match release");
+      }
+      if (paymentIntent.metadata.user_id !== user.id) {
+        throw new Error("Payment intent does not belong to user");
+      }
     }
 
     // Update release status to pending
@@ -76,42 +150,37 @@ serve(async (req) => {
 
     logStep("Release updated to pending", { releaseId });
 
-    // Get track count for the release
-    const { data: tracks } = await supabaseClient
-      .from('tracks')
-      .select('id')
-      .eq('release_id', releaseId);
-
-    const trackCount = tracks?.length || 1;
-
-    // Send payment receipt email
-    try {
-      const receiptResponse = await fetch(
-        `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-payment-receipt`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
-          },
-          body: JSON.stringify({
-            email: user.email,
-            userName: user.user_metadata?.full_name || user.email?.split('@')[0],
-            releaseTitle: releaseData?.title || 'Your Release',
-            artistName: releaseData?.artist_name || 'Artist',
-            amount: paymentIntent.amount,
-            trackCount: trackCount,
-            paymentDate: new Date().toLocaleDateString('en-CA', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
+    // Send payment receipt email only if there was a payment
+    if (paymentIntentId) {
+      try {
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        const receiptResponse = await fetch(
+          `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-payment-receipt`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+            },
+            body: JSON.stringify({
+              email: user.email,
+              userName: user.user_metadata?.full_name || user.email?.split('@')[0],
+              releaseTitle: releaseData?.title || 'Your Release',
+              artistName: releaseData?.artist_name || 'Artist',
+              amount: paymentIntent.amount,
+              trackCount: trackCount,
+              paymentDate: new Date().toLocaleDateString('en-CA', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              }),
             }),
-          }),
-        }
-      );
-      logStep("Payment receipt email sent", { success: receiptResponse.ok });
-    } catch (emailError) {
-      logStep("Failed to send receipt email (non-blocking)", { error: emailError });
+          }
+        );
+        logStep("Payment receipt email sent", { success: receiptResponse.ok });
+      } catch (emailError) {
+        logStep("Failed to send receipt email (non-blocking)", { error: emailError });
+      }
     }
 
     return new Response(JSON.stringify({ success: true }), {

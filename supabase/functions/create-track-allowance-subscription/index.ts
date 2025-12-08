@@ -45,10 +45,11 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Calculate monthly fee: $4 CAD per track
-    const pricePerTrack = 400; // 4 CAD in cents
+    // Calculate monthly fee with tiered pricing:
+    // $4 CAD per track for 5-45 tracks, $2 CAD per track for 46+ tracks
+    const pricePerTrack = tracksPerMonth > 45 ? 200 : 400; // in cents
     const monthlyAmount = tracksPerMonth * pricePerTrack;
-    logStep("Monthly amount calculated", { monthlyAmount: monthlyAmount / 100 });
+    logStep("Monthly amount calculated", { pricePerTrack: pricePerTrack / 100, monthlyAmount: monthlyAmount / 100 });
 
     // Check if customer exists
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
@@ -93,7 +94,7 @@ serve(async (req) => {
       if (!product) {
         product = await stripe.products.create({
           name: "Track Allowance Plan",
-          description: "Monthly track allowance subscription - pay $4/track upfront and submit tracks without per-track fees"
+          description: "Monthly track allowance subscription - $4/track (5-45), $2/track (46+)"
         });
         logStep("Created Track Allowance product", { productId: product.id });
       }
@@ -155,7 +156,7 @@ serve(async (req) => {
     if (!product) {
       product = await stripe.products.create({
         name: "Track Allowance Plan",
-        description: "Monthly track allowance subscription - pay $4/track upfront and submit tracks without per-track fees"
+        description: "Monthly track allowance subscription - $4/track (5-45), $2/track (46+)"
       });
     }
 
