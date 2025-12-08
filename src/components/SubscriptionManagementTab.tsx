@@ -1,9 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Music, Building2, Users, FileText, HelpCircle } from "lucide-react";
+import { Check, X, Music, Building2, Users, FileText, HelpCircle, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
+import { TrackAllowancePlan } from "./TrackAllowancePlan";
 
 interface SubscriptionManagementTabProps {
   userPlan: any;
@@ -41,6 +43,11 @@ export const SubscriptionManagementTab = ({ userPlan, profile }: SubscriptionMan
 
   const permissions = usePlanPermissions(userPlan, accountInfo?.profile);
   const isLabel = permissions.accountType === "label";
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/auth";
+  };
 
   const features = isLabel ? [
     {
@@ -170,8 +177,20 @@ export const SubscriptionManagementTab = ({ userPlan, profile }: SubscriptionMan
               <p>• <span className="font-medium text-foreground">$8 CAD</span> UPC fee per release</p>
             </div>
           </div>
+
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="w-full"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Log Out
+          </Button>
         </CardContent>
       </Card>
+
+      {/* Track Allowance Plan */}
+      <TrackAllowancePlan />
     </div>
   );
 };
