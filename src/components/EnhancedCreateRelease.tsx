@@ -51,6 +51,14 @@ const trackSchema = z.object({
   featured_artists: z.string().trim().max(500, "Featured artists must be less than 500 characters").optional(),
 });
 
+interface TrackAllowanceData {
+  hasSubscription: boolean;
+  tracksAllowed: number;
+  tracksUsed: number;
+  tracksRemaining: number;
+  monthlyAmount: number;
+}
+
 const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   const [showSelection, setShowSelection] = useState(false);
   const [open, setOpen] = useState(false);
@@ -61,6 +69,8 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   const { uploadFile, uploading: s3Uploading } = useS3Upload();
   const [artworkFile, setArtworkFile] = useState<File | null>(null);
   const [pendingReleaseId, setPendingReleaseId] = useState<string | null>(null);
+  const [trackAllowance, setTrackAllowance] = useState<TrackAllowanceData | null>(null);
+  const [useAllowance, setUseAllowance] = useState<boolean | null>(null);
   const [tracks, setTracks] = useState<Track[]>([{
     id: "1",
     track_number: 1,
@@ -88,6 +98,23 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   const trackCount = tracks.length;
   const trackTotal = TRACK_FEE * trackCount;
   const totalCost = trackTotal + UPC_FEE;
+
+  // Check if user can use allowance for this release
+  const canUseAllowance = trackAllowance?.hasSubscription && trackAllowance.tracksRemaining >= trackCount;
+
+  // Fetch track allowance on mount
+  useEffect(() => {
+    const fetchTrackAllowance = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('check-track-allowance');
+        if (error) throw error;
+        setTrackAllowance(data);
+      } catch (err) {
+        console.error("Error fetching track allowance:", err);
+      }
+    };
+    fetchTrackAllowance();
+  }, []);
 
   const generateISRC = async () => {
     try {
@@ -320,6 +347,106 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     setReleaseType("single");
     setShowPricingConfirm(false);
     setPendingReleaseId(null);
+    setUseAllowance(null);
+  };
+
+  const handleUseTrackAllowance = async () => {
+    setCheckoutLoading(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Upload artwork to S3 if file is selected
+      let artworkUrl = formData.artwork_url || null;
+      if (artworkFile) {
+        const timestamp = Date.now();
+        const fileExt = artworkFile.name.split('.').pop();
+        const s3Path = `${user.id}/release-artwork/${timestamp}.${fileExt}`;
+        
+        const uploadedUrl = await uploadFile({ file: artworkFile, path: s3Path });
+        if (uploadedUrl) {
+          artworkUrl = uploadedUrl;
+        } else {
+          throw new Error('Failed to upload artwork');
+        }
+      }
+
+      // Create release as pending (covered by allowance)
+      const { data: release, error: releaseError } = await supabase
+        .from("releases")
+        .insert({
+          user_id: user.id,
+          title: formData.title,
+          artist_name: formData.artist_name,
+          release_date: formData.release_date || null,
+          genre: formData.genre || null,
+          label_name: formData.label_name,
+          artwork_url: artworkUrl,
+          copyright_line: formData.copyright_line,
+          phonographic_line: formData.phonographic_line,
+          featured_artists: formData.featured_artists ? formData.featured_artists.split(",").map(a => a.trim()) : [],
+          notes: formData.notes || null,
+          catalog_number: formData.catalog_number || null,
+          isrc: tracks[0]?.isrc || null,
+          status: 'pending',
+        })
+        .select()
+        .single();
+
+      if (releaseError) throw releaseError;
+
+      // Create tracks
+      const tracksData = tracks.map(track => ({
+        release_id: release.id,
+        track_number: track.track_number,
+        title: track.title,
+        duration: track.duration ? parseInt(track.duration) : null,
+        isrc: track.isrc,
+        audio_file_url: track.audio_file_url,
+        featured_artists: track.featured_artists ? track.featured_artists.split(",").map(a => a.trim()) : [],
+      }));
+
+      const { error: tracksError } = await supabase
+        .from("tracks")
+        .insert(tracksData);
+
+      if (tracksError) throw tracksError;
+
+      // Update track allowance usage
+      const now = new Date();
+      const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      
+      const { data: usageData } = await supabase
+        .from("track_allowance_usage")
+        .select("track_count")
+        .eq("user_id", user.id)
+        .eq("month_year", monthYear)
+        .single();
+
+      const currentUsage = usageData?.track_count || 0;
+      
+      await supabase
+        .from("track_allowance_usage")
+        .upsert({
+          user_id: user.id,
+          month_year: monthYear,
+          track_count: currentUsage + tracks.length,
+          tracks_allowed: trackAllowance?.tracksAllowed || 0
+        }, {
+          onConflict: "user_id,month_year"
+        });
+
+      toast.success("Release submitted using your Track Allowance!");
+      setShowPricingConfirm(false);
+      setOpen(false);
+      resetForm();
+    } catch (error: any) {
+      console.error("Submission error:", error);
+      toast.error(error.message || "Failed to submit release");
+    } finally {
+      setCheckoutLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -376,15 +503,20 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
       </Dialog>
 
       {/* Pricing Confirmation Dialog */}
-      <Dialog open={showPricingConfirm} onOpenChange={setShowPricingConfirm}>
-        <DialogContent className="sm:max-w-[450px] bg-card border-primary/20">
+      <Dialog open={showPricingConfirm} onOpenChange={(open) => {
+        setShowPricingConfirm(open);
+        if (!open) setUseAllowance(null);
+      }}>
+        <DialogContent className="sm:max-w-[500px] bg-card border-primary/20">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold flex items-center gap-2">
               <CreditCard className="w-6 h-6 text-primary" />
               Confirm Submission
             </DialogTitle>
             <DialogDescription>
-              Review your release fees before proceeding to payment
+              {canUseAllowance 
+                ? "You have a Track Allowance plan! Choose how to submit this release."
+                : "Review your release fees before proceeding to payment"}
             </DialogDescription>
           </DialogHeader>
           
@@ -394,55 +526,125 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
               <p className="text-sm text-muted-foreground">{formData.artist_name}</p>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-muted-foreground">
-                  Track Fee ({trackCount} track{trackCount > 1 ? 's' : ''} × $5 CAD)
-                </span>
-                <span className="font-semibold">${trackTotal.toFixed(2)} CAD</span>
+            {/* Track Allowance Option */}
+            {canUseAllowance && useAllowance === null && (
+              <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
+                <p className="text-sm font-medium mb-3">
+                  This release will use {trackCount}/{trackAllowance?.tracksRemaining} of your remaining track allowance!
+                </p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Would you like to use your Track Allowance plan for this release, or pay upfront?
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => setUseAllowance(true)}
+                    className="flex-1 bg-primary hover:bg-primary/90"
+                  >
+                    Use Track Allowance
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setUseAllowance(false)}
+                    className="flex-1"
+                  >
+                    Pay Upfront
+                  </Button>
+                </div>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-border">
-                <span className="text-muted-foreground">UPC Fee</span>
-                <span className="font-semibold">${UPC_FEE.toFixed(2)} CAD</span>
-              </div>
-              <div className="flex justify-between items-center py-3 text-lg">
-                <span className="font-bold">Total</span>
-                <span className="font-bold text-primary">${totalCost.toFixed(2)} CAD</span>
-              </div>
-            </div>
+            )}
 
-            <p className="text-xs text-muted-foreground text-center">
-              You will be redirected to our secure payment portal to complete your transaction.
-            </p>
+            {/* Show pricing breakdown if no allowance or user chose to pay */}
+            {(!canUseAllowance || useAllowance === false) && (
+              <>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-muted-foreground">
+                      Track Fee ({trackCount} track{trackCount > 1 ? 's' : ''} × $5 CAD)
+                    </span>
+                    <span className="font-semibold">${trackTotal.toFixed(2)} CAD</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-muted-foreground">UPC Fee</span>
+                    <span className="font-semibold">${UPC_FEE.toFixed(2)} CAD</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 text-lg">
+                    <span className="font-bold">Total</span>
+                    <span className="font-bold text-primary">${totalCost.toFixed(2)} CAD</span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  You will be redirected to our secure payment portal to complete your transaction.
+                </p>
+              </>
+            )}
+
+            {/* Confirmation when using allowance */}
+            {useAllowance === true && (
+              <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30">
+                <p className="text-sm text-green-400 font-medium mb-2">
+                  ✓ Using Track Allowance
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  This release will be submitted using your track allowance. 
+                  After submission, you'll have {(trackAllowance?.tracksRemaining || 0) - trackCount} tracks remaining this month.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setShowPricingConfirm(false)}
+              onClick={() => {
+                if (useAllowance !== null && canUseAllowance) {
+                  setUseAllowance(null);
+                } else {
+                  setShowPricingConfirm(false);
+                }
+              }}
               className="flex-1"
               disabled={checkoutLoading}
             >
               Back
             </Button>
-            <Button
-              onClick={handleProceedToPayment}
-              disabled={checkoutLoading}
-              className="flex-1 bg-gradient-primary hover:opacity-90"
-            >
-              {checkoutLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Pay ${totalCost.toFixed(2)} CAD
-                </>
-              )}
-            </Button>
+            
+            {/* Show appropriate action button */}
+            {useAllowance === true ? (
+              <Button
+                onClick={handleUseTrackAllowance}
+                disabled={checkoutLoading}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {checkoutLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit with Allowance"
+                )}
+              </Button>
+            ) : (!canUseAllowance || useAllowance === false) ? (
+              <Button
+                onClick={handleProceedToPayment}
+                disabled={checkoutLoading}
+                className="flex-1 bg-gradient-primary hover:opacity-90"
+              >
+                {checkoutLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Pay ${totalCost.toFixed(2)} CAD
+                  </>
+                )}
+              </Button>
+            ) : null}
           </div>
         </DialogContent>
       </Dialog>
