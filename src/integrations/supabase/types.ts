@@ -1228,6 +1228,47 @@ export type Database = {
           },
         ]
       }
+      track_allowance_usage: {
+        Row: {
+          created_at: string
+          id: string
+          month_year: string
+          subscription_id: string | null
+          track_count: number
+          tracks_allowed: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month_year: string
+          subscription_id?: string | null
+          track_count?: number
+          tracks_allowed?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month_year?: string
+          subscription_id?: string | null
+          track_count?: number
+          tracks_allowed?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_allowance_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tracks: {
         Row: {
           audio_file_url: string | null

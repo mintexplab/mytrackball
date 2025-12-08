@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Building2, Home, Music, CreditCard, Receipt } from "lucide-react";
+import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Building2, Home, Music, CreditCard, Receipt, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
@@ -54,6 +54,8 @@ import { SubscriptionManagementTab } from "@/components/SubscriptionManagementTa
 import { FineDialog } from "@/components/FineDialog";
 import { PaymentMethodsManagement } from "@/components/PaymentMethodsManagement";
 import { PaymentHistory } from "@/components/PaymentHistory";
+import { TrackAllowanceTab } from "@/components/TrackAllowanceTab";
+import { TrackAllowanceBlock } from "@/components/TrackAllowanceBlock";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -667,6 +669,11 @@ const Dashboard = () => {
                     <Receipt className="w-4 h-4 mr-2" />
                     Payment History
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setActiveTab("track-allowance")} className="cursor-pointer">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Track Allowance
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -854,6 +861,11 @@ const Dashboard = () => {
                       component: <QuickStatsBlock userId={user?.id} />,
                       visible: true,
                     },
+                    {
+                      id: "track-allowance",
+                      component: <TrackAllowanceBlock />,
+                      visible: true,
+                    },
                   ],
               },
               {
@@ -910,6 +922,10 @@ const Dashboard = () => {
 
           <TabsContent value="payment-history" className="animate-fade-in">
             <PaymentHistory />
+          </TabsContent>
+
+          <TabsContent value="track-allowance" className="animate-fade-in">
+            <TrackAllowanceTab />
           </TabsContent>
 
           {permissions.canAccessPublishing && (
