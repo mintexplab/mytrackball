@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Music, Building2 } from "lucide-react";
+import { Loader2, Music, Building2, CreditCard } from "lucide-react";
+import { PaymentMethodSetup } from "./PaymentMethodSetup";
 
 interface InitialAccountSetupProps {
   onComplete: () => void;
@@ -21,6 +22,8 @@ export const InitialAccountSetup = ({ onComplete }: InitialAccountSetupProps) =>
     artistName: "",
     labelName: "",
   });
+
+  const totalSteps = 4;
 
   const handleNext = () => {
     // Validate current step
@@ -43,10 +46,8 @@ export const InitialAccountSetup = ({ onComplete }: InitialAccountSetupProps) =>
       }
     }
 
-    if (step < 3) {
+    if (step < totalSteps) {
       setStep(step + 1);
-    } else {
-      handleComplete();
     }
   };
 
@@ -123,6 +124,14 @@ export const InitialAccountSetup = ({ onComplete }: InitialAccountSetupProps) =>
     }
   };
 
+  const handlePaymentComplete = () => {
+    handleComplete();
+  };
+
+  const handlePaymentSkip = () => {
+    handleComplete();
+  };
+
   return (
     <div className="fixed inset-0 z-[200] bg-background/95 flex items-center justify-center p-4">
       <Card className="w-full max-w-lg border-border animate-fade-in">
@@ -135,7 +144,7 @@ export const InitialAccountSetup = ({ onComplete }: InitialAccountSetupProps) =>
         <CardContent className="space-y-6">
           {/* Progress indicator */}
           <div className="flex items-center gap-2">
-            {[1, 2, 3].map((s) => (
+            {[1, 2, 3, 4].map((s) => (
               <div
                 key={s}
                 className={`h-2 rounded-full transition-all flex-1 ${
@@ -289,35 +298,70 @@ export const InitialAccountSetup = ({ onComplete }: InitialAccountSetupProps) =>
             </div>
           )}
 
-          {/* Navigation buttons */}
-          <div className="flex items-center justify-between pt-4">
-            <Button
-              variant="ghost"
-              onClick={() => setStep(Math.max(1, step - 1))}
-              disabled={step === 1 || loading}
-            >
-              Back
-            </Button>
-            <div className="text-sm text-muted-foreground">
-              Step {step} of 3
+          {/* Step 4: Save Payment Method (Optional) */}
+          {step === 4 && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="flex items-center gap-2 mb-2">
+                <CreditCard className="w-5 h-5 text-primary" />
+                <h3 className="font-medium">Save Payment Method (Optional)</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Save your card now for faster checkouts when distributing releases or requesting takedowns. 
+                You won't be charged anything now.
+              </p>
+              <PaymentMethodSetup 
+                onComplete={handlePaymentComplete}
+                onSkip={handlePaymentSkip}
+              />
             </div>
-            <Button
-              onClick={handleNext}
-              disabled={loading}
-              className="bg-gradient-primary hover:opacity-90"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Setting up...
-                </>
-              ) : step === 3 ? (
-                "Complete Setup"
-              ) : (
-                "Next"
-              )}
-            </Button>
-          </div>
+          )}
+
+          {/* Navigation buttons */}
+          {step < 4 && (
+            <div className="flex items-center justify-between pt-4">
+              <Button
+                variant="ghost"
+                onClick={() => setStep(Math.max(1, step - 1))}
+                disabled={step === 1 || loading}
+              >
+                Back
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                Step {step} of {totalSteps}
+              </div>
+              <Button
+                onClick={handleNext}
+                disabled={loading}
+                className="bg-gradient-primary hover:opacity-90"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Setting up...
+                  </>
+                ) : (
+                  "Next"
+                )}
+              </Button>
+            </div>
+          )}
+
+          {/* Step 4 shows its own buttons via PaymentMethodSetup */}
+          {step === 4 && (
+            <div className="flex items-center justify-between pt-4">
+              <Button
+                variant="ghost"
+                onClick={() => setStep(3)}
+                disabled={loading}
+              >
+                Back
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                Step {step} of {totalSteps}
+              </div>
+              <div className="w-16" /> {/* Spacer */}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
