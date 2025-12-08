@@ -6,7 +6,7 @@ const SubscriptionManagement = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Redirect to dashboard subscription tab since plan info is now integrated there
+  // Redirect to dashboard services tab since plan info is now integrated there
   useEffect(() => {
     // Preserve any query parameters
     const params = searchParams.toString();

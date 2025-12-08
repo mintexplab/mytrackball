@@ -692,7 +692,7 @@ const Dashboard = () => {
                 className={activeTab === "subscription" ? "bg-gradient-primary text-primary-foreground" : ""}
               >
                 <Package className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Subscription</span>
+                <span className="hidden sm:inline">Services</span>
               </Button>
 
               <Button
