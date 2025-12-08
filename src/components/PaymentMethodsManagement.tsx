@@ -200,8 +200,15 @@ export const PaymentMethodsManagement = () => {
 
     setDeleting(paymentMethodId);
     try {
-      // For now, we'll just show a message since removing cards requires additional Stripe API
-      toast.info("To remove a payment method, please contact support.");
+      const { data, error } = await supabase.functions.invoke("detach-payment-method", {
+        body: { paymentMethodId },
+      });
+      
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      
+      toast.success("Payment method removed successfully");
+      fetchPaymentMethods();
     } catch (err: any) {
       toast.error(err.message || "Failed to remove card");
     } finally {
