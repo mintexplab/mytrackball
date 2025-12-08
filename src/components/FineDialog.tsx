@@ -17,6 +17,7 @@ interface Fine {
   fine_type: string;
   strike_number: number;
   created_at: string;
+  notes: string | null;
 }
 
 interface FineDialogProps {
@@ -54,33 +55,38 @@ export const FineDialog = ({ userId, onResolved }: FineDialogProps) => {
   const totalAmount = pendingFines.reduce((sum, fine) => sum + Number(fine.amount), 0);
   const latestFine = pendingFines[pendingFines.length - 1];
   const strikeNumber = latestFine?.strike_number || 0;
+  const isMockFine = latestFine?.notes?.includes("[MOCK FINE]") || false;
 
   const handleAuthorizeFine = async () => {
-    if (!paymentMethod) {
+    // For mock fines, skip payment method requirement
+    if (!isMockFine && !paymentMethod) {
       setShowPaymentSetup(true);
       return;
     }
 
     setProcessing(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
+      // Only charge if not a mock fine
+      if (!isMockFine) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("Not authenticated");
 
-      // Charge the saved payment method
-      const { data, error } = await supabase.functions.invoke("charge-saved-payment", {
-        body: {
-          paymentMethodId: paymentMethod.id,
-          amount: Math.round(totalAmount * 100), // Convert to cents
-          description: `Fine payment - ${pendingFines.map(f => f.fine_type).join(", ")}`,
-          type: "fine",
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+        // Charge the saved payment method
+        const { data, error } = await supabase.functions.invoke("charge-saved-payment", {
+          body: {
+            paymentMethodId: paymentMethod!.id,
+            amount: Math.round(totalAmount * 100), // Convert to cents
+            description: `Fine payment - ${pendingFines.map(f => f.fine_type).join(", ")}`,
+            type: "fine",
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+      }
 
       // Mark all pending fines as paid
       for (const fine of pendingFines) {
@@ -93,7 +99,7 @@ export const FineDialog = ({ userId, onResolved }: FineDialogProps) => {
           .eq("id", fine.id);
       }
 
-      toast.success("Fine paid successfully");
+      toast.success(isMockFine ? "Mock fine acknowledged" : "Fine paid successfully");
       onResolved();
     } catch (error: any) {
       console.error("Error paying fine:", error);
@@ -148,6 +154,89 @@ export const FineDialog = ({ userId, onResolved }: FineDialogProps) => {
 
   if (pendingFines.length === 0) {
     return null;
+  }
+
+  // For mock fines, skip payment method requirement - go directly to main dialog
+  if (isMockFine) {
+    return (
+      <Dialog open={true} onOpenChange={() => {}}>
+        <DialogContent className="bg-card border-yellow-500/50 max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="text-yellow-500 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Mock Fine Issued
+            </DialogTitle>
+            <DialogDescription>
+              This is a mock fine for testing purposes. No payment is required.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+              <p className="text-sm text-foreground mb-3">
+                <strong>Reason:</strong> {latestFine?.reason}
+              </p>
+              
+              <div className="text-sm text-muted-foreground mb-2">
+                Mock fine amount
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-3xl font-bold text-yellow-500">
+                    {formatCurrency(convertCurrency(totalAmount, currency), currency)}
+                  </span>
+                  {currency !== "CAD" && (
+                    <p className="text-xs text-muted-foreground">≈ ${totalAmount.toFixed(2)} CAD</p>
+                  )}
+                </div>
+                <Badge variant="outline" className="border-yellow-500 text-yellow-500">
+                  Strike {strikeNumber} of 3
+                </Badge>
+              </div>
+            </div>
+
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                ⚠️ This is a <strong>mock fine</strong> for testing. Click "Acknowledge" to dismiss without payment.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleAuthorizeFine}
+                disabled={processing}
+                className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black"
+              >
+                {processing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Acknowledge Mock Fine"
+                )}
+              </Button>
+              <Button
+                onClick={handleCancelFine}
+                disabled={processing}
+                variant="outline"
+                className="flex-1"
+              >
+                {processing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Cancel
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   }
 
   // If no payment method and not showing setup
