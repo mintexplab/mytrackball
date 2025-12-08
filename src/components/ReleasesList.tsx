@@ -4,11 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Clock, Trash2, AlertTriangle, CreditCard } from "lucide-react";
-import ExportDDEX from "./ExportDDEX";
+import { CheckCircle2, XCircle, Clock, Trash2, AlertTriangle, CreditCard, Send } from "lucide-react";
 import ReleaseInfoDialog from "./ReleaseInfoDialog";
 import ReleaseRejectionDialog from "./ReleaseRejectionDialog";
-
 interface ReleasesListProps {
   userId?: string;
   isAdmin: boolean;
@@ -142,6 +140,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
       published: { icon: CheckCircle2, className: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
       "taken down": { icon: XCircle, className: "bg-gray-500/20 text-gray-300 border-gray-500/30" },
       delivering: { icon: Clock, className: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
+      delivered: { icon: Send, className: "bg-teal-500/20 text-teal-300 border-teal-500/30", label: "Delivered" },
       striked: { icon: AlertTriangle, className: "bg-orange-500/20 text-orange-300 border-orange-500/30" },
       "on hold": { icon: AlertTriangle, className: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
     };
@@ -210,7 +209,30 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
                   <ReleaseInfoDialog releaseId={release.id} />
                   {isAdmin ? (
                     <>
-                      <ExportDDEX releaseId={release.id} />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateReleaseStatus(release.id, "paid")}
+                        className="border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-300"
+                      >
+                        Paid
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateReleaseStatus(release.id, "processing")}
+                        className="border-cyan-500/30 hover:bg-cyan-500/20 text-cyan-300"
+                      >
+                        Processing
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateReleaseStatus(release.id, "pay_later")}
+                        className="border-amber-500/30 hover:bg-amber-500/20 text-amber-300"
+                      >
+                        Pay Later
+                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
@@ -232,6 +254,14 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
                         className="border-blue-500/30 hover:bg-blue-500/20 text-blue-300"
                       >
                         Delivering
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateReleaseStatus(release.id, "delivered")}
+                        className="border-teal-500/30 hover:bg-teal-500/20 text-teal-300"
+                      >
+                        Delivered
                       </Button>
                       <Button
                         size="sm"
@@ -261,7 +291,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
                         size="sm"
                         variant="outline"
                         onClick={() => updateReleaseStatus(release.id, "awaiting final qc")}
-                        className="border-cyan-500/30 hover:bg-cyan-500/20 text-cyan-300"
+                        className="border-sky-500/30 hover:bg-sky-500/20 text-sky-300"
                       >
                         Awaiting Final QC
                       </Button>
