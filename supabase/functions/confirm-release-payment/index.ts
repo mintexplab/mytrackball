@@ -62,17 +62,57 @@ serve(async (req) => {
     }
 
     // Update release status to pending
-    const { error: updateError } = await supabaseClient
+    const { data: releaseData, error: updateError } = await supabaseClient
       .from('releases')
       .update({ status: 'pending' })
       .eq('id', releaseId)
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .select('title, artist_name')
+      .single();
 
     if (updateError) {
       throw new Error(`Failed to update release: ${updateError.message}`);
     }
 
     logStep("Release updated to pending", { releaseId });
+
+    // Get track count for the release
+    const { data: tracks } = await supabaseClient
+      .from('tracks')
+      .select('id')
+      .eq('release_id', releaseId);
+
+    const trackCount = tracks?.length || 1;
+
+    // Send payment receipt email
+    try {
+      const receiptResponse = await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-payment-receipt`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+          },
+          body: JSON.stringify({
+            email: user.email,
+            userName: user.user_metadata?.full_name || user.email?.split('@')[0],
+            releaseTitle: releaseData?.title || 'Your Release',
+            artistName: releaseData?.artist_name || 'Artist',
+            amount: paymentIntent.amount,
+            trackCount: trackCount,
+            paymentDate: new Date().toLocaleDateString('en-CA', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            }),
+          }),
+        }
+      );
+      logStep("Payment receipt email sent", { success: receiptResponse.ok });
+    } catch (emailError) {
+      logStep("Failed to send receipt email (non-blocking)", { error: emailError });
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
