@@ -270,18 +270,6 @@ export const RevenueOverview = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/50 border-border/50">
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Subscriptions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{formatCurrency(revenue.subscriptionRevenue)}</p>
-            <p className="text-xs text-muted-foreground">Track allowance plans</p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Recent Payments */}
