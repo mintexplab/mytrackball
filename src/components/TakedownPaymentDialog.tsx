@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AlertTriangle, CreditCard, ExternalLink, Loader2, Shield, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useSavedPaymentMethod } from "@/hooks/useSavedPaymentMethod";
+import { SavedPaymentConfirmDialog } from "./SavedPaymentConfirmDialog";
 
 interface TakedownPaymentDialogProps {
   open: boolean;
@@ -19,6 +21,7 @@ interface TakedownPaymentDialogProps {
   releaseId: string;
   releaseTitle: string;
   artistName: string;
+  onSuccess?: () => void;
 }
 
 const TAKEDOWN_FEE = 19.85;
@@ -29,8 +32,19 @@ export const TakedownPaymentDialog = ({
   releaseId,
   releaseTitle,
   artistName,
+  onSuccess,
 }: TakedownPaymentDialogProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [showSavedPaymentDialog, setShowSavedPaymentDialog] = useState(false);
+  const { paymentMethod, loading: loadingPaymentMethod, hasPaymentMethod } = useSavedPaymentMethod();
+
+  // Check for saved payment method when dialog opens
+  useEffect(() => {
+    if (open && hasPaymentMethod && !loadingPaymentMethod) {
+      setShowSavedPaymentDialog(true);
+      onOpenChange(false);
+    }
+  }, [open, hasPaymentMethod, loadingPaymentMethod]);
 
   const handlePayment = async () => {
     setIsLoading(true);
@@ -59,6 +73,34 @@ export const TakedownPaymentDialog = ({
       setIsLoading(false);
     }
   };
+
+  const handleSavedPaymentSuccess = () => {
+    toast.success("Takedown request submitted successfully!");
+    onSuccess?.();
+  };
+
+  const handleUseDifferentCard = () => {
+    setShowSavedPaymentDialog(false);
+    onOpenChange(true);
+  };
+
+  // If we have a saved payment method, show the quick payment dialog instead
+  if (showSavedPaymentDialog && paymentMethod) {
+    return (
+      <SavedPaymentConfirmDialog
+        open={showSavedPaymentDialog}
+        onOpenChange={setShowSavedPaymentDialog}
+        paymentMethod={paymentMethod}
+        amount={TAKEDOWN_FEE}
+        description={`Takedown fee for "${releaseTitle}"`}
+        releaseId={releaseId}
+        releaseTitle={releaseTitle}
+        type="takedown"
+        onSuccess={handleSavedPaymentSuccess}
+        onUseDifferentCard={handleUseDifferentCard}
+      />
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -102,10 +144,17 @@ export const TakedownPaymentDialog = ({
             </CardContent>
           </Card>
 
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Shield className="w-4 h-4" />
-            <span>Payments are secure and encrypted by Stripe</span>
-          </div>
+          {loadingPaymentMethod ? (
+            <div className="flex items-center justify-center py-2">
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Checking saved payment methods...</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Shield className="w-4 h-4" />
+              <span>Payments are secure and encrypted by Stripe</span>
+            </div>
+          )}
 
           <div className="flex gap-3">
             <Button
@@ -119,7 +168,7 @@ export const TakedownPaymentDialog = ({
             <Button
               className="flex-1"
               onClick={handlePayment}
-              disabled={isLoading}
+              disabled={isLoading || loadingPaymentMethod}
             >
               {isLoading ? (
                 <>

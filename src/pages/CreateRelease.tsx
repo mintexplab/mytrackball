@@ -16,6 +16,8 @@ import { useS3Upload } from "@/hooks/useS3Upload";
 import { Confetti } from "@/components/Confetti";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { ReleasePaymentForm } from "@/components/ReleasePaymentForm";
+import { useSavedPaymentMethod } from "@/hooks/useSavedPaymentMethod";
+import { SavedPaymentConfirmDialog } from "@/components/SavedPaymentConfirmDialog";
 
 // Pricing constants (CAD)
 const TRACK_FEE = 5;
@@ -132,6 +134,7 @@ const COUNTRIES = [
 const CreateRelease = () => {
   const navigate = useNavigate();
   const { uploadFile, uploading, uploadProgress } = useS3Upload();
+  const { paymentMethod, hasPaymentMethod, loading: loadingPaymentMethod } = useSavedPaymentMethod();
   const [releaseType, setReleaseType] = useState<ReleaseType>(null);
   const [tracks, setTracks] = useState<Track[]>([{ 
     id: "1", 
@@ -153,6 +156,8 @@ const CreateRelease = () => {
   const [showPricingConfirm, setShowPricingConfirm] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showSavedPaymentDialog, setShowSavedPaymentDialog] = useState(false);
+  const [pendingReleaseId, setPendingReleaseId] = useState<string | null>(null);
   const [paymentData, setPaymentData] = useState<{
     clientSecret: string;
     paymentIntentId: string;
@@ -592,31 +597,38 @@ const CreateRelease = () => {
 
       await supabase.from("tracks").insert(trackData);
 
-      // Create PaymentIntent for embedded payment
-      const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
-        'create-payment-intent',
-        {
-          body: {
-            trackCount: tracks.length,
-            releaseTitle: validatedData.songTitle,
-            releaseId: release.id,
-          },
-        }
-      );
-
-      if (paymentError) throw paymentError;
-
-      if (paymentData?.clientSecret && paymentData?.publishableKey) {
-        setPaymentData({
-          clientSecret: paymentData.clientSecret,
-          paymentIntentId: paymentData.paymentIntentId,
-          releaseId: release.id,
-          publishableKey: paymentData.publishableKey,
-        });
+      // Check if user has a saved payment method
+      if (hasPaymentMethod && paymentMethod) {
+        setPendingReleaseId(release.id);
         setShowPricingConfirm(false);
-        setShowPaymentForm(true);
+        setShowSavedPaymentDialog(true);
       } else {
-        throw new Error("Failed to initialize payment");
+        // Create PaymentIntent for embedded payment
+        const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
+          'create-payment-intent',
+          {
+            body: {
+              trackCount: tracks.length,
+              releaseTitle: validatedData.songTitle,
+              releaseId: release.id,
+            },
+          }
+        );
+
+        if (paymentError) throw paymentError;
+
+        if (paymentData?.clientSecret && paymentData?.publishableKey) {
+          setPaymentData({
+            clientSecret: paymentData.clientSecret,
+            paymentIntentId: paymentData.paymentIntentId,
+            releaseId: release.id,
+            publishableKey: paymentData.publishableKey,
+          });
+          setShowPricingConfirm(false);
+          setShowPaymentForm(true);
+        } else {
+          throw new Error("Failed to initialize payment");
+        }
       }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -628,6 +640,50 @@ const CreateRelease = () => {
       setUploadingFile(null);
       setLoading(false);
       setCheckoutLoading(false);
+    }
+  };
+
+  const handleSavedPaymentSuccess = () => {
+    setShowConfetti(true);
+    toast.success("Release submitted successfully!");
+    localStorage.removeItem('release-draft');
+    setShowSavedPaymentDialog(false);
+    setPendingReleaseId(null);
+    setTimeout(() => {
+      navigate("/dashboard?release_submitted=true");
+    }, 2000);
+  };
+
+  const handleUseDifferentCard = async () => {
+    setShowSavedPaymentDialog(false);
+    if (!pendingReleaseId) return;
+
+    // Fall back to regular payment flow
+    try {
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
+        'create-payment-intent',
+        {
+          body: {
+            trackCount: tracks.length,
+            releaseTitle: formData.songTitle,
+            releaseId: pendingReleaseId,
+          },
+        }
+      );
+
+      if (paymentError) throw paymentError;
+
+      if (paymentData?.clientSecret && paymentData?.publishableKey) {
+        setPaymentData({
+          clientSecret: paymentData.clientSecret,
+          paymentIntentId: paymentData.paymentIntentId,
+          releaseId: pendingReleaseId,
+          publishableKey: paymentData.publishableKey,
+        });
+        setShowPaymentForm(true);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to initialize payment');
     }
   };
 
@@ -1732,6 +1788,22 @@ const CreateRelease = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Saved Payment Quick Dialog */}
+      {paymentMethod && (
+        <SavedPaymentConfirmDialog
+          open={showSavedPaymentDialog}
+          onOpenChange={setShowSavedPaymentDialog}
+          paymentMethod={paymentMethod}
+          amount={totalCost}
+          description={`Distribution fee for "${formData.songTitle}" (${trackCount} track${trackCount > 1 ? 's' : ''})`}
+          releaseId={pendingReleaseId || undefined}
+          releaseTitle={formData.songTitle}
+          type="release"
+          onSuccess={handleSavedPaymentSuccess}
+          onUseDifferentCard={handleUseDifferentCard}
+        />
+      )}
 
       {/* Pay Later Confirmation Dialog */}
       <Dialog open={showPayLaterConfirm} onOpenChange={setShowPayLaterConfirm}>
