@@ -12,9 +12,11 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-RELEASE-CHECKOUT] ${step}${detailsStr}`);
 };
 
-// Pricing in cents (CAD)
-const TRACK_FEE_CENTS = 500; // $5 CAD per track
-const UPC_FEE_CENTS = 800; // $8 CAD UPC fee
+// Pricing in cents (CAD) by tier
+const PRICING = {
+  eco: { trackFee: 100, upcFee: 400 },    // $1 CAD per track, $4 UPC
+  standard: { trackFee: 500, upcFee: 800 }, // $5 CAD per track, $8 UPC
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -44,10 +46,11 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const { trackCount, releaseTitle, releaseId } = await req.json();
+    const { trackCount, releaseTitle, releaseId, pricingTier = "standard" } = await req.json();
     if (!trackCount || trackCount < 1) throw new Error("Track count is required and must be at least 1");
     if (!releaseTitle) throw new Error("Release title is required");
-    logStep("Request data received", { trackCount, releaseTitle, releaseId });
+    if (!["eco", "standard"].includes(pricingTier)) throw new Error("Invalid pricing tier");
+    logStep("Request data received", { trackCount, releaseTitle, releaseId, pricingTier });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     
@@ -61,14 +64,17 @@ serve(async (req) => {
       logStep("No existing customer found");
     }
 
-    // Calculate fees
-    const trackTotal = TRACK_FEE_CENTS * trackCount;
-    const totalAmount = trackTotal + UPC_FEE_CENTS;
+    // Calculate fees based on tier
+    const tierPricing = PRICING[pricingTier as keyof typeof PRICING];
+    const trackTotal = tierPricing.trackFee * trackCount;
+    const totalAmount = trackTotal + tierPricing.upcFee;
+    const tierName = pricingTier === "eco" ? "Trackball Eco" : "Trackball Standard";
 
     logStep("Calculated fees", { 
+      pricingTier,
       trackCount, 
       trackTotal: trackTotal / 100, 
-      upcFee: UPC_FEE_CENTS / 100, 
+      upcFee: tierPricing.upcFee / 100, 
       total: totalAmount / 100 
     });
 
@@ -83,10 +89,10 @@ serve(async (req) => {
           price_data: {
             currency: "cad",
             product_data: {
-              name: `Track Fee (${trackCount} track${trackCount > 1 ? 's' : ''})`,
+              name: `${tierName} - Track Fee (${trackCount} track${trackCount > 1 ? 's' : ''})`,
               description: `Distribution fee for "${releaseTitle}"`,
             },
-            unit_amount: TRACK_FEE_CENTS,
+            unit_amount: tierPricing.trackFee,
           },
           quantity: trackCount,
         },
@@ -94,10 +100,10 @@ serve(async (req) => {
           price_data: {
             currency: "cad",
             product_data: {
-              name: "UPC Fee",
+              name: `${tierName} - UPC Fee`,
               description: "Universal Product Code for your release",
             },
-            unit_amount: UPC_FEE_CENTS,
+            unit_amount: tierPricing.upcFee,
           },
           quantity: 1,
         },
@@ -110,6 +116,7 @@ serve(async (req) => {
         release_id: releaseId || '',
         track_count: trackCount.toString(),
         release_title: releaseTitle,
+        pricing_tier: pricingTier,
       },
     });
 

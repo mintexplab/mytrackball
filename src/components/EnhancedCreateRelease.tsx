@@ -297,6 +297,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
             trackCount: tracks.length,
             releaseTitle: formData.title,
             releaseId: release.id,
+            pricingTier,
           },
         }
       );
