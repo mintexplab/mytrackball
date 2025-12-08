@@ -9,6 +9,8 @@ import { DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { CollaboratorsManagement } from "./CollaboratorsManagement";
 import { z } from "zod";
+import { usePreferredCurrency } from "@/hooks/usePreferredCurrency";
+import { convertCurrency, formatCurrency } from "./CurrencySelector";
 
 const PartnerRoyaltySplitDisplay = ({ userId }: { userId: string }) => {
   const [splitInfo, setSplitInfo] = useState<{ royalty_split_percentage: number } | null>(null);
@@ -66,6 +68,7 @@ const RoyaltiesTab = ({ userId }: RoyaltiesTabProps) => {
   const [loading, setLoading] = useState(true);
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [payoutNotes, setPayoutNotes] = useState("");
+  const { currency } = usePreferredCurrency();
 
   useEffect(() => {
     fetchRoyalties();
@@ -195,8 +198,13 @@ const RoyaltiesTab = ({ userId }: RoyaltiesTabProps) => {
         </CardHeader>
         <CardContent>
           <p className="text-4xl font-bold text-primary">
-            ${totalEarnings.toFixed(2)} <span className="text-xl text-muted-foreground">CAD</span>
+            {formatCurrency(convertCurrency(totalEarnings, currency), currency)}
           </p>
+          {currency !== "CAD" && (
+            <p className="text-sm text-muted-foreground mt-1">
+              ≈ ${totalEarnings.toFixed(2)} CAD
+            </p>
+          )}
           {/* Show custom royalty split for partner accounts */}
           <PartnerRoyaltySplitDisplay userId={userId} />
         </CardContent>
@@ -224,8 +232,13 @@ const RoyaltiesTab = ({ userId }: RoyaltiesTabProps) => {
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-semibold text-lg text-foreground">
-                          ${parseFloat(royalty.amount.toString()).toFixed(2)} CAD
+                          {formatCurrency(convertCurrency(parseFloat(royalty.amount.toString()), currency), currency)}
                         </p>
+                        {currency !== "CAD" && (
+                          <p className="text-xs text-muted-foreground">
+                            ≈ ${parseFloat(royalty.amount.toString()).toFixed(2)} CAD
+                          </p>
+                        )}
                         <p className="text-sm text-muted-foreground mt-1">
                           Period: {royalty.period}
                         </p>
@@ -264,7 +277,12 @@ const RoyaltiesTab = ({ userId }: RoyaltiesTabProps) => {
           <div className="space-y-4">
             <div className="p-4 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground">Available balance</p>
-              <p className="text-2xl font-bold">${totalEarnings.toFixed(2)}</p>
+              <p className="text-2xl font-bold">
+                {formatCurrency(convertCurrency(totalEarnings, currency), currency)}
+              </p>
+              {currency !== "CAD" && (
+                <p className="text-xs text-muted-foreground">≈ ${totalEarnings.toFixed(2)} CAD</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="notes">Notes (optional)</Label>
