@@ -646,10 +646,10 @@ const ClientInvitations = ({ permissions }: ClientInvitationsProps) => {
               isLocked={true}
               currentLimit={userCount}
               maxLimit={permissions.maxUsers}
-              requiredPlan={permissions.planTier === "free" ? "Trackball Lite or higher" : "higher tier"}
+              requiredPlan={permissions.accountType === "artist" ? "Label Account" : "Contact support"}
             />
             <p className="text-sm text-muted-foreground pr-28">
-              You've reached your plan limit of {permissions.maxUsers} user(s). Upgrade to add more users to your account.
+              You've reached your plan limit of {permissions.maxUsers} user(s).
             </p>
           </div>
         )}

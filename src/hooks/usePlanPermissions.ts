@@ -16,9 +16,12 @@ export interface PlanPermissions {
   canAccessTickets: boolean;
   hasAccountManager: boolean;
   
+  // Artist-specific
+  maxArtistNames: number | null; // null = unlimited
+  
   // Visual
   planDisplayName: string;
-  planTier: "free" | "lite" | "signature" | "prestige" | "partner";
+  accountType: "artist" | "label";
 }
 
 export const usePlanPermissions = (
@@ -26,163 +29,41 @@ export const usePlanPermissions = (
   profile: any
 ): PlanPermissions => {
   return useMemo(() => {
-    const planName = userPlan?.plan?.name?.toLowerCase() || "";
-    const labelType = profile?.label_type?.toLowerCase() || "";
+    const accountType = profile?.account_type?.toLowerCase() || "";
+    const isLabelAccount = accountType === "label";
     
-    // Label plans take precedence over user plans
-    const isLabelAccount = labelType.includes("label");
-    
-    // Label Free
-    if (labelType === "label free") {
-      return {
-        canAddUsers: false,
-        maxUsers: 1,
-        canCreateLabels: true,
-        maxLabels: 1,
-        canCustomizeLabels: false,
-        maxUsersPerLabel: 1,
-        canAccessPublishing: false,
-        canAccessTickets: false,
-        hasAccountManager: false,
-        planDisplayName: "Label Free",
-        planTier: "free",
-      };
-    }
-    
-    // Label Lite
-    if (labelType === "label lite") {
-      return {
-        canAddUsers: true,
-        maxUsers: 2,
-        canCreateLabels: true,
-        maxLabels: 1,
-        canCustomizeLabels: false,
-        maxUsersPerLabel: 2,
-        canAccessPublishing: false,
-        canAccessTickets: false,
-        hasAccountManager: false,
-        planDisplayName: "Label Lite",
-        planTier: "lite",
-      };
-    }
-    
-    // Label Signature
-    if (labelType === "label signature") {
-      return {
-        canAddUsers: true,
-        maxUsers: 2,
-        canCreateLabels: true,
-        maxLabels: 2,
-        canCustomizeLabels: true,
-        maxUsersPerLabel: 2,
-        canAccessPublishing: false,
-        canAccessTickets: true,
-        hasAccountManager: true,
-        planDisplayName: "Label Signature",
-        planTier: "signature",
-      };
-    }
-    
-    // Label Prestige & Partner
-    if (labelType === "label prestige" || labelType === "label partner") {
+    // Label accounts get full permissions
+    if (isLabelAccount) {
       return {
         canAddUsers: true,
         maxUsers: null, // unlimited
         canCreateLabels: true,
         maxLabels: null, // unlimited
-        canCustomizeLabels: true,
+        canCustomizeLabels: false, // no label customization
         maxUsersPerLabel: null, // unlimited
         canAccessPublishing: true,
         canAccessTickets: true,
         hasAccountManager: true,
-        planDisplayName: labelType === "label partner" ? "Label Partner" : "Label Prestige",
-        planTier: labelType === "label partner" ? "partner" : "prestige",
+        maxArtistNames: null, // unlimited
+        planDisplayName: "Label Account",
+        accountType: "label",
       };
     }
     
-    // Trackball Free
-    if (planName === "trackball free") {
-      return {
-        canAddUsers: false,
-        maxUsers: 1,
-        canCreateLabels: false,
-        maxLabels: 0,
-        canCustomizeLabels: false,
-        maxUsersPerLabel: 0,
-        canAccessPublishing: false,
-        canAccessTickets: false,
-        hasAccountManager: false,
-        planDisplayName: "Trackball Free",
-        planTier: "free",
-      };
-    }
-    
-    // Trackball Lite
-    if (planName === "trackball lite") {
-      return {
-        canAddUsers: false,
-        maxUsers: 1,
-        canCreateLabels: false,
-        maxLabels: 0,
-        canCustomizeLabels: false,
-        maxUsersPerLabel: 0,
-        canAccessPublishing: false,
-        canAccessTickets: false,
-        hasAccountManager: false,
-        planDisplayName: "Trackball Lite",
-        planTier: "lite",
-      };
-    }
-    
-    // Trackball Signature
-    if (planName === "trackball signature") {
-      return {
-        canAddUsers: false,
-        maxUsers: 1,
-        canCreateLabels: false,
-        maxLabels: 0,
-        canCustomizeLabels: false,
-        maxUsersPerLabel: 0,
-        canAccessPublishing: false,
-        canAccessTickets: true,
-        hasAccountManager: true,
-        planDisplayName: "Trackball Signature",
-        planTier: "signature",
-      };
-    }
-    
-    // Trackball Prestige
-    if (planName === "trackball prestige") {
-      return {
-        canAddUsers: true,
-        maxUsers: 3,
-        canCreateLabels: true,
-        maxLabels: 1,
-        canCustomizeLabels: false,
-        maxUsersPerLabel: 1,
-        canAccessPublishing: false,
-        canAccessTickets: true,
-        hasAccountManager: true,
-        planDisplayName: "Trackball Prestige",
-        planTier: "prestige",
-      };
-    }
-
-    // Note: "Partner" only exists as "Label Partner" designation, not as an artist plan
-    
-    // Default/fallback (treat as free)
+    // Artist accounts have limited permissions
     return {
       canAddUsers: false,
       maxUsers: 1,
-      canCreateLabels: false,
-      maxLabels: 0,
+      canCreateLabels: true,
+      maxLabels: 1,
       canCustomizeLabels: false,
       maxUsersPerLabel: 0,
       canAccessPublishing: false,
-      canAccessTickets: false,
+      canAccessTickets: true,
       hasAccountManager: false,
-      planDisplayName: "Free Plan",
-      planTier: "free",
+      maxArtistNames: 3, // can have up to 3 artist names
+      planDisplayName: "Artist Account",
+      accountType: "artist",
     };
   }, [userPlan, profile]);
 };

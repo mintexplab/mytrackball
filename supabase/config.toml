@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.generate-smartlink]
 verify_jwt = false
+
+[functions.create-release-checkout]
+verify_jwt = false

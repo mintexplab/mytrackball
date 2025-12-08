@@ -62,22 +62,19 @@ export const InitialAccountSetup = ({ onComplete }: InitialAccountSetupProps) =>
       const profileUpdate: any = {
         full_name: formData.fullName,
         account_type: isArtist ? "artist" : "label",
+        onboarding_completed: true,
       };
 
       if (isArtist) {
         profileUpdate.artist_name = formData.artistName;
       } else {
         profileUpdate.label_name = formData.labelName;
-        profileUpdate.label_type = "Label Free";
       }
 
-      // Update profile and mark onboarding as started
+      // Update profile
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({
-          ...profileUpdate,
-          onboarding_completed: false
-        })
+        .update(profileUpdate)
         .eq("id", user.id);
 
       if (profileError) throw profileError;
@@ -113,50 +110,6 @@ export const InitialAccountSetup = ({ onComplete }: InitialAccountSetupProps) =>
           if (membershipError) {
             console.error('Error creating membership:', membershipError);
           }
-        }
-      }
-
-      // Find the appropriate plan
-      const planName = isArtist ? "Trackball Free" : "Label Free";
-      const { data: planData, error: planFetchError } = await supabase
-        .from("plans")
-        .select("id")
-        .eq("name", planName)
-        .maybeSingle();
-
-      if (planFetchError) throw planFetchError;
-
-      // If plan exists, assign it
-      if (planData) {
-        // Check if user already has a plan
-        const { data: existingPlan } = await supabase
-          .from("user_plans")
-          .select("id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (existingPlan) {
-          // Update existing plan
-          await supabase
-            .from("user_plans")
-            .update({
-              plan_id: planData.id,
-              plan_name: planName,
-              status: "active",
-              started_at: new Date().toISOString(),
-            })
-            .eq("user_id", user.id);
-        } else {
-          // Create new plan entry
-          await supabase
-            .from("user_plans")
-            .insert({
-              user_id: user.id,
-              plan_id: planData.id,
-              plan_name: planName,
-              status: "active",
-              started_at: new Date().toISOString(),
-            });
         }
       }
 
@@ -249,7 +202,7 @@ export const InitialAccountSetup = ({ onComplete }: InitialAccountSetupProps) =>
                         </Label>
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">
-                        I'm an individual artist distributing my music
+                        Release music under up to 3 artist names with 1 label
                       </p>
                     </div>
                   </div>
@@ -276,7 +229,7 @@ export const InitialAccountSetup = ({ onComplete }: InitialAccountSetupProps) =>
                         </Label>
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">
-                        I'm a label managing multiple artists
+                        Full access to manage unlimited artists and labels
                       </p>
                     </div>
                   </div>
@@ -303,7 +256,7 @@ export const InitialAccountSetup = ({ onComplete }: InitialAccountSetupProps) =>
                       autoFocus
                     />
                     <p className="text-xs text-muted-foreground">
-                      This is how you'll be credited on your releases
+                      This is how you'll be credited on your releases. You can add up to 3 artist names total.
                     </p>
                   </>
                 ) : (
@@ -327,11 +280,11 @@ export const InitialAccountSetup = ({ onComplete }: InitialAccountSetupProps) =>
               </div>
 
               <div className="p-3 bg-muted rounded-md">
-                <p className="text-sm text-muted-foreground">
-                  {formData.accountType === "artist"
-                    ? "You'll be assigned to Trackball Free with access to basic distribution features."
-                    : "You'll be assigned to Label Free with tools to manage your label and artists."}
-                </p>
+                <p className="text-sm font-medium mb-2">Distribution Pricing</p>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>• $5 CAD per track</p>
+                  <p>• $8 CAD UPC fee per release</p>
+                </div>
               </div>
             </div>
           )}
