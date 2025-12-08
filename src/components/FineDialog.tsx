@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { AlertTriangle, CreditCard, Loader2, XCircle } from "lucide-react";
 import { PaymentMethodSetup } from "./PaymentMethodSetup";
 import { useSavedPaymentMethod } from "@/hooks/useSavedPaymentMethod";
+import { usePreferredCurrency } from "@/hooks/usePreferredCurrency";
+import { convertCurrency, formatCurrency } from "./CurrencySelector";
 
 interface Fine {
   id: string;
@@ -28,6 +30,7 @@ export const FineDialog = ({ userId, onResolved }: FineDialogProps) => {
   const [processing, setProcessing] = useState(false);
   const [showPaymentSetup, setShowPaymentSetup] = useState(false);
   const { paymentMethod, loading: paymentLoading, refetch: refetchPayment } = useSavedPaymentMethod();
+  const { currency } = usePreferredCurrency();
 
   useEffect(() => {
     fetchPendingFines();
@@ -168,9 +171,14 @@ export const FineDialog = ({ userId, onResolved }: FineDialogProps) => {
                 <strong>Reason:</strong> {latestFine?.reason}
               </p>
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-destructive">
-                  ${totalAmount.toFixed(2)} CAD
-                </span>
+                <div>
+                  <span className="text-2xl font-bold text-destructive">
+                    {formatCurrency(convertCurrency(totalAmount, currency), currency)}
+                  </span>
+                  {currency !== "CAD" && (
+                    <p className="text-xs text-muted-foreground">≈ ${totalAmount.toFixed(2)} CAD</p>
+                  )}
+                </div>
                 <Badge variant="destructive">
                   Strike {strikeNumber} of 3
                 </Badge>
@@ -245,9 +253,14 @@ export const FineDialog = ({ userId, onResolved }: FineDialogProps) => {
             </div>
             
             <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold text-destructive">
-                ${totalAmount.toFixed(2)} CAD
-              </span>
+              <div>
+                <span className="text-3xl font-bold text-destructive">
+                  {formatCurrency(convertCurrency(totalAmount, currency), currency)}
+                </span>
+                {currency !== "CAD" && (
+                  <p className="text-xs text-muted-foreground">≈ ${totalAmount.toFixed(2)} CAD</p>
+                )}
+              </div>
               <Badge variant="destructive">
                 Strike {strikeNumber} of 3
               </Badge>

@@ -5,6 +5,8 @@ import { Receipt, ExternalLink, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { usePreferredCurrency } from "@/hooks/usePreferredCurrency";
+import { convertCurrency, formatCurrency as formatCurrencyDisplay } from "./CurrencySelector";
 
 interface Payment {
   id: string;
@@ -52,6 +54,7 @@ export const PaymentHistory = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const { currency: preferredCurrency } = usePreferredCurrency();
 
   useEffect(() => {
     fetchPaymentHistory();
@@ -142,9 +145,16 @@ export const PaymentHistory = () => {
                     {transaction.status === "succeeded" ? "Paid" : transaction.status}
                   </Badge>
                   
-                  <span className="font-semibold text-foreground whitespace-nowrap">
-                    {formatCurrency(transaction.amount, transaction.currency)}
-                  </span>
+                  <div className="text-right">
+                    <span className="font-semibold text-foreground whitespace-nowrap">
+                      {formatCurrencyDisplay(convertCurrency(transaction.amount / 100, preferredCurrency), preferredCurrency)}
+                    </span>
+                    {preferredCurrency !== "CAD" && (
+                      <p className="text-xs text-muted-foreground">
+                        ≈ {formatCurrency(transaction.amount, transaction.currency)}
+                      </p>
+                    )}
+                  </div>
 
                   {transaction.type === "invoice" && transaction.invoiceUrl && (
                     <Button
