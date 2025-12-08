@@ -8,7 +8,6 @@ export interface PlanPermissions {
   // Label management
   canCreateLabels: boolean;
   maxLabels: number | null; // null = unlimited
-  canCustomizeLabels: boolean;
   maxUsersPerLabel: number | null;
   
   // Features
@@ -39,7 +38,6 @@ export const usePlanPermissions = (
         maxUsers: null, // unlimited
         canCreateLabels: true,
         maxLabels: null, // unlimited
-        canCustomizeLabels: false, // no label customization
         maxUsersPerLabel: null, // unlimited
         canAccessPublishing: true,
         canAccessTickets: true,
@@ -56,7 +54,6 @@ export const usePlanPermissions = (
       maxUsers: 1,
       canCreateLabels: true,
       maxLabels: 1,
-      canCustomizeLabels: false,
       maxUsersPerLabel: 0,
       canAccessPublishing: false,
       canAccessTickets: true,

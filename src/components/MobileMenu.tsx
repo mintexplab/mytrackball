@@ -1,4 +1,4 @@
-import { Menu, Home, Package, Users, Bell, DollarSign, HelpCircle, FileMusic, Upload, Building2, Link as LinkIcon, Palette } from "lucide-react";
+import { Menu, Home, Package, Users, Bell, DollarSign, HelpCircle, FileMusic, Upload, Building2, Link as LinkIcon, Palette, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -235,7 +235,7 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false,
               Royalties
             </Button>
 
-            {(permissions.canAddUsers || permissions.canCreateLabels || permissions.canCustomizeLabels) && (
+            {(permissions.canAddUsers || permissions.canCreateLabels || permissions.accountType === "artist") && (
               <>
                 <Separator className="my-4" />
                 <p className="text-xs text-muted-foreground px-3 font-medium">Team</p>
@@ -262,14 +262,14 @@ export const MobileMenu = ({ activeTab, setActiveTab, userPlan, isAdmin = false,
                   </Button>
                 )}
 
-                {permissions.canCustomizeLabels && (
+                {permissions.accountType === "artist" && (
                   <Button
-                    variant={activeTab === "label-customization" ? "default" : "ghost"}
+                    variant={activeTab === "artist-names" ? "default" : "ghost"}
                     className="w-full justify-start"
-                    onClick={() => handleTabChange("label-customization")}
+                    onClick={() => handleTabChange("artist-names")}
                   >
-                    <Palette className="w-4 h-4 mr-2" />
-                    Label Customization
+                    <Music className="w-4 h-4 mr-2" />
+                    Artist Names
                   </Button>
                 )}
               </>

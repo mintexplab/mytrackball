@@ -8,12 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/lib/toast-with-sound";
-import { ArrowLeft, Upload, Plus, X, Check, Save, Music, Disc3, Album as AlbumIcon, Trash2 } from "lucide-react";
+import { ArrowLeft, Upload, Plus, X, Check, Save, Music, Disc3, Album as AlbumIcon, Trash2, CreditCard, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { useS3Upload } from "@/hooks/useS3Upload";
 import { Confetti } from "@/components/Confetti";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
+
+// Pricing constants (CAD)
+const TRACK_FEE = 5;
+const UPC_FEE = 8;
 
 type ReleaseType = "single" | "ep" | "album" | null;
 
@@ -144,6 +149,13 @@ const CreateRelease = () => {
   const [userLabelName, setUserLabelName] = useState<string>("");
   const [profile, setProfile] = useState<any>(null);
   const [userPlan, setUserPlan] = useState<any>(null);
+  const [showPricingConfirm, setShowPricingConfirm] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  
+  // Calculate pricing
+  const trackCount = tracks.length;
+  const trackTotal = TRACK_FEE * trackCount;
+  const totalCost = trackTotal + UPC_FEE;
   
   // Fetch user's active label name and permissions
   useEffect(() => {
@@ -483,38 +495,47 @@ const CreateRelease = () => {
     }
   }, [releaseType]);
 
-  const handleSubmit = async () => {
+  // Show pricing confirmation before proceeding
+  const handleReviewSubmission = () => {
+    try {
+      releaseSchema.parse(formData);
+      
+      if (!artworkFile) {
+        toast.error("Please upload artwork");
+        return;
+      }
+      
+      const missingAudio = tracks.some(t => !t.audioFile);
+      if (missingAudio) {
+        toast.error("Please upload audio files for all tracks");
+        return;
+      }
+
+      setShowPricingConfirm(true);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      }
+    }
+  };
+
+  const handleProceedToPayment = async () => {
+    setCheckoutLoading(true);
     setLoading(true);
     try {
       const validatedData = releaseSchema.parse(formData);
       
-      if (!artworkFile) {
-        toast.error("Please upload artwork");
-        setLoading(false);
-        return;
-      }
-      
-      // Check all tracks have audio
-      const missingAudio = tracks.some(t => !t.audioFile);
-      if (missingAudio) {
-        toast.error("Please upload audio files for all tracks");
-        setLoading(false);
-        return;
-      }
-
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Upload artwork to S3 (path must start with user.id for security)
+      // Upload artwork to S3
       setUploadingFile('artwork');
       const artworkPath = `${user.id}/release-artwork/${Date.now()}.jpg`;
-      const artworkUrl = await uploadFile({ file: artworkFile, path: artworkPath });
+      const artworkUrl = await uploadFile({ file: artworkFile!, path: artworkPath });
       setUploadingFile(null);
-      if (!artworkUrl) {
-        throw new Error("Artwork upload failed - please try again");
-      }
+      if (!artworkUrl) throw new Error("Artwork upload failed");
 
-      // Upload all track audio files to S3 (path must start with user.id for security)
+      // Upload all track audio files
       setUploadingFile('audio');
       const uploadedTracks = await Promise.all(
         tracks.map(async (track) => {
@@ -527,15 +548,11 @@ const CreateRelease = () => {
       setUploadingFile(null);
 
       const failedUploads = uploadedTracks.filter(t => !t || !t.audioUrl);
-      if (failedUploads.length > 0) {
-        throw new Error("Some audio uploads failed - please try again");
-      }
+      if (failedUploads.length > 0) throw new Error("Some audio uploads failed");
 
-      // Show success confetti after both artwork and audio uploads complete
       setShowConfetti(true);
-      toast.success("🎉 Uploads complete! Finalizing submission...");
 
-      // Create release
+      // Create release with pending_payment status
       const { data: release, error: releaseError } = await supabase.from("releases").insert({
         user_id: user.id,
         title: validatedData.songTitle,
@@ -550,7 +567,7 @@ const CreateRelease = () => {
         label_name: validatedData.label,
         notes: validatedData.additionalNotes,
         isrc: uploadedTracks[0]?.isrc || null,
-        status: 'pending'
+        status: 'pending_payment'
       }).select().single();
 
       if (releaseError) throw releaseError;
@@ -567,14 +584,31 @@ const CreateRelease = () => {
         contributor: track!.contributors.map(c => `${c.name} (${c.role})`).join(", ") || null
       }));
 
-      const { error: tracksError } = await supabase.from("tracks").insert(trackData);
-      if (tracksError) throw tracksError;
+      await supabase.from("tracks").insert(trackData);
 
-      // Clear draft after successful submission
-      localStorage.removeItem('release-draft');
-      
-      toast.success("Release submitted successfully!");
-      navigate("/dashboard");
+      // Create Stripe checkout session
+      const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke(
+        'create-release-checkout',
+        {
+          body: {
+            trackCount: tracks.length,
+            releaseTitle: validatedData.songTitle,
+            releaseId: release.id,
+          },
+        }
+      );
+
+      if (checkoutError) throw checkoutError;
+
+      if (checkoutData?.url) {
+        localStorage.removeItem('release-draft');
+        window.open(checkoutData.url, '_blank');
+        toast.success("Redirecting to payment...");
+        setShowPricingConfirm(false);
+        navigate("/dashboard");
+      } else {
+        throw new Error("No checkout URL received");
+      }
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -584,6 +618,7 @@ const CreateRelease = () => {
     } finally {
       setUploadingFile(null);
       setLoading(false);
+      setCheckoutLoading(false);
     }
   };
 
@@ -1531,12 +1566,79 @@ const CreateRelease = () => {
               Next
             </Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={loading || uploading}>
-              {loading ? "Submitting..." : "Submit Release"}
+            <Button onClick={handleReviewSubmission} disabled={loading || uploading}>
+              Review & Pay (${totalCost.toFixed(2)} CAD)
             </Button>
           )}
         </div>
       </div>
+
+      {/* Pricing Confirmation Dialog */}
+      <Dialog open={showPricingConfirm} onOpenChange={setShowPricingConfirm}>
+        <DialogContent className="sm:max-w-[450px] bg-card border-primary/20">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+              <CreditCard className="w-6 h-6 text-primary" />
+              Confirm Submission
+            </DialogTitle>
+            <DialogDescription>
+              Review your release fees before proceeding to payment
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="p-4 rounded-lg bg-muted/30 border border-border">
+              <h4 className="font-semibold mb-2">{formData.songTitle || "Untitled Release"}</h4>
+              <p className="text-sm text-muted-foreground">{formData.artistName}</p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-muted-foreground">
+                  Track Fee ({trackCount} track{trackCount > 1 ? 's' : ''} × $5 CAD)
+                </span>
+                <span className="font-medium">${trackTotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-muted-foreground">UPC Fee</span>
+                <span className="font-medium">${UPC_FEE.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 text-lg font-bold">
+                <span>Total</span>
+                <span className="text-primary">${totalCost.toFixed(2)} CAD</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setShowPricingConfirm(false)}
+              disabled={checkoutLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleProceedToPayment}
+              disabled={checkoutLoading}
+              className="flex-1 bg-gradient-primary hover:opacity-90"
+            >
+              {checkoutLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Pay ${totalCost.toFixed(2)} CAD
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
