@@ -26,7 +26,7 @@ import { EmailNotificationDialog } from "./EmailNotificationDialog";
 import { AnnouncementBarManagement } from "./AnnouncementBarManagement";
 import { TakedownRequestsManagement } from "./TakedownRequestsManagement";
 import { InvoiceDraftsManagement } from "./InvoiceDraftsManagement";
-import LabelDesignationWelcomeDialog from "./LabelDesignationWelcomeDialog";
+
 import { OnboardingTutorial } from "./OnboardingTutorial";
 import { AdminTicketManagement } from "./AdminTicketManagement";
 import { Bug, GraduationCap, CreditCard } from "lucide-react";
@@ -50,7 +50,7 @@ const AdminPortal = ({
   const [adminArtistName, setAdminArtistName] = useState<string>("");
   const [adminFullName, setAdminFullName] = useState<string>("");
   const [adminUserId, setAdminUserId] = useState<string>("");
-  const [debugWelcomeDialog, setDebugWelcomeDialog] = useState<{ open: boolean; type: "partner_label" | "signature_label" | "prestige_label" | null }>({ open: false, type: null });
+  
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [selectedDebugPlan, setSelectedDebugPlan] = useState<string>("");
   const navigate = useNavigate();
@@ -80,103 +80,60 @@ const AdminPortal = ({
 
   const handleDebugPlanAssignment = async () => {
     if (!selectedDebugPlan || !adminUserId) {
-      toast.error("Please select a plan");
+      toast.error("Please select an account type");
       return;
     }
 
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ label_type: selectedDebugPlan })
+        .update({ account_type: selectedDebugPlan })
         .eq("id", adminUserId);
 
       if (error) throw error;
 
-      // Create notification
-      const planNames: Record<string, string> = {
-        partner_label: "Partner Label",
-        signature_label: "Signature Label", 
-        prestige_label: "Prestige Label",
-        free: "Trackball Free",
-        lite: "Trackball Lite",
-        signature_artist: "Trackball Signature",
-        prestige_artist: "Trackball Prestige"
+      const accountNames: Record<string, string> = {
+        artist: "Artist Account",
+        label: "Label Account",
       };
 
-      const planBenefits: Record<string, string[]> = {
-        partner_label: [
-          "Custom royalty split arrangement",
-          "Create and manage multiple labels",
-          "Invite unlimited users to your labels",
-          "Advanced permission controls",
+      const accountBenefits: Record<string, string[]> = {
+        artist: [
+          "90/10 royalty split (you keep 90%)",
+          "Release submission and management",
+          "Catalog viewing",
+          "Royalties tracking",
+          "Support tickets",
+          "Up to 3 artist names"
+        ],
+        label: [
+          "90/10 royalty split (you keep 90%)",
+          "Create and manage unlimited labels",
+          "Invite unlimited users",
+          "Full catalog management",
+          "Publishing submissions",
+          "Dedicated account manager",
           "Priority support"
         ],
-        signature_label: [
-          "Create and manage multiple labels",
-          "Invite unlimited users to your labels",
-          "Advanced permission controls",
-          "Priority support",
-          "Priority approval",
-          "XZ1 upgrade opportunities"
-        ],
-        prestige_label: [
-          "Create and manage multiple labels",
-          "Invite unlimited users to your labels",
-          "Advanced permission controls",
-          "Priority support",
-          "Publishing tab for PRO submissions",
-          "XZ1 Music Publishing enrollment",
-          "Potential advances",
-          "Free mastering"
-        ],
-        free: [
-          "70/30 royalty splits",
-          "Basic support",
-          "Standard distribution",
-          "Powered by Believe Music"
-        ],
-        lite: [
-          "90/10 royalty splits",
-          "Same-day support",
-          "Trackball social promotion",
-          "Priority queue"
-        ],
-        signature_artist: [
-          "100% royalty splits",
-          "Same-day support",
-          "Priority approval",
-          "Discounted licensing",
-          "Social promotion",
-          "XZ1 upgrade opportunities"
-        ],
-        prestige_artist: [
-          "100% distribution splits",
-          "70% publishing splits",
-          "XZ1 Music Publishing enrollment",
-          "Potential advances",
-          "Free mastering",
-          "Choice of distributor",
-          "Releases remain if cancelled"
-        ]
       };
 
-      const planName = planNames[selectedDebugPlan] || selectedDebugPlan;
-      const benefits = planBenefits[selectedDebugPlan] || [];
+      const accountName = accountNames[selectedDebugPlan] || selectedDebugPlan;
+      const benefits = accountBenefits[selectedDebugPlan] || [];
       
-      const notificationMessage = `Welcome to ${planName}!\n\nYour benefits include:\n${benefits.map(b => `• ${b}`).join('\n')}`;
+      const notificationMessage = `Welcome to your ${accountName}!\n\nYour benefits include:\n${benefits.map(b => `• ${b}`).join('\n')}`;
 
       await supabase.from("notifications").insert({
         user_id: adminUserId,
-        title: `Welcome to ${planName}`,
+        title: `Welcome to ${accountName}`,
         message: notificationMessage,
-        type: "plan_assignment"
+        type: "account_assignment"
       });
 
-      toast.success(`Assigned ${planName} and sent notification`);
+      toast.success(`Assigned ${accountName} and sent notification`);
       setSelectedDebugPlan("");
     } catch (error: any) {
-      console.error("Error assigning plan:", error);
-      toast.error("Failed to assign plan");
+      console.error("Error assigning account type:", error);
+      toast.error("Failed to assign account type");
     }
   };
   const handleSignOut = async () => {
@@ -492,55 +449,20 @@ const AdminPortal = ({
 
                 <div className="border-t border-border pt-6">
                   <div className="flex items-center gap-2 mb-4">
-                    <Bug className="w-5 h-5 text-primary" />
-                    <h3 className="text-lg font-semibold">Label Designation Setup Guides</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Trigger welcome dialogs for any label designation to test the onboarding flow
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    <Button 
-                      onClick={() => setDebugWelcomeDialog({ open: true, type: "partner_label" })}
-                      variant="outline"
-                    >
-                      Partner Label Guide
-                    </Button>
-                    <Button 
-                      onClick={() => setDebugWelcomeDialog({ open: true, type: "signature_label" })}
-                      variant="outline"
-                    >
-                      Signature Label Guide
-                    </Button>
-                    <Button 
-                      onClick={() => setDebugWelcomeDialog({ open: true, type: "prestige_label" })}
-                      variant="outline"
-                    >
-                      Prestige Label Guide
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="border-t border-border pt-6">
-                  <div className="flex items-center gap-2 mb-4">
                     <CreditCard className="w-5 h-5 text-primary" />
-                    <h3 className="text-lg font-semibold">Subscription Plan Assignment</h3>
+                    <h3 className="text-lg font-semibold">Account Type Assignment</h3>
                   </div>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Assign yourself a label designation and trigger the welcome notification
+                    Assign yourself an account type and trigger the welcome notification (all accounts have 90/10 split)
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <Select value={selectedDebugPlan} onValueChange={setSelectedDebugPlan}>
                       <SelectTrigger className="w-full sm:w-[250px]">
-                        <SelectValue placeholder="Select a plan..." />
+                        <SelectValue placeholder="Select account type..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="partner_label">Partner Label</SelectItem>
-                        <SelectItem value="signature_label">Signature Label</SelectItem>
-                        <SelectItem value="prestige_label">Prestige Label</SelectItem>
-                        <SelectItem value="free">Trackball Free</SelectItem>
-                        <SelectItem value="lite">Trackball Lite</SelectItem>
-                        <SelectItem value="signature_artist">Trackball Signature (Artist)</SelectItem>
-                        <SelectItem value="prestige_artist">Trackball Prestige (Artist)</SelectItem>
+                        <SelectItem value="artist">Artist Account</SelectItem>
+                        <SelectItem value="label">Label Account</SelectItem>
                       </SelectContent>
                     </Select>
                     <Button 
@@ -551,6 +473,7 @@ const AdminPortal = ({
                     </Button>
                   </div>
                 </div>
+
 
                 <div className="border-t border-border pt-6">
                   <div className="flex items-center gap-2 mb-4">
@@ -568,13 +491,6 @@ const AdminPortal = ({
         </Tabs>
       </main>
 
-      {debugWelcomeDialog.open && debugWelcomeDialog.type && (
-        <LabelDesignationWelcomeDialog
-          open={debugWelcomeDialog.open}
-          onClose={() => setDebugWelcomeDialog({ open: false, type: null })}
-          labelType={debugWelcomeDialog.type}
-        />
-      )}
 
       {showOnboarding && (
         <OnboardingTutorial 

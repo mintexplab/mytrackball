@@ -76,23 +76,25 @@ const ArtistInvitationManagement = () => {
       value: "artist", 
       label: "Artist Account", 
       features: [
+        "90/10 royalty split (you keep 90%)",
         "Release submission and management",
         "Catalog viewing",
         "Royalties tracking",
-        "Support tickets"
+        "Support tickets",
+        "Up to 3 artist names"
       ] 
     },
     { 
       value: "label", 
       label: "Label Account", 
       features: [
+        "90/10 royalty split (you keep 90%)",
         "Unlimited users",
         "Unlimited labels",
         "Full catalog management",
         "Publishing submissions",
         "Support tickets",
-        "Dedicated account manager",
-        "Label customization & branding"
+        "Dedicated account manager"
       ] 
     },
   ];

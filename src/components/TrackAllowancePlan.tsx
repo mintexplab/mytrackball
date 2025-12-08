@@ -17,10 +17,12 @@ export const TrackAllowancePlan = () => {
   const [showPaymentSetup, setShowPaymentSetup] = useState(false);
   const { paymentMethod, loading: paymentLoading, refetch: refetchPayment } = useSavedPaymentMethod();
 
-  const pricePerTrack = 4; // $4 CAD per track (discounted from $5)
+  // Tiered pricing: $4/track for 5-45 tracks, $2/track for 46+ tracks
+  const pricePerTrack = tracksPerMonth > 45 ? 2 : 4;
   const regularPricePerTrack = 5;
   const monthlyPrice = tracksPerMonth * pricePerTrack;
   const savings = tracksPerMonth * (regularPricePerTrack - pricePerTrack);
+  const discountPercentage = tracksPerMonth > 45 ? 60 : 20;
 
   const handleSubscribe = async () => {
     if (!paymentMethod) {
@@ -50,7 +52,6 @@ export const TrackAllowancePlan = () => {
       if (data?.error) throw new Error(data.error);
 
       if (data?.url) {
-        // Redirect to checkout
         window.open(data.url, "_blank");
       } else if (data?.success) {
         toast.success(`Track Allowance plan activated! You have ${tracksPerMonth} tracks/month.`);
@@ -85,7 +86,7 @@ export const TrackAllowancePlan = () => {
               </CardDescription>
             </div>
             <Badge className="bg-gradient-to-r from-emerald-500 to-green-600 text-white">
-              Save 20%
+              Save {discountPercentage}%
             </Badge>
           </div>
         </CardHeader>
@@ -111,6 +112,7 @@ export const TrackAllowancePlan = () => {
             
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>5 tracks</span>
+              <span className="text-emerald-500 font-medium">46+ = $2/track</span>
               <span>100 tracks</span>
             </div>
           </div>
@@ -145,6 +147,10 @@ export const TrackAllowancePlan = () => {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Check className="w-4 h-4 text-accent" />
               <span>No upfront payment per track</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Check className="w-4 h-4 text-accent" />
+              <span>Exceed limit? Pay upfront or wait for next month</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Check className="w-4 h-4 text-accent" />
@@ -206,6 +212,10 @@ export const TrackAllowancePlan = () => {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Plan</span>
                 <span className="font-medium">{tracksPerMonth} tracks/month</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Price per track</span>
+                <span className="font-medium">${pricePerTrack} CAD</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Monthly charge</span>
