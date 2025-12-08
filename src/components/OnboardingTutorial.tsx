@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, X, CheckCircle } from "lucide-react";
+import { ArrowRight, X, CheckCircle, Music, FolderOpen, DollarSign, HelpCircle, Bell, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -14,67 +14,64 @@ interface OnboardingTutorialProps {
 const tutorialSteps = [
   {
     title: "Welcome to My Trackball",
-    description: "Welcome to your music distribution dashboard! Let's take a comprehensive tour of all the features available to help you succeed. You can skip this tutorial at any time by clicking the X button, or restart it later from your account settings.",
+    description: "Your music distribution dashboard is ready! Let's take a quick tour of the key features. You can skip anytime or restart this tutorial from Account Settings.",
+    icon: Music,
     position: "center",
     highlightElement: null,
   },
   {
-    title: "Landing Tab - Your Dashboard Home",
-    description: "This is your command center! Here you'll see all your releases displayed in a beautiful gallery format. Each release shows your artwork, title, artist name, and release date. Click on any release to view its full details, track distribution status, and manage it.",
+    title: "Dashboard Overview",
+    description: "This is your home base. See your releases at a glance, quick stats, and your account manager contact info. Everything you need is organized into tabs along the top.",
+    icon: FolderOpen,
     position: "top-right",
     highlightElement: "[data-tutorial='landing-tab']",
   },
   {
-    title: "Create Release - Submit Your Music",
-    description: "Ready to distribute? Click here to submit new music. Our multi-step wizard walks you through: submission details, artwork upload, audio files, metadata (release dates, languages), contributors (composers, producers), and additional notes. Don't worry - your progress auto-saves!",
+    title: "Create a New Release",
+    description: "Click here to submit new music for distribution. Our step-by-step form guides you through artwork, audio files, metadata, and contributors. Payment is processed securely at the end.",
+    icon: Music,
     position: "top-left",
     highlightElement: "[data-tutorial='create-release']",
   },
   {
-    title: "Bulk Upload - Submit Multiple Releases",
-    description: "Managing multiple releases? Use our bulk uploader! Upload a CSV file with all your release metadata, then match your audio files and artwork. Perfect for labels or prolific artists distributing entire catalogs efficiently.",
-    position: "top-right",
-    highlightElement: "[data-tutorial='bulk-upload']",
-  },
-  {
-    title: "Content Management - Your Hub",
-    description: "Access all your content tools in one place! The Content dropdown includes Catalog (manage releases), Bulk Upload (submit multiple releases), Smart Links (create multi-platform links), and Publishing (for Prestige members). Everything you need to manage your music distribution.",
+    title: "Catalog Management",
+    description: "View and manage all your releases in the Catalog tab. Filter by status, search, bulk select for actions, and track each release's distribution status.",
+    icon: FolderOpen,
     position: "top-right",
     highlightElement: "[data-tutorial='catalog-tab']",
   },
   {
-    title: "Financial - Track Your Earnings",
-    description: "Follow the money! View your total earnings, payment history, and royalty breakdowns. When you're ready, request payouts directly from this section. Track which releases are generating revenue and monitor your collaborator splits.",
+    title: "Royalties & Earnings",
+    description: "Track your earnings in the Royalties tab. View your balance, payment history, and request payouts when ready. All your financial info in one place.",
+    icon: DollarSign,
     position: "top-right",
     highlightElement: "[data-tutorial='royalties-tab']",
   },
   {
-    title: "Team Management - Invite Collaborators",
-    description: "Signature and Prestige members can manage their team here! The Team dropdown includes Users (invite collaborators with granular permissions) and Labels (create and manage multiple labels). Perfect for labels managing multiple artists or artists working with managers.",
-    position: "top-right",
-    highlightElement: "[data-tutorial='clients-tab']",
-  },
-  {
-    title: "Notifications - Stay Updated",
-    description: "Never miss important updates! Click the bell icon to view announcements, plan changes, release status updates, and system notifications. Your communication hub for everything happening with your account and releases.",
+    title: "Notifications",
+    description: "Click the bell icon to see announcements, release updates, and important messages. Stay informed about your distribution status and platform news.",
+    icon: Bell,
     position: "top-right",
     highlightElement: "[data-tutorial='notifications-icon']",
   },
   {
-    title: "Help & Documentation",
-    description: "Stuck on something? Visit the Help tab for comprehensive guides on every feature: release submissions, bulk uploads, catalog management, royalties, publishing, and troubleshooting. Plus quick access to email support at contact@trackball.cc.",
+    title: "Get Help",
+    description: "Need assistance? The Help tab has documentation, guides, and access to our support ticket system. We're here to help you succeed.",
+    icon: HelpCircle,
     position: "top-right",
     highlightElement: "[data-tutorial='help-tab']",
   },
   {
-    title: "Account & Profile Settings",
-    description: "Click your profile icon here to access account settings. Update your name, label name (Signature/Prestige), upload a profile picture, set your timezone, change password, manage your subscription plan, and restart this tutorial anytime.",
+    title: "Your Account",
+    description: "Click your profile to access Account Settings. Update your profile, manage payment methods, change your password, and configure your preferences.",
+    icon: User,
     position: "top-right",
     highlightElement: "[data-tutorial='profile-dropdown']",
   },
   {
-    title: "You're All Set!",
-    description: "Congratulations! You're now ready to start distributing your music to the world. Remember, you can always restart this tutorial from your account settings if you need a refresher. Welcome to My Trackball - let's get your music heard!",
+    title: "You're Ready!",
+    description: "That's the essentials! Start by creating your first release or exploring the dashboard. You can restart this tutorial anytime from Account Settings. Welcome to Trackball!",
+    icon: CheckCircle,
     position: "center",
     highlightElement: null,
   },
@@ -85,13 +82,11 @@ export const OnboardingTutorial = ({ onComplete, onSkip, isLabelAccount = false 
   const [highlightStyle, setHighlightStyle] = useState<any>({});
 
   useEffect(() => {
-    // Short delay to ensure highlighted elements are rendered
     const initialDelay = currentStep === 0 ? 500 : 100;
     const timer = setTimeout(() => {
       updateHighlight();
     }, initialDelay);
     
-    // Update on window resize or scroll
     const handleUpdate = () => updateHighlight();
     window.addEventListener('resize', handleUpdate);
     window.addEventListener('scroll', handleUpdate, true);
@@ -106,46 +101,18 @@ export const OnboardingTutorial = ({ onComplete, onSkip, isLabelAccount = false 
   const updateHighlight = () => {
     const step = tutorialSteps[currentStep];
     if (step.highlightElement) {
-      // Try multiple times to find the element in case it's still rendering
       let attempts = 0;
       const maxAttempts = 10;
       
       const tryFindElement = () => {
         const element = document.querySelector(step.highlightElement);
         if (element) {
-          // Check if element is inside a dropdown/menu and open it
-          const parentDropdown = element.closest('[data-state]');
-          if (parentDropdown) {
-            // Look for trigger button to open dropdown
-            const dropdownTrigger = parentDropdown.querySelector('[role="button"]') || 
-                                   parentDropdown.previousElementSibling;
-            if (dropdownTrigger && dropdownTrigger instanceof HTMLElement) {
-              dropdownTrigger.click();
-              // Wait for dropdown animation
-              setTimeout(() => positionHighlight(element), 300);
-              return;
-            }
-          }
-          
-          // Check if element is in a collapsed menu (mobile)
-          const mobileMenu = element.closest('[data-mobile-menu]');
-          if (mobileMenu) {
-            const menuToggle = document.querySelector('[data-mobile-menu-toggle]');
-            if (menuToggle && menuToggle instanceof HTMLElement) {
-              menuToggle.click();
-              setTimeout(() => positionHighlight(element), 300);
-              return;
-            }
-          }
-          
           positionHighlight(element);
         } else if (attempts < maxAttempts) {
           attempts++;
           setTimeout(tryFindElement, 100);
         } else {
-          // Element not found after all attempts, clear highlight
           setHighlightStyle({});
-          console.warn(`Tutorial element not found: ${step.highlightElement}`);
         }
       };
       
@@ -161,7 +128,6 @@ export const OnboardingTutorial = ({ onComplete, onSkip, isLabelAccount = false 
       
       tryFindElement();
     } else {
-      // Clear highlight for center steps
       setHighlightStyle({});
     }
   };
@@ -209,6 +175,7 @@ export const OnboardingTutorial = ({ onComplete, onSkip, isLabelAccount = false 
 
   const step = tutorialSteps[currentStep];
   const isCenter = step.position === "center";
+  const StepIcon = step.icon;
 
   return (
     <div className="fixed inset-0 z-[200] pointer-events-none">
@@ -238,33 +205,38 @@ export const OnboardingTutorial = ({ onComplete, onSkip, isLabelAccount = false 
             : "top-24 left-8"
         }`}
       >
-        <Card className="w-[400px] border-primary/30 bg-card shadow-glow">
+        <Card className="w-[380px] max-w-[90vw] border-primary/30 bg-card shadow-glow">
           <CardContent className="p-6 space-y-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="text-xl font-bold mb-2">{step.title}</h3>
-                <p className="text-muted-foreground">{step.description}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 flex-1">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <StepIcon className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold mb-2">{step.title}</h3>
+                  <p className="text-sm text-muted-foreground">{step.description}</p>
+                </div>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleSkip}
-                className="hover:bg-muted"
+                className="hover:bg-muted flex-shrink-0"
               >
                 <X className="w-4 h-4" />
               </Button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {tutorialSteps.map((_, index) => (
                 <div
                   key={index}
-                  className={`h-2 rounded-full transition-all ${
+                  className={`h-1.5 rounded-full transition-all ${
                     index === currentStep
-                      ? "w-8 bg-primary"
+                      ? "w-6 bg-primary"
                       : index < currentStep
-                      ? "w-2 bg-primary/50"
-                      : "w-2 bg-muted"
+                      ? "w-1.5 bg-primary/50"
+                      : "w-1.5 bg-muted"
                   }`}
                 />
               ))}
@@ -272,7 +244,7 @@ export const OnboardingTutorial = ({ onComplete, onSkip, isLabelAccount = false 
 
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-                Step {currentStep + 1} of {tutorialSteps.length}
+                {currentStep + 1} / {tutorialSteps.length}
               </span>
               <Button
                 onClick={handleNext}
@@ -281,7 +253,7 @@ export const OnboardingTutorial = ({ onComplete, onSkip, isLabelAccount = false 
                 {currentStep === tutorialSteps.length - 1 ? (
                   <>
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Finish
+                    Get Started
                   </>
                 ) : (
                   <>

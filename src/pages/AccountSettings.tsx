@@ -13,6 +13,7 @@ import { TwoFactorAuth } from "@/components/TwoFactorAuth";
 import { useS3Upload } from "@/hooks/useS3Upload";
 import LabelDesignationWelcomeDialog from "@/components/LabelDesignationWelcomeDialog";
 import { PaymentMethodsManagement } from "@/components/PaymentMethodsManagement";
+import { PaymentHistory } from "@/components/PaymentHistory";
 const TIMEZONES = [{
   value: "America/New_York",
   label: "Eastern Time (ET)"
@@ -483,6 +484,8 @@ const AccountSettings = () => {
         <TwoFactorAuth />
 
         <PaymentMethodsManagement />
+
+        <PaymentHistory />
 
         <Card className="border-border">
           <CardHeader>
