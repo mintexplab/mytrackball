@@ -349,11 +349,29 @@ const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogPro
                             )}
                           </div>
                         </div>
-                        {track.duration && (
-                          <span className="text-sm text-muted-foreground">
-                            {formatDuration(track.duration)}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {track.duration && (
+                            <span className="text-sm text-muted-foreground">
+                              {formatDuration(track.duration)}
+                            </span>
+                          )}
+                          {track.audio_file_url && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = track.audio_file_url;
+                                const ext = track.audio_file_url.split('.').pop() || 'wav';
+                                link.download = `${track.track_number}. ${track.title}.${ext}`;
+                                link.target = '_blank';
+                                link.click();
+                              }}
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                       
                       {/* Track Credits */}

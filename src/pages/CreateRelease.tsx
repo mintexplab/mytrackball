@@ -868,40 +868,26 @@ const CreateRelease = () => {
         </div>
       </header>
 
-      {/* Step Indicator */}
+      {/* Step Progress Bar */}
       <div className="container mx-auto px-4 py-6">
-        {/* Animated Progress Bar */}
-        <div className="mb-6">
-          <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-primary to-green-500 transition-all duration-500 ease-out"
-              style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
-            />
-          </div>
-          <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-            <span>Step {currentStep} of {steps.length}</span>
-            <span>{Math.round(((currentStep - 1) / (steps.length - 1)) * 100)}% Complete</span>
-          </div>
-        </div>
-        
         <div className="flex items-center justify-between mb-8">
           {steps.map((step, index) => (
             <div key={step.number} className="flex items-center flex-1">
               <div className="flex flex-col items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                  currentStep === step.number 
-                    ? "bg-primary text-primary-foreground" 
-                    : currentStep > step.number
-                    ? "bg-green-500 text-white"
-                    : "bg-muted text-muted-foreground"
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border-2 ${
+                  currentStep >= step.number 
+                    ? "bg-primary border-primary text-primary-foreground" 
+                    : "bg-muted border-muted text-muted-foreground"
                 }`}>
-                  {currentStep > step.number ? <Check className="w-5 h-5" /> : step.number}
+                  {step.number}
                 </div>
-                <span className="text-xs mt-2 text-center hidden md:block">{step.title}</span>
+                <span className={`text-xs mt-2 text-center hidden md:block ${
+                  currentStep >= step.number ? "text-foreground" : "text-muted-foreground"
+                }`}>{step.title}</span>
               </div>
               {index < steps.length - 1 && (
-                <div className={`flex-1 h-1 mx-2 ${
-                  currentStep > step.number ? "bg-green-500" : "bg-muted"
+                <div className={`flex-1 h-0.5 mx-2 ${
+                  currentStep > step.number ? "bg-primary" : "bg-muted"
                 }`} />
               )}
             </div>
