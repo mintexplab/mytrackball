@@ -84,7 +84,8 @@ export const FineManagement = ({ users: propUsers, onFineIssued }: FineManagemen
         .single();
 
       const currentStrikes = profile?.strike_count || 0;
-      const newStrikeNumber = currentStrikes + 1;
+      // Mock fines don't count towards strikes
+      const newStrikeNumber = isMockFine ? 0 : currentStrikes + 1;
 
       // Insert the fine - always pending so user sees dialog
       const { error } = await supabase

@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Package, Ban, Lock, Unlock, Trash2, Mail, User, RotateCcw } from "lucide-react";
+import { Package, Ban, Lock, Unlock, Trash2, Mail, User, RotateCcw, MinusCircle } from "lucide-react";
 import SendNotificationDialog from "./SendNotificationDialog";
 import { Separator } from "@/components/ui/separator";
 
@@ -312,6 +312,45 @@ const UserManagement = () => {
     } catch (error: any) {
       console.error("Label designation assignment error:", error);
       toast.error("Failed to assign label designation: " + error.message);
+    }
+  };
+
+  const reverseStrike = async (userId: string, userName: string) => {
+    try {
+      // Get current strike count
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("strike_count")
+        .eq("id", userId)
+        .single();
+
+      const currentStrikes = profile?.strike_count || 0;
+      
+      if (currentStrikes <= 0) {
+        toast.error("User has no strikes to reverse");
+        return;
+      }
+
+      const newStrikeCount = currentStrikes - 1;
+
+      // Update profile strike count
+      const { error } = await supabase
+        .from("profiles")
+        .update({ 
+          strike_count: newStrikeCount,
+          // If we're going below 3 strikes, unsuspend the account
+          suspended_at: newStrikeCount < 3 ? null : undefined,
+          suspension_reason: newStrikeCount < 3 ? null : undefined
+        })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      toast.success(`Strike reversed for ${userName}. Now at ${newStrikeCount}/3 strikes.`);
+      fetchUsers();
+    } catch (error: any) {
+      console.error("Strike reversal error:", error);
+      toast.error("Failed to reverse strike: " + error.message);
     }
   };
 
@@ -672,6 +711,19 @@ const UserManagement = () => {
                               Reset Tutorial
                             </Button>
 
+                            {(masterUser.strike_count || 0) > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => reverseStrike(masterUser.id, masterUser.full_name || masterUser.email)}
+                                className="w-full justify-start gap-2 h-8 text-xs text-yellow-500 hover:text-yellow-500 hover:bg-yellow-500/10"
+                                title={`Reverse strike (${masterUser.strike_count}/3)`}
+                              >
+                                <MinusCircle className="w-3 h-3" />
+                                Reverse Strike ({masterUser.strike_count}/3)
+                              </Button>
+                            )}
+
                             <SendNotificationDialog 
                               userId={masterUser.id} 
                               userName={masterUser.full_name || masterUser.email} 
@@ -777,6 +829,19 @@ const UserManagement = () => {
                                   </>
                                 )}
                               </Button>
+
+                              {(subUser.strike_count || 0) > 0 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => reverseStrike(subUser.id, subUser.full_name || subUser.email)}
+                                  className="w-full justify-start gap-2 h-8 text-xs text-yellow-500 hover:text-yellow-500 hover:bg-yellow-500/10"
+                                  title={`Reverse strike (${subUser.strike_count}/3)`}
+                                >
+                                  <MinusCircle className="w-3 h-3" />
+                                  Reverse Strike ({subUser.strike_count}/3)
+                                </Button>
+                              )}
 
                               <SendNotificationDialog 
                                 userId={subUser.id} 
@@ -986,6 +1051,19 @@ const UserManagement = () => {
                               <RotateCcw className="w-3 h-3" />
                               Reset Tutorial
                             </Button>
+
+                            {(user.strike_count || 0) > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => reverseStrike(user.id, user.full_name || user.email)}
+                                className="w-full justify-start gap-2 h-8 text-xs text-yellow-500 hover:text-yellow-500 hover:bg-yellow-500/10"
+                                title={`Reverse strike (${user.strike_count}/3)`}
+                              >
+                                <MinusCircle className="w-3 h-3" />
+                                Reverse Strike ({user.strike_count}/3)
+                              </Button>
+                            )}
 
                             <SendNotificationDialog 
                               userId={user.id} 
