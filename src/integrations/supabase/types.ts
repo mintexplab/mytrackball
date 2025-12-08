@@ -660,6 +660,8 @@ export type Database = {
           mfa_setup_completed: boolean | null
           onboarding_completed: boolean | null
           parent_account_id: string | null
+          preferred_currency: string | null
+          strike_count: number | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subdistributor_accent_color: string | null
@@ -668,6 +670,8 @@ export type Database = {
           subdistributor_footer_text: string | null
           subdistributor_logo_url: string | null
           subscription_welcome_shown_at: string | null
+          suspended_at: string | null
+          suspension_reason: string | null
           user_id: string
           user_timezone: string | null
         }
@@ -696,6 +700,8 @@ export type Database = {
           mfa_setup_completed?: boolean | null
           onboarding_completed?: boolean | null
           parent_account_id?: string | null
+          preferred_currency?: string | null
+          strike_count?: number | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subdistributor_accent_color?: string | null
@@ -704,6 +710,8 @@ export type Database = {
           subdistributor_footer_text?: string | null
           subdistributor_logo_url?: string | null
           subscription_welcome_shown_at?: string | null
+          suspended_at?: string | null
+          suspension_reason?: string | null
           user_id: string
           user_timezone?: string | null
         }
@@ -732,6 +740,8 @@ export type Database = {
           mfa_setup_completed?: boolean | null
           onboarding_completed?: boolean | null
           parent_account_id?: string | null
+          preferred_currency?: string | null
+          strike_count?: number | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subdistributor_accent_color?: string | null
@@ -740,6 +750,8 @@ export type Database = {
           subdistributor_footer_text?: string | null
           subdistributor_logo_url?: string | null
           subscription_welcome_shown_at?: string | null
+          suspended_at?: string | null
+          suspension_reason?: string | null
           user_id?: string
           user_timezone?: string | null
         }
@@ -1303,6 +1315,66 @@ export type Database = {
             columns: ["announcement_id"]
             isOneToOne: false
             referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_fines: {
+        Row: {
+          amount: number
+          cancelled_at: string | null
+          created_at: string | null
+          fine_type: string
+          id: string
+          issued_by: string | null
+          notes: string | null
+          paid_at: string | null
+          reason: string
+          status: string
+          strike_number: number
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          cancelled_at?: string | null
+          created_at?: string | null
+          fine_type: string
+          id?: string
+          issued_by?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          reason: string
+          status?: string
+          strike_number: number
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          cancelled_at?: string | null
+          created_at?: string | null
+          fine_type?: string
+          id?: string
+          issued_by?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          reason?: string
+          status?: string
+          strike_number?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_fines_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_fines_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

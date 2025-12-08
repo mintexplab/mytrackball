@@ -33,6 +33,7 @@ import { Bug, GraduationCap, CreditCard } from "lucide-react";
 import { TestPaymentSection } from "./TestPaymentSection";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FineManagement } from "./FineManagement";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -293,6 +294,11 @@ const AdminPortal = ({
                     <FileText className="w-4 h-4 mr-2" />
                     Invoice Drafts
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setActiveTab("fines")} className="cursor-pointer">
+                    <AlertTriangle className="w-4 h-4 mr-2 text-destructive" />
+                    <span className="text-destructive">Fines & Strikes</span>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -432,6 +438,13 @@ const AdminPortal = ({
 
           <TabsContent value="payouts">
             <PayoutRequestsManagement />
+          </TabsContent>
+
+          <TabsContent value="fines">
+            <FineManagement users={[]} onFineIssued={() => {}} />
+          </TabsContent>
+
+          <TabsContent value="invoice-drafts">
           </TabsContent>
 
           <TabsContent value="publishing">
