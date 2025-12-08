@@ -654,9 +654,18 @@ const CreateRelease = () => {
     setShowPayLaterConfirm(false);
     setShowPricingConfirm(false);
     
-    // Send admin notification about pay later selection
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      
+      // Update release status to pay_later if we have a releaseId
+      if (paymentData?.releaseId) {
+        await supabase
+          .from('releases')
+          .update({ status: 'pay_later' })
+          .eq('id', paymentData.releaseId);
+      }
+      
+      // Send admin notification about pay later selection
       if (user) {
         await supabase.functions.invoke('send-system-notification', {
           body: {
@@ -670,7 +679,7 @@ const CreateRelease = () => {
         });
       }
     } catch (error) {
-      console.error('Failed to send admin notification:', error);
+      console.error('Failed to update release or send notification:', error);
     }
     
     toast.info("Your release has been saved. You will receive a payment link within 3 business days.");
