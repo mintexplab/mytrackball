@@ -54,6 +54,21 @@ const handler = async (req: Request): Promise<Response> => {
         statusColor = "#3b82f6";
         statusMessage = "Your release is now live on streaming platforms!";
         break;
+      case "paid":
+        statusEmoji = "💳";
+        statusColor = "#10b981";
+        statusMessage = "Payment received! Your release is now in the queue for processing.";
+        break;
+      case "processing":
+        statusEmoji = "⚙️";
+        statusColor = "#06b6d4";
+        statusMessage = "Your release is now being processed and prepared for distribution.";
+        break;
+      case "delivered":
+        statusEmoji = "📦";
+        statusColor = "#14b8a6";
+        statusMessage = "Your release has been delivered to streaming platforms and will be live soon!";
+        break;
       default:
         statusEmoji = "⏳";
         statusColor = "#eab308";
