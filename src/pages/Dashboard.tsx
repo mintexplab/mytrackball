@@ -483,57 +483,31 @@ const Dashboard = () => {
         <InitialAccountSetup 
           onComplete={() => {
             setShowInitialSetup(false);
-            setShowOnboarding(true);
-            setShowOnboardingOverlay(true);
+            // Show loader FIRST, then guided tour after loader completes
+            setShowLoader(true);
+            const randomDelay = Math.floor(Math.random() * 5000) + 5000;
+            
+            // Start loading dashboard data
+            if (user?.id) {
+              checkAdminStatus(user.id);
+              fetchUserPlan(user.id);
+              fetchReleaseCount(user.id);
+            }
+            
+            setTimeout(() => {
+              setShowLoader(false);
+              sessionStorage.setItem('loginLoaderShown', 'true');
+              // NOW show the guided tour after loader completes
+              setShowOnboarding(true);
+              setShowOnboardingOverlay(true);
+            }, randomDelay);
           }} 
         />
       </div>
     );
   }
 
-  // Show onboarding tutorial immediately if needed (no loading spinner)
-  if (showOnboarding && showOnboardingOverlay && user) {
-    return (
-      <div className="min-h-screen bg-background relative">
-        <OnboardingTutorial
-          onComplete={async () => {
-            setShowOnboarding(false);
-            setShowOnboardingOverlay(false);
-            // Now load the dashboard
-            if (user?.id) {
-              setShowLoader(true);
-              const randomDelay = Math.floor(Math.random() * 3000) + 2000;
-              setTimeout(() => {
-                setShowLoader(false);
-                sessionStorage.setItem('loginLoaderShown', 'true');
-              }, randomDelay);
-              checkAdminStatus(user.id);
-              fetchUserPlan(user.id);
-              fetchReleaseCount(user.id);
-            }
-          }}
-          onSkip={async () => {
-            setShowOnboarding(false);
-            setShowOnboardingOverlay(false);
-            // Now load the dashboard
-            if (user?.id) {
-              setShowLoader(true);
-              const randomDelay = Math.floor(Math.random() * 3000) + 2000;
-              setTimeout(() => {
-                setShowLoader(false);
-                sessionStorage.setItem('loginLoaderShown', 'true');
-              }, randomDelay);
-              checkAdminStatus(user.id);
-              fetchUserPlan(user.id);
-              fetchReleaseCount(user.id);
-            }
-          }}
-          isLabelAccount={false}
-        />
-      </div>
-    );
-  }
-
+  // Show loader first if it's active
   if (loading || showLoader) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -541,6 +515,25 @@ const Dashboard = () => {
           {showLoader && <p className="text-muted-foreground animate-pulse">Loading your dashboard...</p>}
         </div>
       </div>;
+  }
+
+  // Show onboarding tutorial AFTER loader completes
+  if (showOnboarding && showOnboardingOverlay && user) {
+    return (
+      <div className="min-h-screen bg-background relative">
+        <OnboardingTutorial
+          onComplete={async () => {
+            setShowOnboarding(false);
+            setShowOnboardingOverlay(false);
+          }}
+          onSkip={async () => {
+            setShowOnboarding(false);
+            setShowOnboardingOverlay(false);
+          }}
+          isLabelAccount={profile?.account_type === 'label'}
+        />
+      </div>
+    );
   }
   if (isAdmin && !viewAsArtist) {
     return <AdminPortal onSignOut={handleSignOut} onViewArtistDashboard={() => setViewAsArtist(true)} />;
