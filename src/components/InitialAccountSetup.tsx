@@ -240,14 +240,39 @@ export const InitialAccountSetup = ({
                 Choose your preferred currency for displaying financial information. All payments will still be processed in CAD.
               </p>
               
-              <CurrencySelector 
-                value={formData.preferredCurrency}
-                onChange={(value) => {
-                  console.log("Currency selected:", value);
-                  setFormData(prev => ({ ...prev, preferredCurrency: value }));
-                }}
-                label="Preferred Display Currency"
-              />
+              <div className="space-y-2">
+                <Label>Preferred Display Currency</Label>
+                <RadioGroup 
+                  value={formData.preferredCurrency} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, preferredCurrency: value }))}
+                  className="grid grid-cols-2 gap-2"
+                >
+                  {[
+                    { code: "CAD", name: "Canadian Dollar", symbol: "$" },
+                    { code: "USD", name: "US Dollar", symbol: "$" },
+                    { code: "EUR", name: "Euro", symbol: "€" },
+                    { code: "GBP", name: "British Pound", symbol: "£" },
+                    { code: "AUD", name: "Australian Dollar", symbol: "$" },
+                    { code: "JPY", name: "Japanese Yen", symbol: "¥" },
+                  ].map((currency) => (
+                    <div 
+                      key={currency.code}
+                      className={`flex items-center space-x-2 border rounded-lg p-3 cursor-pointer transition-all ${
+                        formData.preferredCurrency === currency.code 
+                          ? "border-primary bg-primary/5" 
+                          : "border-border hover:border-primary/50"
+                      }`}
+                      onClick={() => setFormData(prev => ({ ...prev, preferredCurrency: currency.code }))}
+                    >
+                      <RadioGroupItem value={currency.code} id={`currency-${currency.code}`} />
+                      <Label htmlFor={`currency-${currency.code}`} className="cursor-pointer flex-1">
+                        <span className="font-mono mr-1">{currency.symbol}</span>
+                        <span>{currency.code}</span>
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
 
               <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
                 <p className="text-xs text-muted-foreground">
