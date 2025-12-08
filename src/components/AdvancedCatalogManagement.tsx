@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Filter, Download, Music, Calendar, Tag, Trash2, Archive, AlertTriangle, X } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Filter, Download, Music, Calendar, Tag, Trash2, Archive, AlertTriangle, X, DollarSign, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import ReleaseInfoDialog from "./ReleaseInfoDialog";
 import { TakedownPaymentDialog } from "./TakedownPaymentDialog";
@@ -23,6 +24,14 @@ const getStatusDisplay = (status: string) => {
     pending: { 
       label: "Pending", 
       className: "bg-yellow-500/20 border-yellow-500/30 text-yellow-300" 
+    },
+    pending_payment: { 
+      label: "Payment Pending", 
+      className: "bg-orange-500/20 border-orange-500/30 text-orange-300" 
+    },
+    pay_later: { 
+      label: "Pay Later", 
+      className: "bg-amber-500/20 border-amber-500/30 text-amber-300" 
     },
     approved: { 
       label: "Approved", 
@@ -71,6 +80,10 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
   const [showArchived, setShowArchived] = useState(false);
   const [takedownDialogOpen, setTakedownDialogOpen] = useState(false);
   const [takedownRelease, setTakedownRelease] = useState<{ id: string; title: string; artistName: string } | null>(null);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [releaseForPayment, setReleaseForPayment] = useState<any>(null);
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const [trackCount, setTrackCount] = useState(1);
 
   useEffect(() => {
     fetchReleases();
@@ -258,6 +271,64 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
     setTakedownDialogOpen(true);
   };
 
+  const fetchTrackCount = async (releaseId: string) => {
+    const { data, error } = await supabase
+      .from("tracks")
+      .select("id")
+      .eq("release_id", releaseId);
+
+    if (!error && data) {
+      return data.length || 1;
+    }
+    return 1;
+  };
+
+  const openPaymentDialog = async (release: any) => {
+    const count = await fetchTrackCount(release.id);
+    setTrackCount(count);
+    setReleaseForPayment(release);
+    setPaymentDialogOpen(true);
+  };
+
+  const handlePayAndDistribute = async () => {
+    if (!releaseForPayment) return;
+
+    setProcessingPayment(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase.functions.invoke("create-release-checkout", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: {
+          releaseId: releaseForPayment.id,
+          releaseTitle: releaseForPayment.title,
+          trackCount,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.url) {
+        window.open(data.url, "_blank");
+        setPaymentDialogOpen(false);
+      }
+    } catch (error: any) {
+      console.error("Error creating checkout:", error);
+      toast.error(error.message || "Failed to create checkout session");
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
+
+  // Calculate payment amounts
+  const trackFee = 5;
+  const upcFee = 8;
+  const totalAmount = (trackCount * trackFee) + upcFee;
+
   const handleBulkArchive = async () => {
     const releasesToArchive = Array.from(selectedReleases);
     const releases = filteredReleases.filter(r => releasesToArchive.includes(r.id));
@@ -433,6 +504,8 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="pending_payment">Payment Pending</SelectItem>
+                <SelectItem value="pay_later">Pay Later</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
                 <SelectItem value="delivering">Delivering</SelectItem>
@@ -611,6 +684,17 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
                         </>
                       ) : (
                         <>
+                          {/* Pay and Distribute button for pending_payment status */}
+                          {(release.status === "pending_payment" || release.status === "pay_later") && (
+                            <Button
+                              size="sm"
+                              onClick={() => openPaymentDialog(release)}
+                              className="bg-emerald-600 hover:bg-emerald-700"
+                            >
+                              <DollarSign className="w-3 h-3 mr-1" />
+                              Pay and Distribute
+                            </Button>
+                          )}
                           {(release.status === "approved" || release.status === "delivering") && !release.takedown_requested && (
                             <Button
                               size="sm"
@@ -653,6 +737,75 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
           artistName={takedownRelease.artistName}
         />
       )}
+
+      {/* Pay and Distribute Dialog */}
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-primary" />
+              Pay and Distribute
+            </DialogTitle>
+            <DialogDescription>
+              Complete payment to submit your release for distribution
+            </DialogDescription>
+          </DialogHeader>
+          
+          {releaseForPayment && (
+            <div className="space-y-4 py-4">
+              <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                <h4 className="font-semibold">{releaseForPayment.title}</h4>
+                <p className="text-sm text-muted-foreground">{releaseForPayment.artist_name}</p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground">
+                    Track Fee ({trackCount} track{trackCount > 1 ? 's' : ''} × ${trackFee} CAD)
+                  </span>
+                  <span className="font-semibold">${(trackCount * trackFee).toFixed(2)} CAD</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground">UPC Fee</span>
+                  <span className="font-semibold">${upcFee.toFixed(2)} CAD</span>
+                </div>
+                <div className="flex justify-between items-center py-3 text-lg">
+                  <span className="font-bold">Total</span>
+                  <span className="font-bold text-primary">${totalAmount.toFixed(2)} CAD</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setPaymentDialogOpen(false)}
+              className="flex-1"
+              disabled={processingPayment}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handlePayAndDistribute}
+              disabled={processingPayment}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+            >
+              {processingPayment ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Pay ${totalAmount.toFixed(2)} CAD
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
