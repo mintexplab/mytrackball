@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Building2, Home, Music } from "lucide-react";
+import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Building2, Home, Music, CreditCard, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
@@ -52,6 +52,8 @@ import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { FeatureLockBadge } from "@/components/FeatureLockBadge";
 import { SubscriptionManagementTab } from "@/components/SubscriptionManagementTab";
 import { FineDialog } from "@/components/FineDialog";
+import { PaymentMethodsManagement } from "@/components/PaymentMethodsManagement";
+import { PaymentHistory } from "@/components/PaymentHistory";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -604,6 +606,14 @@ const Dashboard = () => {
                     <DollarSign className="w-4 h-4 mr-2" />
                     Royalties
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab("payment-methods")} className="cursor-pointer">
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Payment Methods
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab("payment-history")} className="cursor-pointer">
+                    <Receipt className="w-4 h-4 mr-2" />
+                    Payment History
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -839,6 +849,14 @@ const Dashboard = () => {
 
         <TabsContent value="royalties" className="animate-fade-in">
             {user && <RoyaltiesTab userId={user.id} />}
+          </TabsContent>
+
+          <TabsContent value="payment-methods" className="animate-fade-in">
+            <PaymentMethodsManagement />
+          </TabsContent>
+
+          <TabsContent value="payment-history" className="animate-fade-in">
+            <PaymentHistory />
           </TabsContent>
 
           {permissions.canAccessPublishing && (
