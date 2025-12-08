@@ -40,7 +40,7 @@ import { DocumentationSection } from "@/components/DocumentationSection";
 import { QuickStatsBlock } from "@/components/dashboard/QuickStatsBlock";
 import { AccountManagerBlock } from "@/components/dashboard/AccountManagerBlock";
 import { ReleasesAndDraftsBlock } from "@/components/dashboard/ReleasesAndDraftsBlock";
-import { PlanAndLabelsBlock } from "@/components/dashboard/PlanAndLabelsBlock";
+
 import LabelManagementTab from "@/components/LabelManagementTab";
 import LabelDesignationWelcomeDialog from "@/components/LabelDesignationWelcomeDialog";
 import SubscriptionWelcomeDialog from "@/components/SubscriptionWelcomeDialog";
@@ -799,28 +799,17 @@ const Dashboard = () => {
                       visible: true,
                     },
                   ],
-                },
-                {
-                  title: "Support",
-                  blocks: [
-                    {
-                      id: "plan-labels",
-                      component: (
-                        <PlanAndLabelsBlock
-                          userPlan={userPlan}
-                          labelType={profile?.label_type}
-                          labelName={profile?.label_name}
-                        />
-                      ),
-                      visible: true,
-                    },
-                    {
-                      id: "account-manager",
-                      component: <AccountManagerBlock profile={profile} />,
-                      visible: !!(userPlan?.plan.name === "Trackball Prestige" && profile?.account_manager_name),
-                    },
-                  ],
-                },
+              },
+              {
+                title: "Support",
+                blocks: [
+                  {
+                    id: "account-manager",
+                    component: <AccountManagerBlock profile={profile} />,
+                    visible: !!profile?.account_manager_name,
+                  },
+                ],
+              },
               ]}
             />
           </TabsContent>
