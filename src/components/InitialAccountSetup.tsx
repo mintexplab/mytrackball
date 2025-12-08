@@ -6,8 +6,10 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Music, Building2, CreditCard } from "lucide-react";
+import { Loader2, Music, Building2, CreditCard, Globe } from "lucide-react";
 import { PaymentMethodSetup } from "./PaymentMethodSetup";
+import { CurrencySelector } from "./CurrencySelector";
+
 interface InitialAccountSetupProps {
   onComplete: () => void;
 }
@@ -20,9 +22,10 @@ export const InitialAccountSetup = ({
     fullName: "",
     accountType: "",
     artistName: "",
-    labelName: ""
+    labelName: "",
+    preferredCurrency: "CAD"
   });
-  const totalSteps = 4;
+  const totalSteps = 5;
   const handleNext = () => {
     // Validate current step
     if (step === 1 && !formData.fullName.trim()) {
@@ -62,7 +65,8 @@ export const InitialAccountSetup = ({
       const profileUpdate: any = {
         full_name: formData.fullName,
         account_type: isArtist ? "artist" : "label",
-        onboarding_completed: true
+        onboarding_completed: true,
+        preferred_currency: formData.preferredCurrency
       };
       if (isArtist) {
         profileUpdate.artist_name = formData.artistName;
@@ -132,7 +136,7 @@ export const InitialAccountSetup = ({
         <CardContent className="space-y-6">
           {/* Progress indicator */}
           <div className="flex items-center gap-2">
-            {[1, 2, 3, 4].map(s => <div key={s} className={`h-2 rounded-full transition-all flex-1 ${s === step ? "bg-primary" : s < step ? "bg-primary/50" : "bg-muted"}`} />)}
+            {[1, 2, 3, 4, 5].map(s => <div key={s} className={`h-2 rounded-full transition-all flex-1 ${s === step ? "bg-primary" : s < step ? "bg-primary/50" : "bg-muted"}`} />)}
           </div>
 
           {/* Step 1: Full Name */}
@@ -226,8 +230,31 @@ export const InitialAccountSetup = ({
               </div>
             </div>}
 
-          {/* Step 4: Save Payment Method (Optional) */}
+          {/* Step 4: Currency Preference */}
           {step === 4 && <div className="space-y-4 animate-fade-in">
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="w-5 h-5 text-primary" />
+                <h3 className="font-medium">Display Currency</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Choose your preferred currency for displaying financial information. All payments will still be processed in CAD.
+              </p>
+              
+              <CurrencySelector 
+                value={formData.preferredCurrency}
+                onChange={(value) => setFormData({ ...formData, preferredCurrency: value })}
+                label="Preferred Display Currency"
+              />
+
+              <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                <p className="text-xs text-muted-foreground">
+                  💡 This affects how royalties, payments, and other financial information are displayed throughout your dashboard. You can change this later in your account settings.
+                </p>
+              </div>
+            </div>}
+
+          {/* Step 5: Save Payment Method (Optional) */}
+          {step === 5 && <div className="space-y-4 animate-fade-in">
               <div className="flex items-center gap-2 mb-2">
                 <CreditCard className="w-5 h-5 text-primary" />
                 <h3 className="font-medium">Payment details</h3>
@@ -237,7 +264,7 @@ export const InitialAccountSetup = ({
             </div>}
 
           {/* Navigation buttons */}
-          {step < 4 && <div className="flex items-center justify-between pt-4">
+          {step < 5 && <div className="flex items-center justify-between pt-4">
               <Button variant="ghost" onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1 || loading}>
                 Back
               </Button>
@@ -252,9 +279,9 @@ export const InitialAccountSetup = ({
               </Button>
             </div>}
 
-          {/* Step 4 shows its own buttons via PaymentMethodSetup */}
-          {step === 4 && <div className="flex items-center justify-between pt-4">
-              <Button variant="ghost" onClick={() => setStep(3)} disabled={loading}>
+          {/* Step 5 shows its own buttons via PaymentMethodSetup */}
+          {step === 5 && <div className="flex items-center justify-between pt-4">
+              <Button variant="ghost" onClick={() => setStep(4)} disabled={loading}>
                 Back
               </Button>
               <div className="text-sm text-muted-foreground">

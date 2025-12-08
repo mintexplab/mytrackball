@@ -15,9 +15,10 @@ import {
 interface PaymentMethodSetupProps {
   onComplete: () => void;
   onSkip: () => void;
+  hideSkip?: boolean;
 }
 
-const CardSetupForm = ({ onComplete, onSkip }: PaymentMethodSetupProps) => {
+const CardSetupForm = ({ onComplete, onSkip, hideSkip }: PaymentMethodSetupProps) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
@@ -128,16 +129,18 @@ const CardSetupForm = ({ onComplete, onSkip }: PaymentMethodSetupProps) => {
       )}
 
       <div className="flex gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          className="flex-1"
-          onClick={onSkip}
-          disabled={isLoading}
-        >
-          <SkipForward className="w-4 h-4 mr-2" />
-          Skip for Now
-        </Button>
+        {!hideSkip && (
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            onClick={onSkip}
+            disabled={isLoading}
+          >
+            <SkipForward className="w-4 h-4 mr-2" />
+            Skip for Now
+          </Button>
+        )}
         <Button
           type="submit"
           className="flex-1"
@@ -160,7 +163,7 @@ const CardSetupForm = ({ onComplete, onSkip }: PaymentMethodSetupProps) => {
   );
 };
 
-export const PaymentMethodSetup = ({ onComplete, onSkip }: PaymentMethodSetupProps) => {
+export const PaymentMethodSetup = ({ onComplete, onSkip, hideSkip }: PaymentMethodSetupProps) => {
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -218,7 +221,7 @@ export const PaymentMethodSetup = ({ onComplete, onSkip }: PaymentMethodSetupPro
           </p>
         </div>
         <Elements stripe={stripePromise}>
-          <CardSetupForm onComplete={onComplete} onSkip={onSkip} />
+          <CardSetupForm onComplete={onComplete} onSkip={onSkip} hideSkip={hideSkip} />
         </Elements>
       </CardContent>
     </Card>

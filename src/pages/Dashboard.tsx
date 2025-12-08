@@ -51,6 +51,7 @@ import { LabelInvitationNotification } from "@/components/LabelInvitationNotific
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { FeatureLockBadge } from "@/components/FeatureLockBadge";
 import { SubscriptionManagementTab } from "@/components/SubscriptionManagementTab";
+import { FineDialog } from "@/components/FineDialog";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -513,6 +514,9 @@ const Dashboard = () => {
   }
   return <div className="min-h-screen bg-background relative">
       <AnnouncementBar />
+      
+      {/* Fine Dialog - shows if user has pending fines */}
+      {user && <FineDialog userId={user.id} onResolved={() => window.location.reload()} />}
       
       {isLoggingOut && <div className="fixed inset-0 z-50 bg-background animate-fade-in flex flex-col items-center justify-center gap-4">
           <p className="text-lg text-foreground animate-pulse">Signing you out of My Trackball</p>
