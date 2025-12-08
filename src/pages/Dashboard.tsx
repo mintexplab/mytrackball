@@ -214,8 +214,10 @@ const Dashboard = () => {
         if (!profileData?.account_type || profileData.account_type === 'pending') {
           setShowInitialSetup(true);
         } else {
-          setShowOnboarding(true);
-          setShowOnboardingOverlay(true);
+          // Don't show onboarding overlay here - let dashboard load first
+          // The tutorial will be triggered after dashboard is fully loaded
+          setShowOnboarding(false);
+          setShowOnboardingOverlay(false);
         }
         setLoading(false);
         // Skip the loader entirely for onboarding users
@@ -567,24 +569,8 @@ const Dashboard = () => {
       </div>;
   }
 
-  // Show onboarding tutorial AFTER loader completes
-  if (showOnboarding && showOnboardingOverlay && user) {
-    return (
-      <div className="min-h-screen bg-background relative">
-        <OnboardingTutorial
-          onComplete={async () => {
-            setShowOnboarding(false);
-            setShowOnboardingOverlay(false);
-          }}
-          onSkip={async () => {
-            setShowOnboarding(false);
-            setShowOnboardingOverlay(false);
-          }}
-          isLabelAccount={profile?.account_type === 'label'}
-        />
-      </div>
-    );
-  }
+  // Show onboarding tutorial as an OVERLAY after dashboard is visible
+  // This way the dashboard is loaded and interactable behind the tutorial
   if (isAdmin && !viewAsArtist) {
     return <AdminPortal onSignOut={handleSignOut} onViewArtistDashboard={() => setViewAsArtist(true)} />;
   }
@@ -608,6 +594,21 @@ const Dashboard = () => {
   }
   return <div className="min-h-screen bg-background relative">
       <AnnouncementBar />
+      
+      {/* Onboarding Tutorial Overlay - shows on TOP of dashboard */}
+      {showOnboarding && showOnboardingOverlay && user && (
+        <OnboardingTutorial
+          onComplete={async () => {
+            setShowOnboarding(false);
+            setShowOnboardingOverlay(false);
+          }}
+          onSkip={async () => {
+            setShowOnboarding(false);
+            setShowOnboardingOverlay(false);
+          }}
+          isLabelAccount={profile?.account_type === 'label'}
+        />
+      )}
       
       {/* Fine Dialog - shows if user has pending fines */}
       {user && <FineDialog userId={user.id} onResolved={() => {}} />}
