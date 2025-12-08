@@ -160,7 +160,7 @@ export const RevenueOverview = () => {
       </Card>
 
       {/* Revenue Chart */}
-      {revenue.chartData.length > 0 && (
+      {revenue.chartData && revenue.chartData.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Revenue Trends</CardTitle>
