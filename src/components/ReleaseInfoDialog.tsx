@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Info, Music, Calendar, Tag, User, Building2, FileText, Play } from "lucide-react";
+import { Info, Music, Calendar, Tag, User, Building2, FileText, Play, Download, Image } from "lucide-react";
 import { toast } from "sonner";
 import { AudioPlayer } from "./AudioPlayer";
 
@@ -113,6 +113,51 @@ const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogPro
                   </div>
                 </div>
               </div>
+
+              {/* Download Section */}
+              {(release.artwork_url || release.audio_file_url) && (
+                <>
+                  <Separator />
+                  <div className="space-y-3">
+                    <h4 className="font-bold text-lg">DOWNLOAD ASSETS</h4>
+                    <div className="flex gap-2 flex-wrap">
+                      {release.artwork_url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = release.artwork_url;
+                            link.download = `${release.artist_name} - ${release.title} (Artwork).jpg`;
+                            link.target = '_blank';
+                            link.click();
+                          }}
+                        >
+                          <Image className="w-4 h-4 mr-2" />
+                          Download Artwork
+                        </Button>
+                      )}
+                      {release.audio_file_url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = release.audio_file_url;
+                            const ext = release.audio_file_url.split('.').pop() || 'wav';
+                            link.download = `${release.artist_name} - ${release.title}.${ext}`;
+                            link.target = '_blank';
+                            link.click();
+                          }}
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download Audio
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Audio Player */}
               {release.audio_file_url && (
