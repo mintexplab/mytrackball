@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TwoFactorAuth } from "@/components/TwoFactorAuth";
 import { useS3Upload } from "@/hooks/useS3Upload";
 import LabelDesignationWelcomeDialog from "@/components/LabelDesignationWelcomeDialog";
+import { PaymentMethodsManagement } from "@/components/PaymentMethodsManagement";
 const TIMEZONES = [{
   value: "America/New_York",
   label: "Eastern Time (ET)"
@@ -481,6 +482,8 @@ const AccountSettings = () => {
 
         <TwoFactorAuth />
 
+        <PaymentMethodsManagement />
+
         <Card className="border-border">
           <CardHeader>
             <CardTitle>Tutorial & Onboarding</CardTitle>
@@ -588,35 +591,6 @@ const AccountSettings = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle>Current Plan</CardTitle>
-            <CardDescription>Your distribution plan details</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {userPlan ? <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold text-lg">{userPlan.plan.name}</p>
-                    <p className="text-sm text-muted-foreground">{userPlan.plan.description}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-primary">${userPlan.plan.price}</p>
-                    <p className="text-sm text-muted-foreground">per year  </p>
-                  </div>
-                </div>
-                <div className="pt-4 border-t border-border">
-                  <p className="text-sm font-medium mb-2">Plan Features:</p>
-                  <ul className="space-y-1 text-sm text-muted-foreground">
-                    {userPlan.plan.features?.map((feature: string, index: number) => <li key={index} className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                        {feature}
-                      </li>)}
-                  </ul>
-                </div>
-              </div> : <p className="text-muted-foreground">No active plan</p>}
-          </CardContent>
-        </Card>
       </main>
     </div>;
 };
