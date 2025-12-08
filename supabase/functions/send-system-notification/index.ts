@@ -20,8 +20,13 @@ const escapeHtml = (unsafe: string): string => {
 };
 
 interface SystemNotificationRequest {
-  type: "payout_request" | "release_submission" | "new_user_signup" | "takedown_request" | "plan_purchase";
-  data: {
+  type: "payout_request" | "release_submission" | "new_user_signup" | "takedown_request" | "plan_purchase" | "pay_later_selected";
+  userEmail?: string;
+  releaseTitle?: string;
+  artistName?: string;
+  trackCount?: number;
+  totalAmount?: number;
+  data?: {
     userName?: string;
     userEmail?: string;
     userId?: string;
@@ -61,7 +66,8 @@ const handler = async (req: Request): Promise<Response> => {
     // NOTE: We only require a valid authenticated user to send system notifications.
     // Admin-specific actions should be enforced at the caller level.
 
-    const { type, data }: SystemNotificationRequest = await req.json();
+    const requestBody: SystemNotificationRequest = await req.json();
+    const { type, data, userEmail, releaseTitle, artistName, trackCount, totalAmount } = requestBody;
 
     let subject = "";
     let html = "";
@@ -71,9 +77,9 @@ const handler = async (req: Request): Promise<Response> => {
         subject = "New Payout Request";
         html = `
           <h2>New Payout Request</h2>
-          <p><strong>User:</strong> ${escapeHtml(data.userName || '')} (${escapeHtml(data.userEmail || '')})</p>
-          <p><strong>User ID:</strong> ${escapeHtml(data.userId || '')}</p>
-          <p><strong>Amount:</strong> $${data.amount}</p>
+          <p><strong>User:</strong> ${escapeHtml(data?.userName || '')} (${escapeHtml(data?.userEmail || '')})</p>
+          <p><strong>User ID:</strong> ${escapeHtml(data?.userId || '')}</p>
+          <p><strong>Amount:</strong> $${data?.amount}</p>
           <p>Please review this request in the admin portal.</p>
         `;
         break;
@@ -82,9 +88,9 @@ const handler = async (req: Request): Promise<Response> => {
         subject = "New Release Submission";
         html = `
           <h2>New Release Submission</h2>
-          <p><strong>User:</strong> ${escapeHtml(data.userName || '')} (${escapeHtml(data.userEmail || '')})</p>
-          <p><strong>Release:</strong> ${escapeHtml(data.releaseTitle || '')}</p>
-          <p><strong>Release ID:</strong> ${escapeHtml(data.releaseId || '')}</p>
+          <p><strong>User:</strong> ${escapeHtml(data?.userName || '')} (${escapeHtml(data?.userEmail || '')})</p>
+          <p><strong>Release:</strong> ${escapeHtml(data?.releaseTitle || '')}</p>
+          <p><strong>Release ID:</strong> ${escapeHtml(data?.releaseId || '')}</p>
           <p>Please review this release in the admin portal.</p>
         `;
         break;
@@ -93,9 +99,9 @@ const handler = async (req: Request): Promise<Response> => {
         subject = "New User Signup";
         html = `
           <h2>New User Signup</h2>
-          <p><strong>Name:</strong> ${escapeHtml(data.userName || '')}</p>
-          <p><strong>Email:</strong> ${escapeHtml(data.userEmail || '')}</p>
-          <p><strong>User ID:</strong> ${escapeHtml(data.userId || '')}</p>
+          <p><strong>Name:</strong> ${escapeHtml(data?.userName || '')}</p>
+          <p><strong>Email:</strong> ${escapeHtml(data?.userEmail || '')}</p>
+          <p><strong>User ID:</strong> ${escapeHtml(data?.userId || '')}</p>
           <p>A new user has signed up for Trackball Distribution.</p>
         `;
         break;
@@ -104,9 +110,9 @@ const handler = async (req: Request): Promise<Response> => {
         subject = "Takedown Request";
         html = `
           <h2>Takedown Request</h2>
-          <p><strong>User:</strong> ${escapeHtml(data.userName || '')} (${escapeHtml(data.userEmail || '')})</p>
-          <p><strong>Release:</strong> ${escapeHtml(data.releaseTitle || '')}</p>
-          <p><strong>Release ID:</strong> ${escapeHtml(data.releaseId || '')}</p>
+          <p><strong>User:</strong> ${escapeHtml(data?.userName || '')} (${escapeHtml(data?.userEmail || '')})</p>
+          <p><strong>Release:</strong> ${escapeHtml(data?.releaseTitle || '')}</p>
+          <p><strong>Release ID:</strong> ${escapeHtml(data?.releaseId || '')}</p>
           <p>Please process this takedown request in the admin portal.</p>
         `;
         break;
@@ -115,9 +121,26 @@ const handler = async (req: Request): Promise<Response> => {
         subject = "New Plan Purchase";
         html = `
           <h2>New Plan Purchase</h2>
-          <p><strong>User:</strong> ${escapeHtml(data.userName || '')} (${escapeHtml(data.userEmail || '')})</p>
-          <p><strong>Plan:</strong> ${escapeHtml(data.planName || '')}</p>
+          <p><strong>User:</strong> ${escapeHtml(data?.userName || '')} (${escapeHtml(data?.userEmail || '')})</p>
+          <p><strong>Plan:</strong> ${escapeHtml(data?.planName || '')}</p>
           <p>A user has purchased a new subscription plan.</p>
+        `;
+        break;
+
+      case "pay_later_selected":
+        subject = "⚠️ Pay Later Selected - Action Required";
+        html = `
+          <h2 style="color: #dc2626;">Pay Later Selected</h2>
+          <p>A user has chosen to pay later for their release submission.</p>
+          <hr style="border: 1px solid #333; margin: 16px 0;" />
+          <p><strong>User Email:</strong> ${escapeHtml(userEmail || '')}</p>
+          <p><strong>Release Title:</strong> ${escapeHtml(releaseTitle || '')}</p>
+          <p><strong>Artist Name:</strong> ${escapeHtml(artistName || '')}</p>
+          <p><strong>Track Count:</strong> ${trackCount || 0}</p>
+          <p><strong>Total Amount Owed:</strong> $${totalAmount?.toFixed(2) || '0.00'} CAD</p>
+          <hr style="border: 1px solid #333; margin: 16px 0;" />
+          <p style="color: #f59e0b;"><strong>⚠️ Action Required:</strong> Send payment link within 3 business days.</p>
+          <p style="color: #dc2626;">Failure to collect payment may result in the release not being submitted.</p>
         `;
         break;
     }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -11,15 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, CreditCard, Check, Shield } from "lucide-react";
 import { toast } from "@/lib/toast-with-sound";
 import { supabase } from "@/integrations/supabase/client";
-
-// Get the Stripe publishable key from environment
-const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string;
-
-const stripePromise = STRIPE_PUBLISHABLE_KEY 
-  ? loadStripe(STRIPE_PUBLISHABLE_KEY) 
-  : null;
-
-console.log('Stripe key available:', !!STRIPE_PUBLISHABLE_KEY);
 
 interface PaymentFormProps {
   clientSecret: string;
@@ -194,6 +185,7 @@ interface ReleasePaymentFormProps {
   paymentIntentId: string;
   trackCount: number;
   releaseTitle: string;
+  publishableKey: string;
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -204,9 +196,15 @@ export const ReleasePaymentForm = ({
   paymentIntentId,
   trackCount,
   releaseTitle,
+  publishableKey,
   onSuccess,
   onCancel,
 }: ReleasePaymentFormProps) => {
+  const stripePromise = useMemo(() => {
+    if (!publishableKey) return null;
+    return loadStripe(publishableKey);
+  }, [publishableKey]);
+
   if (!stripePromise) {
     return (
       <Card className="border-destructive/30">
