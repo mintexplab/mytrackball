@@ -74,7 +74,8 @@ const AddCardForm = ({ onComplete, onCancel }: { onComplete: () => void; onCance
       const cardElement = elements.getElement(CardElement);
       if (!cardElement) throw new Error("Card element not found");
 
-      const { error: confirmError, setupIntent } = await stripe.confirmCardSetup(
+      // Use confirmCardPayment for verification fee payment
+      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
         clientSecret,
         {
           payment_method: {
@@ -87,8 +88,29 @@ const AddCardForm = ({ onComplete, onCancel }: { onComplete: () => void; onCance
         throw new Error(confirmError.message);
       }
 
-      if (setupIntent?.status === "succeeded") {
-        toast.success("Card added successfully!");
+      if (paymentIntent?.status === "succeeded") {
+        // Send verification receipt email
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, display_name")
+            .eq("id", user?.id)
+            .single();
+
+          await supabase.functions.invoke("send-verification-receipt", {
+            body: {
+              userEmail: user?.email,
+              userName: profile?.display_name || profile?.full_name || user?.email?.split('@')[0],
+              paymentDate: new Date().toISOString(),
+            },
+          });
+        } catch (emailError) {
+          console.error("Failed to send verification receipt:", emailError);
+          // Don't block the flow if email fails
+        }
+
+        toast.success("Card verified and added successfully! A $2.29 CAD verification fee was charged.");
         onComplete();
       }
     } catch (err: any) {
@@ -102,6 +124,14 @@ const AddCardForm = ({ onComplete, onCancel }: { onComplete: () => void; onCance
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+        <p className="text-sm text-muted-foreground">
+          <strong className="text-primary">$2.29 CAD Verification Fee</strong>
+          <br />
+          A one-time fee will be charged to verify your card. This helps prevent fraud and ensures secure transactions.
+        </p>
+      </div>
+
       <div className="space-y-2">
         <label className="text-sm font-medium">Card Details</label>
         <div className="p-3 border border-border rounded-lg bg-background/50">
@@ -144,12 +174,12 @@ const AddCardForm = ({ onComplete, onCancel }: { onComplete: () => void; onCance
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Adding...
+              Verifying...
             </>
           ) : (
             <>
               <Check className="w-4 h-4 mr-2" />
-              Add Card
+              Verify & Add Card ($2.29)
             </>
           )}
         </Button>
@@ -303,7 +333,7 @@ export const PaymentMethodsManagement = () => {
                 Add Payment Method
               </DialogTitle>
               <DialogDescription>
-                Add a new card for quick payments
+                Add a new card with a $2.29 CAD verification fee
               </DialogDescription>
             </DialogHeader>
             {stripePromise ? (

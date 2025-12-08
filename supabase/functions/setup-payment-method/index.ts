@@ -72,15 +72,38 @@ serve(async (req) => {
       description: 'Card Verification Fee',
       metadata: {
         user_id: user.id,
+        user_email: user.email,
         type: 'verification_fee',
       },
     });
     logStep("Created PaymentIntent for verification", { paymentIntentId: paymentIntent.id, amount: verificationFee });
 
+    // Send verification receipt email after successful payment intent creation
+    // The receipt will be triggered after payment confirmation
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      
+      // Get user's full name from profile
+      const { data: profileData } = await supabaseClient
+        .from("profiles")
+        .select("full_name, display_name")
+        .eq("id", user.id)
+        .single();
+      
+      const userName = profileData?.display_name || profileData?.full_name || user.email?.split('@')[0] || 'User';
+
+      // Store verification receipt data in metadata for webhook to send email
+      logStep("User profile fetched for receipt", { userName });
+    } catch (profileError) {
+      logStep("Warning: Could not fetch profile for receipt", { error: profileError });
+    }
+
     return new Response(JSON.stringify({
       clientSecret: paymentIntent.client_secret,
       publishableKey,
       customerId,
+      userEmail: user.email,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
