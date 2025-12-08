@@ -33,7 +33,9 @@ export const SignaturePad = ({ onSignatureChange, disabled = false }: SignatureP
       const isCanvasEmpty = sigCanvas.current.isEmpty();
       setIsEmpty(isCanvasEmpty);
       if (!isCanvasEmpty) {
-        const dataUrl = sigCanvas.current.getTrimmedCanvas().toDataURL("image/png");
+        // Use getCanvas() instead of getTrimmedCanvas() to avoid trim-canvas error
+        const canvas = sigCanvas.current.getCanvas();
+        const dataUrl = canvas.toDataURL("image/png");
         onSignatureChange(dataUrl);
       } else {
         onSignatureChange(null);
@@ -88,7 +90,7 @@ export const SignaturePad = ({ onSignatureChange, disabled = false }: SignatureP
               height: "150px",
             }
           }}
-          penColor="hsl(var(--primary))"
+          penColor="#ffffff"
           backgroundColor="transparent"
           onEnd={handleEnd}
         />
