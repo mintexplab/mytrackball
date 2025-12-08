@@ -89,16 +89,20 @@ export const FineDialog = ({ userId, onResolved }: FineDialogProps) => {
       }
 
       // Mark all pending fines as paid
-      for (const fine of pendingFines) {
-        await supabase
-          .from("user_fines")
-          .update({
-            status: "paid",
-            paid_at: new Date().toISOString(),
-          })
-          .eq("id", fine.id);
-      }
+      const fineIds = pendingFines.map(f => f.id);
+      const { error: updateError } = await supabase
+        .from("user_fines")
+        .update({
+          status: "paid",
+          paid_at: new Date().toISOString(),
+        })
+        .in("id", fineIds);
 
+      if (updateError) throw updateError;
+
+      // Clear local state immediately to prevent dialog from showing again
+      setPendingFines([]);
+      
       toast.success(isMockFine ? "Mock fine acknowledged" : "Fine paid successfully");
       onResolved();
     } catch (error: any) {
