@@ -165,56 +165,81 @@ const Dashboard = () => {
     root.style.setProperty('--shadow-glow', `0 0 40px hsl(${h} ${s} ${l} / 0.3)`);
   };
 
+  // Check onboarding status FIRST before anything else loads
   useEffect(() => {
+    const checkOnboardingFirst = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.user) {
+        navigate("/auth");
+        setLoading(false);
+        return;
+      }
+
+      // Check if user needs onboarding BEFORE loading anything else
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("account_type, onboarding_completed")
+        .eq("id", session.user.id)
+        .single();
+
+      // Check if admin (admins skip onboarding)
+      const { data: isAdminData } = await supabase.rpc('has_role', {
+        _user_id: session.user.id,
+        _role: 'admin'
+      });
+
+      if (!isAdminData && (!profileData?.onboarding_completed)) {
+        // User needs onboarding - show it IMMEDIATELY without loading dashboard
+        if (!profileData?.account_type || profileData.account_type === 'pending') {
+          setShowInitialSetup(true);
+        } else {
+          setShowOnboarding(true);
+          setShowOnboardingOverlay(true);
+        }
+        setUser(session.user);
+        setSession(session);
+        setLoading(false);
+        return; // Don't load dashboard yet
+      }
+
+      // User doesn't need onboarding - proceed with normal loading
+      setSession(session);
+      setUser(session.user);
+      
+      // Check termination and maintenance
+      checkTerminationStatus(session.user.id);
+      checkMaintenanceMode(session.user.id);
+      
+      // Check if loader has been shown this session
+      const loaderShown = sessionStorage.getItem('loginLoaderShown');
+      if (!loaderShown) {
+        setShowLoader(true);
+        const randomDelay = Math.floor(Math.random() * 5000) + 5000;
+        setTimeout(() => {
+          setShowLoader(false);
+          sessionStorage.setItem('loginLoaderShown', 'true');
+        }, randomDelay);
+      }
+      
+      checkAdminStatus(session.user.id);
+      fetchUserPlan(session.user.id);
+      fetchReleaseCount(session.user.id);
+      setLoading(false);
+    };
+
+    checkOnboardingFirst();
+
     // Add fade-in animation on mount
     document.body.style.transition = "opacity 0.3s ease-in";
     document.body.style.opacity = "1";
 
-    const {
-      data: {
-        subscription
-      }
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setTimeout(() => {
-          checkAdminStatus(session.user.id);
-          fetchUserPlan(session.user.id);
-        }, 0);
-      }
-    });
-    supabase.auth.getSession().then(async ({
-      data: {
-        session
-      }
-    }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        // Check termination and maintenance FIRST, before loader
-        checkTerminationStatus(session.user.id);
-        checkMaintenanceMode(session.user.id);
-        
-        // Check if loader has been shown this session
-        const loaderShown = sessionStorage.getItem('loginLoaderShown');
-        if (!loaderShown) {
-          setShowLoader(true);
-          // Random delay between 5-10 seconds
-          const randomDelay = Math.floor(Math.random() * 5000) + 5000;
-          setTimeout(() => {
-            setShowLoader(false);
-            sessionStorage.setItem('loginLoaderShown', 'true');
-          }, randomDelay);
-        }
-        checkAdminStatus(session.user.id);
-        fetchUserPlan(session.user.id);
-        fetchReleaseCount(session.user.id);
-      } else {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
         navigate("/auth");
       }
-      setLoading(false);
     });
+
     return () => subscription.unsubscribe();
   }, [navigate]);
   const checkAdminStatus = async (userId: string) => {
@@ -408,20 +433,8 @@ const Dashboard = () => {
         .eq("id", userId);
     }
 
-    // Check if initial setup or onboarding should be shown (only for non-admin, first-time users)
-    const { data: isAdminData } = await supabase.rpc('has_role', {
-      _user_id: userId,
-      _role: 'admin'
-    });
-    
-    if (!isAdminData && !profileData?.onboarding_completed) {
-      // Check if account needs initial setup (no account_type set)
-      if (!profileData?.account_type || profileData.account_type === 'pending') {
-        setShowInitialSetup(true);
-      } else {
-        setShowOnboarding(true);
-      }
-    }
+    // Note: Initial onboarding check is now handled in the initial useEffect
+    // This is only for cases where the user is already loaded but needs onboarding check
 
     // If user has a parent account, fetch parent account details
     if (profileData?.parent_account_id) {
@@ -444,18 +457,7 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, [user?.id]);
 
-  // Show onboarding tutorial after dashboard is fully loaded
-  useEffect(() => {
-    if (showOnboarding && !showInitialSetup && !showLoader && !loading) {
-      // Add a delay to ensure dashboard is fully rendered and interactive
-      const timer = setTimeout(() => {
-        setShowOnboardingOverlay(true);
-      }, 1500);
-      return () => clearTimeout(timer);
-    } else {
-      setShowOnboardingOverlay(false);
-    }
-  }, [showOnboarding, showInitialSetup, showLoader, loading]);
+  // Onboarding overlay is now set immediately in the initial check, no delay needed
   const fetchReleaseCount = async (userId: string) => {
     const {
       count
@@ -474,6 +476,64 @@ const Dashboard = () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
+  // Show initial setup immediately if needed (no loading spinner)
+  if (showInitialSetup && user) {
+    return (
+      <div className="min-h-screen bg-background relative">
+        <InitialAccountSetup 
+          onComplete={() => {
+            setShowInitialSetup(false);
+            setShowOnboarding(true);
+            setShowOnboardingOverlay(true);
+          }} 
+        />
+      </div>
+    );
+  }
+
+  // Show onboarding tutorial immediately if needed (no loading spinner)
+  if (showOnboarding && showOnboardingOverlay && user) {
+    return (
+      <div className="min-h-screen bg-background relative">
+        <OnboardingTutorial
+          onComplete={async () => {
+            setShowOnboarding(false);
+            setShowOnboardingOverlay(false);
+            // Now load the dashboard
+            if (user?.id) {
+              setShowLoader(true);
+              const randomDelay = Math.floor(Math.random() * 3000) + 2000;
+              setTimeout(() => {
+                setShowLoader(false);
+                sessionStorage.setItem('loginLoaderShown', 'true');
+              }, randomDelay);
+              checkAdminStatus(user.id);
+              fetchUserPlan(user.id);
+              fetchReleaseCount(user.id);
+            }
+          }}
+          onSkip={async () => {
+            setShowOnboarding(false);
+            setShowOnboardingOverlay(false);
+            // Now load the dashboard
+            if (user?.id) {
+              setShowLoader(true);
+              const randomDelay = Math.floor(Math.random() * 3000) + 2000;
+              setTimeout(() => {
+                setShowLoader(false);
+                sessionStorage.setItem('loginLoaderShown', 'true');
+              }, randomDelay);
+              checkAdminStatus(user.id);
+              fetchUserPlan(user.id);
+              fetchReleaseCount(user.id);
+            }
+          }}
+          isLabelAccount={false}
+        />
+      </div>
+    );
+  }
+
   if (loading || showLoader) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -969,47 +1029,7 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Initial Account Setup - Shows first */}
-      {showInitialSetup && (
-        <InitialAccountSetup
-          onComplete={async () => {
-            setShowInitialSetup(false);
-            // Refresh profile data to get updated account type and wait for it
-            if (user?.id) {
-              await fetchUserPlan(user.id);
-              // Small delay to ensure state updates have propagated
-              await new Promise(resolve => setTimeout(resolve, 100));
-            }
-            // Show onboarding tutorial after setup
-            setShowOnboarding(true);
-          }}
-        />
-      )}
-
-      {/* Onboarding Tutorial - Shows after initial setup */}
-      {showOnboardingOverlay && !showInitialSetup && (
-        <OnboardingTutorial
-          onComplete={async () => {
-            setShowOnboarding(false);
-            setShowOnboardingOverlay(false);
-            // If label account, show label designation welcome after tutorial
-            if (profile?.account_type === 'label' && profile?.label_type === 'Label Free') {
-              setLabelDesignationType('label_free');
-              setShowLabelDesignationWelcome(true);
-            }
-          }}
-          onSkip={async () => {
-            setShowOnboarding(false);
-            setShowOnboardingOverlay(false);
-            // If label account, show label designation welcome after skipping tutorial
-            if (profile?.account_type === 'label' && profile?.label_type === 'Label Free') {
-              setLabelDesignationType('label_free');
-              setShowLabelDesignationWelcome(true);
-            }
-          }}
-          isLabelAccount={profile?.account_type === 'label'}
-        />
-      )}
+      {/* Note: InitialAccountSetup and OnboardingTutorial now render as full pages before dashboard loads */}
 
       {/* Subscription Welcome Dialog - Shows first */}
       {showSubscriptionWelcome && (
