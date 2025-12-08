@@ -87,6 +87,13 @@ serve(async (req) => {
     });
     logStep("Fetched payment methods", { count: paymentMethods.data.length });
 
+    // Fetch recent payment intents (one-time payments)
+    const paymentIntents = await stripe.paymentIntents.list({
+      customer: customerId,
+      limit: 10,
+    });
+    logStep("Fetched payment intents", { count: paymentIntents.data.length });
+
     // Fetch upcoming invoice if subscription exists
     let upcomingInvoice = null;
     if (subscription) {
@@ -139,6 +146,14 @@ serve(async (req) => {
         period_start: upcomingInvoice.period_start,
         period_end: upcomingInvoice.period_end,
       } : null,
+      recentPayments: paymentIntents.data.map((pi: any) => ({
+        id: pi.id,
+        amount: pi.amount,
+        status: pi.status,
+        created: pi.created,
+        description: pi.description || pi.metadata?.description || 'Payment',
+        customer_email: user.email,
+      })),
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
