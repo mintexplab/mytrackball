@@ -51,7 +51,8 @@ const CardSetupForm = ({ onComplete, onSkip }: PaymentMethodSetupProps) => {
       const cardElement = elements.getElement(CardElement);
       if (!cardElement) throw new Error("Card element not found");
 
-      const { error: confirmError, setupIntent } = await stripe.confirmCardSetup(
+      // Use confirmCardPayment instead of confirmCardSetup for the verification charge
+      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
         clientSecret,
         {
           payment_method: {
@@ -64,8 +65,8 @@ const CardSetupForm = ({ onComplete, onSkip }: PaymentMethodSetupProps) => {
         throw new Error(confirmError.message);
       }
 
-      if (setupIntent?.status === "succeeded") {
-        toast.success("Payment method saved successfully!");
+      if (paymentIntent?.status === "succeeded") {
+        toast.success("Card verified and saved successfully!");
         onComplete();
       }
     } catch (err: any) {
@@ -124,12 +125,12 @@ const CardSetupForm = ({ onComplete, onSkip }: PaymentMethodSetupProps) => {
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Saving...
+              Verifying...
             </>
           ) : (
             <>
               <Check className="w-4 h-4 mr-2" />
-              Save Card
+              Verify & Save ($2.29)
             </>
           )}
         </Button>
@@ -185,12 +186,16 @@ export const PaymentMethodSetup = ({ onComplete, onSkip }: PaymentMethodSetupPro
       <CardContent className="pt-6">
         <div className="flex items-center gap-2 mb-4">
           <CreditCard className="w-5 h-5 text-primary" />
-          <h3 className="font-medium">Save Payment Method</h3>
+          <h3 className="font-medium">Verify Payment Method</h3>
         </div>
-        <p className="text-sm text-muted-foreground mb-4">
-          Save your card for faster checkouts on future releases and takedowns. 
-          You won't be charged now.
+        <p className="text-sm text-muted-foreground mb-3">
+          To verify your card is genuine, a one-time <span className="text-foreground font-semibold">$2.29 CAD</span> verification fee will be charged.
         </p>
+        <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-4">
+          <p className="text-xs text-muted-foreground">
+            This helps us prevent fraud and ensures secure transactions for all future releases and takedowns. Your card will be saved for faster checkouts.
+          </p>
+        </div>
         <Elements stripe={stripePromise}>
           <CardSetupForm onComplete={onComplete} onSkip={onSkip} />
         </Elements>
