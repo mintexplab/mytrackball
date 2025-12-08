@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music, Settings, ChevronDown, AlertTriangle, FileText, ShieldAlert, MessageSquare } from "lucide-react";
+import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music, Settings, ChevronDown, AlertTriangle, FileText, ShieldAlert, MessageSquare, Sparkles } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
 import UserManagement from "./UserManagement";
@@ -34,6 +34,7 @@ import { TestPaymentSection } from "./TestPaymentSection";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FineManagement } from "./FineManagement";
+import { TrackAllowanceAdminManagement } from "./TrackAllowanceAdminManagement";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -252,6 +253,10 @@ const AdminPortal = ({
                     Invoice Drafts
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setActiveTab("track-allowance")} className="cursor-pointer">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Track Allowance
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setActiveTab("fines")} className="cursor-pointer">
                     <AlertTriangle className="w-4 h-4 mr-2 text-destructive" />
                     <span className="text-destructive">Fines & Strikes</span>
@@ -401,7 +406,8 @@ const AdminPortal = ({
             <FineManagement users={[]} onFineIssued={() => {}} />
           </TabsContent>
 
-          <TabsContent value="invoice-drafts">
+          <TabsContent value="track-allowance">
+            <TrackAllowanceAdminManagement />
           </TabsContent>
 
           <TabsContent value="publishing">
