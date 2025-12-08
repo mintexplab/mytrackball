@@ -86,7 +86,7 @@ export const FineManagement = ({ users: propUsers, onFineIssued }: FineManagemen
       const currentStrikes = profile?.strike_count || 0;
       const newStrikeNumber = currentStrikes + 1;
 
-      // Insert the fine
+      // Insert the fine - always pending so user sees dialog
       const { error } = await supabase
         .from("user_fines")
         .insert({
@@ -96,10 +96,8 @@ export const FineManagement = ({ users: propUsers, onFineIssued }: FineManagemen
           fine_type: fineType,
           strike_number: newStrikeNumber,
           issued_by: user.id,
-          notes: notes || null,
-          // For mock fines, mark as already paid so user doesn't see the dialog
-          status: isMockFine ? "paid" : "pending",
-          paid_at: isMockFine ? new Date().toISOString() : null,
+          notes: isMockFine ? `[MOCK FINE] ${notes || ''}`.trim() : (notes || null),
+          status: "pending", // Always pending so dialog shows
         });
 
       if (error) throw error;
