@@ -157,6 +157,7 @@ const CreateRelease = () => {
     clientSecret: string;
     paymentIntentId: string;
     releaseId: string;
+    publishableKey: string;
   } | null>(null);
   
   // Calculate pricing
@@ -605,11 +606,12 @@ const CreateRelease = () => {
 
       if (paymentError) throw paymentError;
 
-      if (paymentData?.clientSecret) {
+      if (paymentData?.clientSecret && paymentData?.publishableKey) {
         setPaymentData({
           clientSecret: paymentData.clientSecret,
           paymentIntentId: paymentData.paymentIntentId,
           releaseId: release.id,
+          publishableKey: paymentData.publishableKey,
         });
         setShowPricingConfirm(false);
         setShowPaymentForm(true);
@@ -651,6 +653,26 @@ const CreateRelease = () => {
   const handlePayLater = async () => {
     setShowPayLaterConfirm(false);
     setShowPricingConfirm(false);
+    
+    // Send admin notification about pay later selection
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.functions.invoke('send-system-notification', {
+          body: {
+            type: 'pay_later_selected',
+            userEmail: user.email,
+            releaseTitle: formData.songTitle,
+            artistName: formData.artistName,
+            trackCount: tracks.length,
+            totalAmount: totalCost,
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to send admin notification:', error);
+    }
+    
     toast.info("Your release has been saved. You will receive a payment link within 3 business days.");
     localStorage.removeItem('release-draft');
     navigate("/dashboard");
@@ -1694,6 +1716,7 @@ const CreateRelease = () => {
               paymentIntentId={paymentData.paymentIntentId}
               trackCount={trackCount}
               releaseTitle={formData.songTitle}
+              publishableKey={paymentData.publishableKey}
               onSuccess={handlePaymentSuccess}
               onCancel={handlePaymentCancel}
             />

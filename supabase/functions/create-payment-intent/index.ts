@@ -97,10 +97,17 @@ serve(async (req) => {
 
     logStep("PaymentIntent created", { paymentIntentId: paymentIntent.id });
 
+    // Get publishable key to return to frontend
+    const publishableKey = Deno.env.get("STRIPE_PUBLISHABLE_KEY");
+    if (!publishableKey) {
+      logStep("WARNING: STRIPE_PUBLISHABLE_KEY not set");
+    }
+
     return new Response(JSON.stringify({ 
       clientSecret: paymentIntent.client_secret,
       amount: totalAmount,
-      paymentIntentId: paymentIntent.id
+      paymentIntentId: paymentIntent.id,
+      publishableKey: publishableKey || null
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
