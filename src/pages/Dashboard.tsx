@@ -56,6 +56,8 @@ import { PaymentMethodsManagement } from "@/components/PaymentMethodsManagement"
 import { PaymentHistory } from "@/components/PaymentHistory";
 import { TrackAllowanceTab } from "@/components/TrackAllowanceTab";
 import { TrackAllowanceBlock } from "@/components/TrackAllowanceBlock";
+import { TermsAgreementFlow } from "@/components/TermsAgreementFlow";
+import { CURRENT_TERMS_VERSION } from "@/components/TermsOfServiceContent";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -83,6 +85,7 @@ const Dashboard = () => {
   const [viewAsArtist, setViewAsArtist] = useState(false);
   const [showInitialSetup, setShowInitialSetup] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showTermsAgreement, setShowTermsAgreement] = useState(false);
   const [showOnboardingOverlay, setShowOnboardingOverlay] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [showLabelDesignationWelcome, setShowLabelDesignationWelcome] = useState(false);
@@ -178,14 +181,14 @@ const Dashboard = () => {
         return;
       }
 
-      // Check if user needs onboarding BEFORE loading anything else
+      // Check if user needs terms acceptance or onboarding BEFORE loading anything else
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("account_type, onboarding_completed")
+        .select("account_type, onboarding_completed, terms_accepted_at, terms_version")
         .eq("id", session.user.id)
         .single();
 
-      // Check if admin (admins skip onboarding)
+      // Check if admin (admins skip onboarding and terms)
       const { data: isAdminData } = await supabase.rpc('has_role', {
         _user_id: session.user.id,
         _role: 'admin'
@@ -194,6 +197,18 @@ const Dashboard = () => {
       // Set session and user immediately
       setSession(session);
       setUser(session.user);
+
+      // Check if terms need to be accepted (skip for admins)
+      const needsTermsAcceptance = !isAdminData && (
+        !profileData?.terms_accepted_at || 
+        profileData?.terms_version !== CURRENT_TERMS_VERSION
+      );
+
+      if (needsTermsAcceptance) {
+        setShowTermsAgreement(true);
+        setLoading(false);
+        return;
+      }
 
       if (!isAdminData && (!profileData?.onboarding_completed)) {
         // User needs onboarding - show it IMMEDIATELY without loading dashboard or loader
@@ -478,6 +493,40 @@ const Dashboard = () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
+  // Show terms agreement flow if needed (highest priority for new users)
+  if (showTermsAgreement && user) {
+    return (
+      <TermsAgreementFlow
+        userId={user.id}
+        onComplete={() => {
+          setShowTermsAgreement(false);
+          // Now check if onboarding is needed
+          if (!profile?.onboarding_completed) {
+            if (!profile?.account_type || profile.account_type === 'pending') {
+              setShowInitialSetup(true);
+            } else {
+              setShowOnboarding(true);
+              setShowOnboardingOverlay(true);
+            }
+          } else {
+            // Proceed with normal loading
+            setShowLoader(true);
+            const randomDelay = Math.floor(Math.random() * 5000) + 5000;
+            if (user?.id) {
+              checkAdminStatus(user.id);
+              fetchUserPlan(user.id);
+              fetchReleaseCount(user.id);
+            }
+            setTimeout(() => {
+              setShowLoader(false);
+              sessionStorage.setItem('loginLoaderShown', 'true');
+            }, randomDelay);
+          }
+        }}
+      />
+    );
+  }
+
   // Show initial setup immediately if needed (no loading spinner)
   if (showInitialSetup && user) {
     return (

@@ -672,6 +672,9 @@ export type Database = {
           subscription_welcome_shown_at: string | null
           suspended_at: string | null
           suspension_reason: string | null
+          terms_accepted_at: string | null
+          terms_signature_url: string | null
+          terms_version: string | null
           user_id: string
           user_timezone: string | null
         }
@@ -712,6 +715,9 @@ export type Database = {
           subscription_welcome_shown_at?: string | null
           suspended_at?: string | null
           suspension_reason?: string | null
+          terms_accepted_at?: string | null
+          terms_signature_url?: string | null
+          terms_version?: string | null
           user_id: string
           user_timezone?: string | null
         }
@@ -752,6 +758,9 @@ export type Database = {
           subscription_welcome_shown_at?: string | null
           suspended_at?: string | null
           suspension_reason?: string | null
+          terms_accepted_at?: string | null
+          terms_signature_url?: string | null
+          terms_version?: string | null
           user_id?: string
           user_timezone?: string | null
         }
