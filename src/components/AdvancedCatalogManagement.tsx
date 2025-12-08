@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Filter, Download, Music, Calendar, Tag, Trash2, Archive, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
 import ReleaseInfoDialog from "./ReleaseInfoDialog";
+import { TakedownPaymentDialog } from "./TakedownPaymentDialog";
 
 interface AdvancedCatalogManagementProps {
   userId: string;
@@ -68,6 +69,8 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
   const [genreFilter, setGenreFilter] = useState("all");
   const [selectedReleases, setSelectedReleases] = useState<Set<string>>(new Set());
   const [showArchived, setShowArchived] = useState(false);
+  const [takedownDialogOpen, setTakedownDialogOpen] = useState(false);
+  const [takedownRelease, setTakedownRelease] = useState<{ id: string; title: string; artistName: string } | null>(null);
 
   useEffect(() => {
     fetchReleases();
@@ -246,21 +249,13 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
     fetchReleases();
   };
 
-  const handleRequestTakedown = async (releaseId: string) => {
-    if (!confirm("Request takedown for this release? This will notify the admin to remove it from streaming platforms.")) return;
-
-    const { error } = await supabase
-      .from("releases")
-      .update({ takedown_requested: true })
-      .eq("id", releaseId);
-
-    if (error) {
-      toast.error("Failed to request takedown");
-      return;
-    }
-
-    toast.success("Takedown request submitted");
-    fetchReleases();
+  const openTakedownPayment = (release: any) => {
+    setTakedownRelease({
+      id: release.id,
+      title: release.title,
+      artistName: release.artist_name,
+    });
+    setTakedownDialogOpen(true);
   };
 
   const handleBulkArchive = async () => {
@@ -621,7 +616,7 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
                               size="sm"
                               variant="outline"
                               className="border-yellow-500/30 hover:bg-yellow-500/20 text-yellow-300"
-                              onClick={() => handleRequestTakedown(release.id)}
+                              onClick={() => openTakedownPayment(release)}
                             >
                               <AlertTriangle className="w-3 h-3 mr-1" />
                               Request Takedown
@@ -648,6 +643,16 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
           )}
         </CardContent>
       </Card>
+
+      {takedownRelease && (
+        <TakedownPaymentDialog
+          open={takedownDialogOpen}
+          onOpenChange={setTakedownDialogOpen}
+          releaseId={takedownRelease.id}
+          releaseTitle={takedownRelease.title}
+          artistName={takedownRelease.artistName}
+        />
+      )}
     </div>
   );
 };

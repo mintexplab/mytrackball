@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { CheckCircle2, XCircle, Clock, Trash2, AlertTriangle, CreditCard, Send } from "lucide-react";
 import ReleaseInfoDialog from "./ReleaseInfoDialog";
 import ReleaseRejectionDialog from "./ReleaseRejectionDialog";
+import { TakedownPaymentDialog } from "./TakedownPaymentDialog";
+
 interface ReleasesListProps {
   userId?: string;
   isAdmin: boolean;
@@ -15,10 +17,38 @@ interface ReleasesListProps {
 const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
   const [releases, setReleases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [takedownDialogOpen, setTakedownDialogOpen] = useState(false);
+  const [selectedRelease, setSelectedRelease] = useState<{ id: string; title: string; artistName: string } | null>(null);
 
   useEffect(() => {
     fetchReleases();
+    // Check for takedown success from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const takedownResult = urlParams.get("takedown");
+    const releaseId = urlParams.get("releaseId");
+    
+    if (takedownResult === "success" && releaseId) {
+      // Process the takedown request after successful payment
+      processTakedownAfterPayment(releaseId);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, [userId, isAdmin]);
+
+  const processTakedownAfterPayment = async (releaseId: string) => {
+    const { error } = await supabase
+      .from("releases")
+      .update({ takedown_requested: true })
+      .eq("id", releaseId);
+
+    if (error) {
+      toast.error("Payment received but failed to submit takedown request. Please contact support.");
+      return;
+    }
+
+    toast.success("Payment successful! Takedown request submitted to admin.");
+    fetchReleases();
+  };
 
   const fetchReleases = async () => {
     let query = supabase
@@ -113,19 +143,13 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
     fetchReleases();
   };
 
-  const requestTakedown = async (releaseId: string) => {
-    const { error } = await supabase
-      .from("releases")
-      .update({ takedown_requested: true })
-      .eq("id", releaseId);
-
-    if (error) {
-      toast.error("Failed to request takedown");
-      return;
-    }
-
-    toast.success("Takedown request submitted");
-    fetchReleases();
+  const openTakedownDialog = (release: any) => {
+    setSelectedRelease({
+      id: release.id,
+      title: release.title,
+      artistName: release.artist_name,
+    });
+    setTakedownDialogOpen(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -311,7 +335,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => requestTakedown(release.id)}
+                          onClick={() => openTakedownDialog(release)}
                           className="border-yellow-500/30 hover:bg-yellow-500/20 text-yellow-300"
                         >
                           <AlertTriangle className="w-3 h-3 mr-1" />
@@ -326,6 +350,16 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
           ))}
         </TableBody>
       </Table>
+
+      {selectedRelease && (
+        <TakedownPaymentDialog
+          open={takedownDialogOpen}
+          onOpenChange={setTakedownDialogOpen}
+          releaseId={selectedRelease.id}
+          releaseTitle={selectedRelease.title}
+          artistName={selectedRelease.artistName}
+        />
+      )}
     </div>
   );
 };
