@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music, Settings, ChevronDown, AlertTriangle, FileText, ShieldAlert, MessageSquare, Sparkles, TrendingUp } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
-import UserManagement from "./UserManagement";
+import CompactUserManagement from "./CompactUserManagement";
 import ReleasesList from "./ReleasesList";
 import { AnnouncementManagement } from "./AnnouncementManagement";
 import RoyaltiesManagement from "./RoyaltiesManagement";
@@ -359,7 +359,7 @@ const AdminPortal = ({
           </div>
 
           <TabsContent value="users">
-            <UserManagement />
+            <CompactUserManagement />
           </TabsContent>
 
           <TabsContent value="managers">
