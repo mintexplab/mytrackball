@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AlertTriangle, CreditCard, Loader2, XCircle } from "lucide-react";
+import { AlertTriangle, CreditCard, Loader2, XCircle, LogOut } from "lucide-react";
 import { PaymentMethodSetup } from "./PaymentMethodSetup";
 import { useSavedPaymentMethod } from "@/hooks/useSavedPaymentMethod";
 import { usePreferredCurrency } from "@/hooks/usePreferredCurrency";
@@ -293,6 +293,18 @@ export const FineDialog = ({ userId, onResolved }: FineDialogProps) => {
             >
               <CreditCard className="w-4 h-4 mr-2" />
               Add Payment Method
+            </Button>
+
+            <Button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = "/auth";
+              }}
+              variant="ghost"
+              className="w-full text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Log Out
             </Button>
           </div>
         </DialogContent>
