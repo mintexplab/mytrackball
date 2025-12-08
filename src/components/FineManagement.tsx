@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AlertTriangle, DollarSign, Loader2, Search } from "lucide-react";
+import { AlertTriangle, DollarSign, Loader2, Search, TestTube } from "lucide-react";
 
 interface FineManagementProps {
   users?: any[];
@@ -33,6 +34,7 @@ export const FineManagement = ({ users: propUsers, onFineIssued }: FineManagemen
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isMockFine, setIsMockFine] = useState(false);
 
   useEffect(() => {
     if (!propUsers || propUsers.length === 0) {
@@ -95,12 +97,15 @@ export const FineManagement = ({ users: propUsers, onFineIssued }: FineManagemen
           strike_number: newStrikeNumber,
           issued_by: user.id,
           notes: notes || null,
+          // For mock fines, mark as already paid so user doesn't see the dialog
+          status: isMockFine ? "paid" : "pending",
+          paid_at: isMockFine ? new Date().toISOString() : null,
         });
 
       if (error) throw error;
 
       // If this is the 3rd strike, automatically add the $55 penalty fee
-      if (newStrikeNumber >= 3) {
+      if (newStrikeNumber >= 3 && !isMockFine) {
         await supabase
           .from("user_fines")
           .insert({
@@ -116,7 +121,8 @@ export const FineManagement = ({ users: propUsers, onFineIssued }: FineManagemen
         toast.warning(`User has reached 3 strikes and has been suspended. $55 CAD penalty added.`);
       }
 
-      toast.success(`Fine of $${amount} CAD issued successfully (Strike ${newStrikeNumber}/3)`);
+      const fineLabel = isMockFine ? "Mock fine" : "Fine";
+      toast.success(`${fineLabel} of $${amount} CAD issued successfully (Strike ${newStrikeNumber}/3)`);
       
       // Reset form
       setSelectedUserId("");
@@ -124,6 +130,7 @@ export const FineManagement = ({ users: propUsers, onFineIssued }: FineManagemen
       setFineType("");
       setFineReason("");
       setNotes("");
+      setIsMockFine(false);
       setDialogOpen(false);
       fetchUsers();
       onFineIssued?.();
@@ -269,6 +276,23 @@ export const FineManagement = ({ users: propUsers, onFineIssued }: FineManagemen
                     value={fineReason}
                     onChange={(e) => setFineReason(e.target.value)}
                     className="bg-background/50 border-border min-h-[80px]"
+                  />
+                </div>
+
+                {/* Mock Fine Toggle */}
+                <div className="flex items-center justify-between p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <TestTube className="w-4 h-4 text-yellow-500" />
+                    <div>
+                      <Label className="text-sm font-medium">Mock Fine (Testing)</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Issue fine for record-keeping only, no payment required
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={isMockFine}
+                    onCheckedChange={setIsMockFine}
                   />
                 </div>
 

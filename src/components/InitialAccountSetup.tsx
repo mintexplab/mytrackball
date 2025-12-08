@@ -242,7 +242,10 @@ export const InitialAccountSetup = ({
               
               <CurrencySelector 
                 value={formData.preferredCurrency}
-                onChange={(value) => setFormData({ ...formData, preferredCurrency: value })}
+                onChange={(value) => {
+                  console.log("Currency selected:", value);
+                  setFormData(prev => ({ ...prev, preferredCurrency: value }));
+                }}
                 label="Preferred Display Currency"
               />
 

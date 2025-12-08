@@ -442,29 +442,18 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, [user?.id]);
 
-  // Show onboarding tutorial after dashboard is fully loaded and interactive
+  // Show onboarding tutorial after dashboard is fully loaded
   useEffect(() => {
-    if (showOnboarding && !showInitialSetup && !showLoader && !loading && hasUserInteracted) {
-      setShowOnboardingOverlay(true);
+    if (showOnboarding && !showInitialSetup && !showLoader && !loading) {
+      // Add a delay to ensure dashboard is fully rendered and interactive
+      const timer = setTimeout(() => {
+        setShowOnboardingOverlay(true);
+      }, 1500);
+      return () => clearTimeout(timer);
     } else {
       setShowOnboardingOverlay(false);
     }
-  }, [showOnboarding, showInitialSetup, showLoader, loading, hasUserInteracted]);
-
-  // Track first user interaction to trigger onboarding (only when dashboard is fully ready)
-  useEffect(() => {
-    if (showOnboarding && !showInitialSetup && !showLoader && !loading && !hasUserInteracted) {
-      const handleFirstClick = () => {
-        setHasUserInteracted(true);
-      };
-
-      document.addEventListener('click', handleFirstClick, { once: true });
-
-      return () => {
-        document.removeEventListener('click', handleFirstClick);
-      };
-    }
-  }, [showOnboarding, showInitialSetup, showLoader, loading, hasUserInteracted]);
+  }, [showOnboarding, showInitialSetup, showLoader, loading]);
   const fetchReleaseCount = async (userId: string) => {
     const {
       count
