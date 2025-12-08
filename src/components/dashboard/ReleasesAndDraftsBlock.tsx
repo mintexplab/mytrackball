@@ -99,14 +99,22 @@ export const ReleasesAndDraftsBlock = ({ userId, onReleaseClick }: ReleasesAndDr
     navigate('/create-release');
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      pending: "text-yellow-500",
-      approved: "text-green-500",
-      rejected: "text-red-500",
-      delivering: "text-blue-500",
+  const getStatusDisplay = (status: string): { label: string; color: string } => {
+    const statusMap: Record<string, { label: string; color: string }> = {
+      pending: { label: "Pending Review", color: "text-yellow-400" },
+      pending_payment: { label: "Awaiting Payment", color: "text-orange-400" },
+      pay_later: { label: "Payment Pending", color: "text-amber-400" },
+      approved: { label: "Approved", color: "text-green-400" },
+      rejected: { label: "Rejected", color: "text-red-400" },
+      delivering: { label: "Delivering", color: "text-blue-400" },
+      delivered: { label: "Delivered", color: "text-teal-400" },
+      "taken down": { label: "Taken Down", color: "text-gray-400" },
+      striked: { label: "Striked", color: "text-orange-400" },
+      "on hold": { label: "On Hold", color: "text-purple-400" },
+      processing: { label: "Processing", color: "text-cyan-400" },
+      published: { label: "Published", color: "text-blue-400" },
     };
-    return colors[status] || "text-muted-foreground";
+    return statusMap[status] || { label: status.replace(/_/g, ' '), color: "text-muted-foreground" };
   };
 
   if (loading) {
@@ -175,8 +183,8 @@ export const ReleasesAndDraftsBlock = ({ userId, onReleaseClick }: ReleasesAndDr
                         <p className="text-xs text-muted-foreground truncate">
                           {release.artist_name}
                         </p>
-                        <p className={`text-xs capitalize ${getStatusColor(release.status)}`}>
-                          {release.status}
+                        <p className={`text-xs font-medium ${getStatusDisplay(release.status).color}`}>
+                          {getStatusDisplay(release.status).label}
                         </p>
                       </div>
                     </div>
