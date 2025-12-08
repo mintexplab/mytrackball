@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Music, Loader2, RefreshCw, Settings, Calendar, Sparkles } from "lucide-react";
 import { format } from "date-fns";
+import { TrackAllowancePlan } from "./TrackAllowancePlan";
 
 interface TrackAllowanceData {
   hasSubscription: boolean;
@@ -83,27 +84,9 @@ export const TrackAllowanceTab = () => {
 
   if (!data?.hasSubscription) {
     return (
-      <Card className="backdrop-blur-sm bg-card/80 border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            Track Allowance
-          </CardTitle>
-          <CardDescription>
-            You don't have a Track Allowance subscription
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="p-6 bg-muted/30 rounded-lg text-center">
-            <p className="text-muted-foreground mb-4">
-              Subscribe to a Track Allowance plan to get discounted per-track pricing and submit tracks without upfront payment.
-            </p>
-            <Button onClick={() => window.location.href = "/dashboard?tab=subscription"}>
-              View Plans
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <TrackAllowancePlan />
+      </div>
     );
   }
 
