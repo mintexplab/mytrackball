@@ -134,11 +134,21 @@ serve(async (req) => {
         onConflict: "user_id,month_year"
       });
 
-    // Safely get current period end
+    // Safely get current period end with robust error handling
     let currentPeriodEnd = null;
-    if (trackAllowanceSubscription.current_period_end && 
-        typeof trackAllowanceSubscription.current_period_end === 'number') {
-      currentPeriodEnd = new Date(trackAllowanceSubscription.current_period_end * 1000).toISOString();
+    try {
+      if (trackAllowanceSubscription.current_period_end) {
+        const timestamp = Number(trackAllowanceSubscription.current_period_end);
+        if (!isNaN(timestamp) && timestamp > 0) {
+          currentPeriodEnd = new Date(timestamp * 1000).toISOString();
+        }
+      }
+    } catch (dateError) {
+      logStep("Error parsing current_period_end, using null", { 
+        value: trackAllowanceSubscription.current_period_end,
+        error: dateError instanceof Error ? dateError.message : String(dateError)
+      });
+      currentPeriodEnd = null;
     }
 
     return new Response(JSON.stringify({ 
