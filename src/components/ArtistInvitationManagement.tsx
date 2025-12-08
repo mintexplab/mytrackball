@@ -7,16 +7,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Loader2, Trash2, CheckCircle, XCircle, Clock } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 const ArtistInvitationManagement = () => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [assignmentType, setAssignmentType] = useState<"artist_plan" | "label_designation">("artist_plan");
-  const [selectedPlan, setSelectedPlan] = useState("");
-  const [royaltySplit, setRoyaltySplit] = useState<number>(50);
+  const [selectedAccountType, setSelectedAccountType] = useState("");
   const [invitations, setInvitations] = useState<any[]>([]);
   const [loadingInvitations, setLoadingInvitations] = useState(true);
   const { toast } = useToast();
@@ -45,8 +42,8 @@ const ArtistInvitationManagement = () => {
     }
   };
 
-  const revokeInvitation = async (invitationId: string, email: string) => {
-    if (!confirm(`Are you sure you want to revoke the invitation sent to ${email}?`)) {
+  const revokeInvitation = async (invitationId: string, inviteeEmail: string) => {
+    if (!confirm(`Are you sure you want to revoke the invitation sent to ${inviteeEmail}?`)) {
       return;
     }
 
@@ -60,7 +57,7 @@ const ArtistInvitationManagement = () => {
 
       toast({
         title: "Invitation revoked",
-        description: `Invitation to ${email} has been revoked`,
+        description: `Invitation to ${inviteeEmail} has been revoked`,
       });
 
       fetchInvitations();
@@ -74,19 +71,30 @@ const ArtistInvitationManagement = () => {
     }
   };
 
-  const artistPlans = [
-    { value: "trackball_free", label: "Trackball Free", features: ["Basic release management", "Release submission", "Catalog viewing"] },
-    { value: "trackball_lite", label: "Trackball Lite", features: ["Basic release management", "Release submission", "Catalog viewing"] },
-    { value: "trackball_signature", label: "Trackball Signature", features: ["Basic release management", "Release submission", "Catalog viewing", "Support tickets", "Dedicated account manager"] },
-    { value: "trackball_prestige", label: "Trackball Prestige", features: ["Up to 3 users", "Publishing submissions", "Basic release management", "Release submission", "Catalog viewing", "Up to 1 label (no branding)", "Support tickets", "Dedicated account manager"] },
-  ];
-
-  const labelDesignations = [
-    { value: "free", label: "Label Free", features: ["Max 1 user", "Max 1 label", "Basic release management", "Release submission", "Catalog viewing"] },
-    { value: "lite", label: "Label Lite", features: ["Max 2 users", "Max 1 label", "Basic release management", "Release submission", "Catalog viewing"] },
-    { value: "signature_label", label: "Label Signature", features: ["Max 2 users", "Max 2 labels", "Basic release management", "Release submission", "Catalog viewing", "Support tickets", "Dedicated account manager"] },
-    { value: "prestige_label", label: "Label Prestige", features: ["Unlimited users", "Unlimited labels", "Publishing submissions", "Full catalog management", "Support tickets", "Dedicated account manager", "Label customization & branding"] },
-    { value: "partner_label", label: "Label Partner", features: ["Unlimited users", "Unlimited labels", "Publishing submissions", "Full catalog management", "Support tickets", "Dedicated account manager", "Label customization & branding", "Custom royalty split arrangement"] },
+  const accountTypes = [
+    { 
+      value: "artist", 
+      label: "Artist Account", 
+      features: [
+        "Release submission and management",
+        "Catalog viewing",
+        "Royalties tracking",
+        "Support tickets"
+      ] 
+    },
+    { 
+      value: "label", 
+      label: "Label Account", 
+      features: [
+        "Unlimited users",
+        "Unlimited labels",
+        "Full catalog management",
+        "Publishing submissions",
+        "Support tickets",
+        "Dedicated account manager",
+        "Label customization & branding"
+      ] 
+    },
   ];
 
   const handleSendInvitation = async () => {
@@ -99,10 +107,10 @@ const ArtistInvitationManagement = () => {
       return;
     }
 
-    if (!selectedPlan) {
+    if (!selectedAccountType) {
       toast({
-        title: "Plan selection required",
-        description: "Please select a plan or designation for the invitee",
+        title: "Account type required",
+        description: "Please select an account type for the invitee",
         variant: "destructive",
       });
       return;
@@ -122,13 +130,12 @@ const ArtistInvitationManagement = () => {
         return;
       }
 
-      const allPlans = [...artistPlans, ...labelDesignations];
-      const planInfo = allPlans.find(p => p.value === selectedPlan);
+      const accountInfo = accountTypes.find(a => a.value === selectedAccountType);
 
-      if (!planInfo) {
+      if (!accountInfo) {
         toast({
           title: "Error",
-          description: "Invalid plan selection",
+          description: "Invalid account type selection",
           variant: "destructive",
         });
         return;
@@ -138,15 +145,10 @@ const ArtistInvitationManagement = () => {
       const insertData: any = {
         email,
         invited_by: user.id,
-        assigned_plan_type: assignmentType,
-        assigned_plan_name: planInfo.label,
-        plan_features: planInfo.features,
+        assigned_plan_type: selectedAccountType,
+        assigned_plan_name: accountInfo.label,
+        plan_features: accountInfo.features,
       };
-
-      // Add royalty split if Partner Label
-      if (selectedPlan === "partner_label") {
-        insertData.royalty_split_percentage = royaltySplit;
-      }
 
       const { data: invitationData, error: insertError } = await supabase
         .from("artist_invitations")
@@ -163,10 +165,9 @@ const ArtistInvitationManagement = () => {
         body: { 
           email,
           invitationId: invitationData.id,
-          planType: assignmentType,
-          planName: planInfo.label,
-          planFeatures: planInfo.features,
-          royaltySplit: selectedPlan === "partner_label" ? royaltySplit : null,
+          planType: selectedAccountType,
+          planName: accountInfo.label,
+          planFeatures: accountInfo.features,
           acceptUrl,
         },
       });
@@ -175,11 +176,11 @@ const ArtistInvitationManagement = () => {
 
       toast({
         title: "Invitation sent",
-        description: `Invitation sent to ${email} with ${planInfo.label}`,
+        description: `Invitation sent to ${email} as ${accountInfo.label}`,
       });
 
       setEmail("");
-      setSelectedPlan("");
+      setSelectedAccountType("");
       fetchInvitations();
     } catch (error: any) {
       console.error("Error sending invitation:", error);
@@ -202,7 +203,7 @@ const ArtistInvitationManagement = () => {
             Invite Users
           </CardTitle>
           <CardDescription>
-            Send invitations to users to join My Trackball with pre-assigned plans
+            Send invitations to users to join My Trackball
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -219,81 +220,28 @@ const ArtistInvitationManagement = () => {
               />
             </div>
 
-            <div className="space-y-4">
-              <Label>Assignment Type</Label>
-              <RadioGroup value={assignmentType} onValueChange={(value: any) => {
-                setAssignmentType(value);
-                setSelectedPlan("");
-              }}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="artist_plan" id="artist_plan" />
-                  <Label htmlFor="artist_plan" className="font-normal cursor-pointer">
-                    Artist Subscription Plan
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="label_designation" id="label_designation" />
-                  <Label htmlFor="label_designation" className="font-normal cursor-pointer">
-                    Label Designation (Partner Deal)
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
             <div className="space-y-2">
-              <Label htmlFor="plan-select">
-                {assignmentType === "artist_plan" ? "Select Artist Plan" : "Select Label Designation"}
-              </Label>
-              <Select key={assignmentType} value={selectedPlan} onValueChange={setSelectedPlan}>
-                <SelectTrigger id="plan-select">
-                  <SelectValue placeholder={assignmentType === "artist_plan" ? "Choose a plan..." : "Choose a designation..."} />
+              <Label htmlFor="account-type-select">Account Type</Label>
+              <Select value={selectedAccountType} onValueChange={setSelectedAccountType}>
+                <SelectTrigger id="account-type-select">
+                  <SelectValue placeholder="Select account type..." />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border z-50">
-                  {assignmentType === "artist_plan" ? (
-                    artistPlans.map((plan) => (
-                      <SelectItem key={plan.value} value={plan.value}>
-                        {plan.label}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    labelDesignations.map((designation) => (
-                      <SelectItem key={designation.value} value={designation.value}>
-                        {designation.label}
-                      </SelectItem>
-                    ))
-                  )}
+                  {accountTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {selectedPlan === "partner_label" && (
-              <div className="space-y-2">
-                <Label htmlFor="royalty-split">Royalty Split Percentage (Partner's Share)</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="royalty-split"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={royaltySplit}
-                    onChange={(e) => setRoyaltySplit(Number(e.target.value))}
-                    disabled={loading}
-                    className="flex-1"
-                  />
-                  <span className="text-sm text-muted-foreground">%</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Trackball receives {100 - royaltySplit}%
-                </p>
-              </div>
-            )}
-
-            {selectedPlan && (
+            {selectedAccountType && (
               <div className="p-4 rounded-lg bg-muted/50 border border-border">
                 <p className="text-sm font-medium mb-2">Included Features:</p>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  {[...artistPlans, ...labelDesignations]
-                    .find(p => p.value === selectedPlan)
+                  {accountTypes
+                    .find(a => a.value === selectedAccountType)
                     ?.features.map((feature, idx) => (
                       <li key={idx}>• {feature}</li>
                     ))}
@@ -303,7 +251,7 @@ const ArtistInvitationManagement = () => {
 
             <Button
               onClick={handleSendInvitation}
-              disabled={loading || !email || !selectedPlan}
+              disabled={loading || !email || !selectedAccountType}
               className="w-full"
             >
               {loading ? (
@@ -371,9 +319,6 @@ const ArtistInvitationManagement = () => {
                     </div>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <span className="font-medium">{invitation.assigned_plan_name}</span>
-                      {invitation.royalty_split_percentage && (
-                        <span>Split: {invitation.royalty_split_percentage}%</span>
-                      )}
                       <span>Sent {format(new Date(invitation.created_at), "MMM d, yyyy")}</span>
                     </div>
                   </div>

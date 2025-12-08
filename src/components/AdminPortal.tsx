@@ -17,7 +17,6 @@ import { PayoutRequestsManagement } from "./PayoutRequestsManagement";
 import VersionManagement from "./VersionManagement";
 import ArtistInvitationManagement from "./ArtistInvitationManagement";
 import PublishingManagement from "./PublishingManagement";
-import LabelDesignationManagement from "./LabelDesignationManagement";
 import MaintenanceManagement from "./MaintenanceManagement";
 import AccountAppealsManagement from "./AccountAppealsManagement";
 import { ProfileDropdown } from "./ProfileDropdown";
@@ -26,7 +25,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { EmailNotificationDialog } from "./EmailNotificationDialog";
 import { AnnouncementBarManagement } from "./AnnouncementBarManagement";
 import { TakedownRequestsManagement } from "./TakedownRequestsManagement";
-import { PartnerPermissionsBreakdown } from "./PartnerPermissionsBreakdown";
 import { InvoiceDraftsManagement } from "./InvoiceDraftsManagement";
 import LabelDesignationWelcomeDialog from "./LabelDesignationWelcomeDialog";
 import { OnboardingTutorial } from "./OnboardingTutorial";
@@ -35,7 +33,6 @@ import { Bug, GraduationCap, CreditCard } from "lucide-react";
 import { TestPaymentSection } from "./TestPaymentSection";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LabelPartnerServiceConfig } from "./LabelPartnerServiceConfig";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -319,15 +316,7 @@ const AdminPortal = ({
                 <UserPlus className="w-4 h-4 mr-2" />
                 Invite Users
               </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab("label-designations")} className="cursor-pointer">
-                    <Building2 className="w-4 h-4 mr-2" />
-                    Label Designations
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setActiveTab("partner-permissions")} className="cursor-pointer">
-                    <ShieldAlert className="w-4 h-4 mr-2" />
-                    Partner Permissions
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+              <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setActiveTab("appeals")} className="cursor-pointer">
                     <FileText className="w-4 h-4 mr-2" />
                     Account Appeals
@@ -381,8 +370,6 @@ const AdminPortal = ({
               <DropdownMenuContent className="bg-card border-border">
                 <DropdownMenuItem onClick={() => setActiveTab("managers")}>Managers</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("invite-artists")}>Invite Users</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab("label-designations")}>Label Designations</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab("partner-permissions")}>Partner Permissions</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("takedowns")}>Takedowns</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("announcements")}>Announcements</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveTab("royalties")}>Royalties</DropdownMenuItem>
@@ -427,17 +414,6 @@ const AdminPortal = ({
 
           <TabsContent value="invite-artists">
             <ArtistInvitationManagement />
-          </TabsContent>
-
-          <TabsContent value="label-designations">
-            <LabelDesignationManagement />
-          </TabsContent>
-
-          <TabsContent value="partner-permissions">
-            <div className="space-y-6">
-              <PartnerPermissionsBreakdown />
-              <LabelPartnerServiceConfig />
-            </div>
           </TabsContent>
 
           <TabsContent value="announcements">
