@@ -5,9 +5,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Info, Music, Calendar, Tag, User, Building2, FileText, Play, Download, Image } from "lucide-react";
+import { Info, Music, Calendar, Tag, User, Building2, FileText, Play, Download, Image, Archive, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { AudioPlayer } from "./AudioPlayer";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 interface ReleaseInfoDialogProps {
   releaseId: string;
@@ -19,6 +21,7 @@ const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogPro
   const [release, setRelease] = useState<any>(null);
   const [tracks, setTracks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [downloadingAll, setDownloadingAll] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -58,6 +61,36 @@ const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogPro
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleDownloadAllTracks = async () => {
+    const tracksWithAudio = tracks.filter(t => t.audio_file_url);
+    if (tracksWithAudio.length === 0) {
+      toast.error("No audio files available to download");
+      return;
+    }
+
+    setDownloadingAll(true);
+    try {
+      const zip = new JSZip();
+      
+      for (const track of tracksWithAudio) {
+        const response = await fetch(track.audio_file_url);
+        const blob = await response.blob();
+        const ext = track.audio_file_url.split('.').pop() || 'wav';
+        const filename = `${track.track_number}. ${track.title}.${ext}`;
+        zip.file(filename, blob);
+      }
+
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `${release.artist_name} - ${release.title} (Tracks).zip`);
+      toast.success("All tracks downloaded successfully");
+    } catch (error) {
+      console.error("Error downloading tracks:", error);
+      toast.error("Failed to download tracks");
+    } finally {
+      setDownloadingAll(false);
+    }
   };
 
   return (
@@ -115,7 +148,7 @@ const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogPro
               </div>
 
               {/* Download Section */}
-              {(release.artwork_url || release.audio_file_url) && (
+              {(release.artwork_url || release.audio_file_url || tracks.some(t => t.audio_file_url)) && (
                 <>
                   <Separator />
                   <div className="space-y-3">
@@ -152,6 +185,26 @@ const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogPro
                         >
                           <Download className="w-4 h-4 mr-2" />
                           Download Audio
+                        </Button>
+                      )}
+                      {tracks.filter(t => t.audio_file_url).length > 1 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleDownloadAllTracks}
+                          disabled={downloadingAll}
+                        >
+                          {downloadingAll ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Downloading...
+                            </>
+                          ) : (
+                            <>
+                              <Archive className="w-4 h-4 mr-2" />
+                              Download All Tracks (ZIP)
+                            </>
+                          )}
                         </Button>
                       )}
                     </div>

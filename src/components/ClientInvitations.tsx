@@ -79,56 +79,35 @@ const ClientInvitations = ({ permissions }: ClientInvitationsProps) => {
 
   const fetchLabels = async () => {
     const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
     
-    // First, get labels owned by the user
-    const { data: ownedLabels, error: ownedError } = await supabase
-      .from("labels")
-      .select("*")
-      .eq("user_id", user?.id);
-
-    if (ownedError) {
-      console.error("Error fetching owned labels:", ownedError);
-    }
-
-    // Then get labels from memberships
+    // Get labels from user_label_memberships with valid labels only
     const { data: membershipLabels, error: membershipError } = await supabase
       .from("user_label_memberships")
       .select(`
-        *,
-        labels!inner(label_id)
+        id,
+        label_id,
+        label_name,
+        role,
+        labels!inner(id, label_id, name)
       `)
-      .eq("user_id", user?.id)
+      .eq("user_id", user.id)
       .order("joined_at", { ascending: false });
 
     if (membershipError) {
       console.error("Error fetching label memberships:", membershipError);
     }
 
-    // Combine both, mapping owned labels to the same format
-    const allLabels = [
-      ...(ownedLabels || []).map(label => ({
-        label_id: label.id,
-        label_name: label.name,
-        role: "owner",
-        five_digit_label_id: label.label_id,
-        labels: { label_id: label.label_id }
-      })),
-      ...(membershipLabels || []).map(d => ({
-        ...d,
-        five_digit_label_id: (d.labels as any).label_id
-      }))
-    ];
+    // Map memberships to format expected by the dropdown
+    // The inner join with labels ensures only existing labels are returned
+    const validLabels = (membershipLabels || []).map(membership => ({
+      label_id: membership.label_id,
+      label_name: (membership.labels as any)?.name || membership.label_name,
+      role: membership.role,
+      five_digit_label_id: (membership.labels as any)?.label_id
+    }));
 
-    // Remove duplicates by label_id
-    const uniqueLabels = allLabels.reduce((acc, current) => {
-      const exists = acc.find(item => item.label_id === current.label_id);
-      if (!exists) {
-        acc.push(current);
-      }
-      return acc;
-    }, [] as any[]);
-
-    setLabels(uniqueLabels);
+    setLabels(validLabels);
   };
 
   const fetchInvitations = async () => {
