@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/lib/toast-with-sound";
-import { Plus, Trash2, Music, Upload } from "lucide-react";
+import { Plus, Trash2, Music, Upload, Loader2, CreditCard } from "lucide-react";
 import { z } from "zod";
 import { useS3Upload } from "@/hooks/useS3Upload";
 
@@ -24,6 +24,10 @@ interface Track {
   audio_file_url: string;
   featured_artists: string;
 }
+
+// Pricing constants (CAD)
+const TRACK_FEE = 5;
+const UPC_FEE = 8;
 
 const releaseSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
@@ -50,10 +54,13 @@ const trackSchema = z.object({
 const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   const [showSelection, setShowSelection] = useState(false);
   const [open, setOpen] = useState(false);
+  const [showPricingConfirm, setShowPricingConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [releaseType, setReleaseType] = useState<"single" | "album">("single");
   const { uploadFile, uploading: s3Uploading } = useS3Upload();
   const [artworkFile, setArtworkFile] = useState<File | null>(null);
+  const [pendingReleaseId, setPendingReleaseId] = useState<string | null>(null);
   const [tracks, setTracks] = useState<Track[]>([{
     id: "1",
     track_number: 1,
@@ -77,13 +84,15 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     catalog_number: "",
   });
 
+  // Calculate pricing
+  const trackCount = tracks.length;
+  const trackTotal = TRACK_FEE * trackCount;
+  const totalCost = trackTotal + UPC_FEE;
+
   const generateISRC = async () => {
     try {
-      // Use secure database function to generate ISRC
       const { data, error } = await supabase.rpc('generate_next_isrc');
-
       if (error) throw error;
-
       return data;
     } catch (error) {
       console.error("Error generating ISRC:", error);
@@ -138,14 +147,12 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     
     const file = event.target.files[0];
     
-    // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       toast.error('Please upload a valid image file (JPG, PNG, or WEBP)');
       return;
     }
     
-    // Validate file size (10MB)
     if (file.size > 10485760) {
       toast.error('Artwork file must be less than 10MB');
       return;
@@ -155,13 +162,12 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     toast.success('Artwork ready to upload');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleReviewSubmission = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
+    
     try {
       // Validate release data
-      const validatedRelease = releaseSchema.parse(formData);
+      releaseSchema.parse(formData);
 
       // Validate all tracks
       for (const track of tracks) {
@@ -174,11 +180,26 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
         });
       }
 
+      // Show pricing confirmation
+      setShowPricingConfirm(true);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error(error.message);
+      }
+    }
+  };
+
+  const handleProceedToPayment = async () => {
+    setCheckoutLoading(true);
+    
+    try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Upload artwork to S3 if file is selected (path must start with user.id for security)
-      let artworkUrl = validatedRelease.artwork_url || null;
+      // Upload artwork to S3 if file is selected
+      let artworkUrl = formData.artwork_url || null;
       if (artworkFile) {
         const timestamp = Date.now();
         const fileExt = artworkFile.name.split('.').pop();
@@ -192,23 +213,24 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
         }
       }
 
-      // Create release
+      // Create release as pending payment
       const { data: release, error: releaseError } = await supabase
         .from("releases")
         .insert({
           user_id: user.id,
-          title: validatedRelease.title,
-          artist_name: validatedRelease.artist_name,
-          release_date: validatedRelease.release_date || null,
-          genre: validatedRelease.genre || null,
-          label_name: validatedRelease.label_name,
+          title: formData.title,
+          artist_name: formData.artist_name,
+          release_date: formData.release_date || null,
+          genre: formData.genre || null,
+          label_name: formData.label_name,
           artwork_url: artworkUrl,
-          copyright_line: validatedRelease.copyright_line,
-          phonographic_line: validatedRelease.phonographic_line,
-          featured_artists: validatedRelease.featured_artists ? validatedRelease.featured_artists.split(",").map(a => a.trim()) : [],
-          notes: validatedRelease.notes || null,
-          catalog_number: validatedRelease.catalog_number || null,
-          isrc: tracks[0]?.isrc || null, // Save first track's ISRC to release
+          copyright_line: formData.copyright_line,
+          phonographic_line: formData.phonographic_line,
+          featured_artists: formData.featured_artists ? formData.featured_artists.split(",").map(a => a.trim()) : [],
+          notes: formData.notes || null,
+          catalog_number: formData.catalog_number || null,
+          isrc: tracks[0]?.isrc || null,
+          status: 'pending_payment',
         })
         .select()
         .single();
@@ -232,18 +254,36 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
 
       if (tracksError) throw tracksError;
 
-      toast.success("Release submitted for review!");
-      setOpen(false);
-      resetForm();
-      window.location.reload();
-    } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
+      setPendingReleaseId(release.id);
+
+      // Create Stripe checkout session
+      const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke(
+        'create-release-checkout',
+        {
+          body: {
+            trackCount: tracks.length,
+            releaseTitle: formData.title,
+            releaseId: release.id,
+          },
+        }
+      );
+
+      if (checkoutError) throw checkoutError;
+
+      if (checkoutData?.url) {
+        window.open(checkoutData.url, '_blank');
+        toast.success("Redirecting to payment...");
+        setShowPricingConfirm(false);
+        setOpen(false);
+        resetForm();
       } else {
-        toast.error(error.message);
+        throw new Error("No checkout URL received");
       }
+    } catch (error: any) {
+      console.error("Checkout error:", error);
+      toast.error(error.message || "Failed to create checkout session");
     } finally {
-      setLoading(false);
+      setCheckoutLoading(false);
     }
   };
 
@@ -278,9 +318,10 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     }]);
     setArtworkFile(null);
     setReleaseType("single");
+    setShowPricingConfirm(false);
+    setPendingReleaseId(null);
   };
 
-  // Auto-generate ISRC for first track on mount
   useEffect(() => {
     if (tracks[0] && !tracks[0].isrc) {
       generateISRC().then(isrc => {
@@ -334,6 +375,78 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
         </DialogContent>
       </Dialog>
 
+      {/* Pricing Confirmation Dialog */}
+      <Dialog open={showPricingConfirm} onOpenChange={setShowPricingConfirm}>
+        <DialogContent className="sm:max-w-[450px] bg-card border-primary/20">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+              <CreditCard className="w-6 h-6 text-primary" />
+              Confirm Submission
+            </DialogTitle>
+            <DialogDescription>
+              Review your release fees before proceeding to payment
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="p-4 rounded-lg bg-muted/30 border border-border">
+              <h4 className="font-semibold mb-2">{formData.title}</h4>
+              <p className="text-sm text-muted-foreground">{formData.artist_name}</p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-muted-foreground">
+                  Track Fee ({trackCount} track{trackCount > 1 ? 's' : ''} × $5 CAD)
+                </span>
+                <span className="font-semibold">${trackTotal.toFixed(2)} CAD</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-muted-foreground">UPC Fee</span>
+                <span className="font-semibold">${UPC_FEE.toFixed(2)} CAD</span>
+              </div>
+              <div className="flex justify-between items-center py-3 text-lg">
+                <span className="font-bold">Total</span>
+                <span className="font-bold text-primary">${totalCost.toFixed(2)} CAD</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center">
+              You will be redirected to our secure payment portal to complete your transaction.
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowPricingConfirm(false)}
+              className="flex-1"
+              disabled={checkoutLoading}
+            >
+              Back
+            </Button>
+            <Button
+              onClick={handleProceedToPayment}
+              disabled={checkoutLoading}
+              className="flex-1 bg-gradient-primary hover:opacity-90"
+            >
+              {checkoutLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Pay ${totalCost.toFixed(2)} CAD
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Release Form Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild className="hidden">
@@ -346,7 +459,24 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
             Submit your music for distribution with complete metadata
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
+
+        {/* Pricing Preview */}
+        <Card className="p-4 border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="font-semibold text-sm">Estimated Cost</h4>
+              <p className="text-xs text-muted-foreground">
+                {trackCount} track{trackCount > 1 ? 's' : ''} × $5 + $8 UPC
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-primary">${totalCost.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">CAD</p>
+            </div>
+          </div>
+        </Card>
+
+        <form onSubmit={handleReviewSubmission} className="space-y-6">
           {/* Basic Info */}
           <Card className="p-4 border-border">
             <h3 className="font-semibold mb-4 text-primary">Release Information</h3>
@@ -526,7 +656,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
                     className="border-primary/20"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Track
+                    Add Track (+$5)
                   </Button>
                 </div>
               </div>
@@ -712,7 +842,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
               disabled={loading}
               className="flex-1 bg-gradient-primary hover:opacity-90 transition-opacity"
             >
-              {loading ? "Submitting..." : "Submit Release"}
+              Review & Pay (${totalCost.toFixed(2)} CAD)
             </Button>
           </div>
         </form>
