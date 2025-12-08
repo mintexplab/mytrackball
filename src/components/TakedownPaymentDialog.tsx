@@ -10,10 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AlertTriangle, CreditCard, ExternalLink, Loader2, Shield, Info } from "lucide-react";
+import { AlertTriangle, Loader2, Shield, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useSavedPaymentMethod } from "@/hooks/useSavedPaymentMethod";
 import { SavedPaymentConfirmDialog } from "./SavedPaymentConfirmDialog";
+import { InDashboardPayment } from "./InDashboardPayment";
 
 interface TakedownPaymentDialogProps {
   open: boolean;
@@ -36,41 +37,58 @@ export const TakedownPaymentDialog = ({
 }: TakedownPaymentDialogProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showSavedPaymentDialog, setShowSavedPaymentDialog] = useState(false);
+  const [paymentData, setPaymentData] = useState<{
+    clientSecret: string;
+    publishableKey: string;
+    paymentIntentId: string;
+  } | null>(null);
   const { paymentMethod, loading: loadingPaymentMethod, hasPaymentMethod } = useSavedPaymentMethod();
 
-  // Check for saved payment method when dialog opens
+  // Initialize payment when dialog opens
   useEffect(() => {
-    if (open && hasPaymentMethod && !loadingPaymentMethod) {
-      setShowSavedPaymentDialog(true);
-      onOpenChange(false);
+    if (open && !paymentData && !isLoading) {
+      // Check for saved payment method first
+      if (hasPaymentMethod && !loadingPaymentMethod) {
+        setShowSavedPaymentDialog(true);
+        onOpenChange(false);
+      } else if (!loadingPaymentMethod) {
+        initializePayment();
+      }
     }
   }, [open, hasPaymentMethod, loadingPaymentMethod]);
 
-  const handlePayment = async () => {
+  const initializePayment = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-takedown-checkout", {
-        body: {
-          releaseId,
-          releaseTitle,
-          artistName,
-        },
+      const { data, error } = await supabase.functions.invoke("create-takedown-payment", {
+        body: { releaseId, releaseTitle, artistName }
       });
 
       if (error) throw error;
-
-      if (data?.url) {
-        window.open(data.url, "_blank");
-        toast.success("Checkout opened - complete payment to submit takedown request");
-        onOpenChange(false);
-      } else {
-        throw new Error("No checkout URL returned");
-      }
+      setPaymentData(data);
     } catch (error: any) {
       console.error("Takedown payment error:", error);
-      toast.error(error.message || "Failed to create checkout");
+      toast.error(error.message || "Failed to initialize payment");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePaymentSuccess = async () => {
+    // Update release status to takedown_requested
+    try {
+      await supabase
+        .from("releases")
+        .update({ takedown_requested: true, status: "takedown_requested" })
+        .eq("id", releaseId);
+
+      toast.success("Takedown request submitted successfully!");
+      onSuccess?.();
+      onOpenChange(false);
+      setPaymentData(null);
+    } catch (error) {
+      console.error("Error updating release status:", error);
+      toast.error("Payment successful but failed to update release status");
     }
   };
 
@@ -82,6 +100,7 @@ export const TakedownPaymentDialog = ({
   const handleUseDifferentCard = () => {
     setShowSavedPaymentDialog(false);
     onOpenChange(true);
+    initializePayment();
   };
 
   // If we have a saved payment method, show the quick payment dialog instead
@@ -103,7 +122,10 @@ export const TakedownPaymentDialog = ({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      onOpenChange(isOpen);
+      if (!isOpen) setPaymentData(null);
+    }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -144,45 +166,26 @@ export const TakedownPaymentDialog = ({
             </CardContent>
           </Card>
 
-          {loadingPaymentMethod ? (
-            <div className="flex items-center justify-center py-2">
-              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-sm text-muted-foreground">Checking saved payment methods...</span>
+          {isLoading || loadingPaymentMethod ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading payment...</span>
             </div>
+          ) : paymentData ? (
+            <InDashboardPayment
+              clientSecret={paymentData.clientSecret}
+              publishableKey={paymentData.publishableKey}
+              description="Takedown Fee"
+              amount={1985}
+              onSuccess={handlePaymentSuccess}
+              onCancel={() => onOpenChange(false)}
+            />
           ) : (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Shield className="w-4 h-4" />
               <span>Payments are secure and encrypted by Stripe</span>
             </div>
           )}
-
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              className="flex-1"
-              onClick={handlePayment}
-              disabled={isLoading || loadingPaymentMethod}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Pay ${TAKEDOWN_FEE.toFixed(2)} CAD
-                </>
-              )}
-            </Button>
-          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Music, Building2, CreditCard, Globe, AlertCircle } from "lucide-react";
+import { Loader2, Music, Building2, CreditCard, Globe, AlertCircle, ArrowLeft } from "lucide-react";
 import { PaymentMethodSetup } from "./PaymentMethodSetup";
 import { InDashboardPayment } from "./InDashboardPayment";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -304,6 +304,13 @@ export const InitialAccountSetup = ({
 
     // Step 4 for Label: Payment
     if (isLabelAccount && step === 4) {
+      const handleSwitchToArtist = () => {
+        setFormData(prev => ({ ...prev, accountType: "artist", labelName: "", artistName: "" }));
+        setLabelPaymentData(null);
+        setStep(2);
+        toast.info("Switched to Artist Account");
+      };
+
       return (
         <div className="space-y-4 animate-fade-in">
           <Alert className="border-primary/30 bg-primary/5">
@@ -332,6 +339,21 @@ export const InitialAccountSetup = ({
               <Button onClick={initializeLabelPayment}>Try Again</Button>
             </div>
           )}
+
+          {/* Switch to Artist Account Option */}
+          <div className="pt-4 border-t border-border">
+            <p className="text-sm text-muted-foreground text-center mb-3">
+              Don't want to pay the label fee?
+            </p>
+            <Button
+              variant="outline"
+              onClick={handleSwitchToArtist}
+              className="w-full"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Switch to Artist Account (Free)
+            </Button>
+          </div>
         </div>
       );
     }

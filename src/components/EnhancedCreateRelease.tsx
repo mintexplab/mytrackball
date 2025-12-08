@@ -6,14 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/lib/toast-with-sound";
-import { Plus, Trash2, Music, Upload, Loader2, CreditCard } from "lucide-react";
+import { Plus, Trash2, Music, Upload, Loader2, CreditCard, Sparkles, AlertCircle } from "lucide-react";
 import { z } from "zod";
 import { useS3Upload } from "@/hooks/useS3Upload";
-
-interface EnhancedCreateReleaseProps {
-  children: React.ReactNode;
-}
+import { InDashboardPayment } from "./InDashboardPayment";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Track {
   id: string;
@@ -63,6 +62,10 @@ interface TrackAllowanceData {
   monthlyAmount: number;
 }
 
+interface EnhancedCreateReleaseProps {
+  children: React.ReactNode;
+}
+
 const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   const [showSelection, setShowSelection] = useState(false);
   const [open, setOpen] = useState(false);
@@ -76,6 +79,23 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   const [pendingReleaseId, setPendingReleaseId] = useState<string | null>(null);
   const [trackAllowance, setTrackAllowance] = useState<TrackAllowanceData | null>(null);
   const [useAllowance, setUseAllowance] = useState<boolean | null>(null);
+  const [paymentData, setPaymentData] = useState<{
+    clientSecret: string;
+    publishableKey: string;
+    paymentIntentId: string;
+    amount: number;
+  } | null>(null);
+  
+  // Artist account data
+  const [isArtistAccount, setIsArtistAccount] = useState(false);
+  const [artistNames, setArtistNames] = useState<string[]>([]);
+  const [maxArtistSlots, setMaxArtistSlots] = useState(3);
+  const [showAddSlotPayment, setShowAddSlotPayment] = useState(false);
+  const [addSlotPaymentData, setAddSlotPaymentData] = useState<{
+    clientSecret: string;
+    publishableKey: string;
+  } | null>(null);
+  
   const [tracks, setTracks] = useState<Track[]>([{
     id: "1",
     track_number: 1,
@@ -108,18 +128,49 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   // Check if user can use allowance for this release
   const canUseAllowance = trackAllowance?.hasSubscription && trackAllowance.tracksRemaining >= trackCount;
 
-  // Fetch track allowance on mount
+  // Fetch track allowance and artist account info on mount
   useEffect(() => {
-    const fetchTrackAllowance = async () => {
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('check-track-allowance');
-        if (error) throw error;
-        setTrackAllowance(data);
+        // Fetch track allowance
+        const { data: allowanceData, error: allowanceError } = await supabase.functions.invoke('check-track-allowance');
+        if (!allowanceError && allowanceData) {
+          setTrackAllowance(allowanceData);
+        }
+        
+        // Fetch user profile to check account type and artist names
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("account_type, artist_name, label_name")
+            .eq("id", user.id)
+            .single();
+          
+          if (profile) {
+            setIsArtistAccount(profile.account_type === "artist");
+            
+            // Parse artist names
+            if (profile.artist_name) {
+              const names = profile.artist_name.split(",").map((n: string) => n.trim()).filter(Boolean);
+              setArtistNames(names);
+              // Auto-select first artist name if available
+              if (names.length > 0 && !formData.artist_name) {
+                setFormData(prev => ({ ...prev, artist_name: names[0] }));
+              }
+            }
+            
+            // Auto-fill label name
+            if (profile.label_name && !formData.label_name) {
+              setFormData(prev => ({ ...prev, label_name: profile.label_name }));
+            }
+          }
+        }
       } catch (err) {
-        console.error("Error fetching track allowance:", err);
+        console.error("Error fetching data:", err);
       }
     };
-    fetchTrackAllowance();
+    fetchData();
   }, []);
 
   const generateISRC = async () => {
@@ -738,14 +789,35 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
 
                   <div className="space-y-2">
                     <Label htmlFor="artist_name">Primary Artist *</Label>
-                    <Input
-                      id="artist_name"
-                      placeholder="DJ Example"
-                      value={formData.artist_name}
-                      onChange={(e) => setFormData({ ...formData, artist_name: e.target.value })}
-                      required
-                      className="bg-background/50 border-border"
-                    />
+                    {isArtistAccount && artistNames.length > 0 ? (
+                      <Select
+                        value={formData.artist_name}
+                        onValueChange={(value) => setFormData({ ...formData, artist_name: value })}
+                      >
+                        <SelectTrigger className="bg-background/50 border-border">
+                          <SelectValue placeholder="Select artist name" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {artistNames.map((name) => (
+                            <SelectItem key={name} value={name}>
+                              {name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        id="artist_name"
+                        placeholder="DJ Example"
+                        value={formData.artist_name}
+                        onChange={(e) => setFormData({ ...formData, artist_name: e.target.value })}
+                        required
+                        className="bg-background/50 border-border"
+                      />
+                    )}
+                    {isArtistAccount && artistNames.length === 0 && (
+                      <p className="text-xs text-amber-400">Add artist names in Account Settings first</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
