@@ -3,33 +3,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Check, X, Music, Building2, Users, FileText, HelpCircle, LogOut, Sparkles, Loader2, Settings } from "lucide-react";
+import { Check, X, Music, Building2, Users, FileText, HelpCircle, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
-import { TrackAllowancePlan } from "./TrackAllowancePlan";
-import { toast } from "sonner";
-import { format } from "date-fns";
 
 interface SubscriptionManagementTabProps {
   userPlan: any;
   profile: any;
 }
 
-interface TrackAllowanceData {
-  hasSubscription: boolean;
-  subscriptionId?: string;
-  tracksAllowed: number;
-  tracksUsed: number;
-  tracksRemaining: number;
-  monthlyAmount: number;
-  currentPeriodEnd?: string;
-}
-
 export const SubscriptionManagementTab = ({ userPlan, profile }: SubscriptionManagementTabProps) => {
-  const [trackAllowance, setTrackAllowance] = useState<TrackAllowanceData | null>(null);
-  const [loadingAllowance, setLoadingAllowance] = useState(true);
-  const [managingSubscription, setManagingSubscription] = useState(false);
 
   const { data: accountInfo } = useQuery({
     queryKey: ["subscriptionAccountInfo"],
@@ -58,55 +42,6 @@ export const SubscriptionManagementTab = ({ userPlan, profile }: SubscriptionMan
       };
     },
   });
-
-  useEffect(() => {
-    const fetchAllowance = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        const { data: result, error } = await supabase.functions.invoke("check-track-allowance", {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-
-        if (!error && result) {
-          setTrackAllowance(result);
-        }
-      } catch (error) {
-        console.error("Error fetching track allowance:", error);
-      } finally {
-        setLoadingAllowance(false);
-      }
-    };
-
-    fetchAllowance();
-  }, []);
-
-  const handleManageSubscription = async () => {
-    setManagingSubscription(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-
-      const { data: result, error } = await supabase.functions.invoke("customer-portal", {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) throw error;
-      if (result?.url) {
-        window.open(result.url, "_blank");
-      }
-    } catch (error: any) {
-      console.error("Error opening customer portal:", error);
-      toast.error(error.message || "Failed to open subscription management");
-    } finally {
-      setManagingSubscription(false);
-    }
-  };
 
   const permissions = usePlanPermissions(userPlan, accountInfo?.profile);
   const isLabel = permissions.accountType === "label";
@@ -168,79 +103,8 @@ export const SubscriptionManagementTab = ({ userPlan, profile }: SubscriptionMan
     },
   ];
 
-  const usagePercentage = trackAllowance?.tracksAllowed && trackAllowance.tracksAllowed > 0 
-    ? (trackAllowance.tracksUsed / trackAllowance.tracksAllowed) * 100 
-    : 0;
-
   return (
     <div className="space-y-6">
-      {/* Active Track Allowance Subscription */}
-      {trackAllowance?.hasSubscription && (
-        <Card className="backdrop-blur-sm bg-card/80 border-emerald-500/30">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl font-bold flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-emerald-500" />
-                  Active Track Allowance
-                </CardTitle>
-                <CardDescription>
-                  Your monthly track submission subscription
-                </CardDescription>
-              </div>
-              <Badge className="bg-gradient-to-r from-emerald-500 to-green-600 text-white">
-                Active
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 rounded-lg bg-gradient-to-br from-emerald-500/10 to-green-600/10 border border-emerald-500/20">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Tracks Remaining</p>
-                  <div className="flex items-baseline gap-2 mt-1">
-                    <span className="text-3xl font-bold text-foreground">{trackAllowance.tracksRemaining}</span>
-                    <span className="text-muted-foreground">/ {trackAllowance.tracksAllowed}</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Monthly</p>
-                  <p className="text-xl font-bold text-emerald-500">${trackAllowance.monthlyAmount} CAD</p>
-                </div>
-              </div>
-              
-              <Progress value={usagePercentage} className="h-2 mb-2" />
-              
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{trackAllowance.tracksUsed} used</span>
-                {trackAllowance.currentPeriodEnd && (
-                  <span>Resets {format(new Date(trackAllowance.currentPeriodEnd), "MMM d")}</span>
-                )}
-              </div>
-            </div>
-
-            <Button
-              onClick={handleManageSubscription}
-              disabled={managingSubscription}
-              variant="outline"
-              className="w-full"
-            >
-              {managingSubscription ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Opening...
-                </>
-              ) : (
-                <>
-                  <Settings className="w-4 h-4 mr-2" />
-                  Manage or Cancel Subscription
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
       <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -326,11 +190,6 @@ export const SubscriptionManagementTab = ({ userPlan, profile }: SubscriptionMan
           </Button>
         </CardContent>
       </Card>
-
-      {/* Track Allowance Plan - only show if no active subscription */}
-      {!trackAllowance?.hasSubscription && !loadingAllowance && (
-        <TrackAllowancePlan />
-      )}
     </div>
   );
 };
