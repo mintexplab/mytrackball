@@ -507,7 +507,7 @@ const Dashboard = () => {
       <AnnouncementBar />
       
       {/* Fine Dialog - shows if user has pending fines */}
-      {user && <FineDialog userId={user.id} onResolved={() => window.location.reload()} />}
+      {user && <FineDialog userId={user.id} onResolved={() => {}} />}
       
       {isLoggingOut && <div className="fixed inset-0 z-50 bg-background animate-fade-in flex flex-col items-center justify-center gap-4">
           <p className="text-lg text-foreground animate-pulse">Signing you out of My Trackball</p>
