@@ -96,13 +96,24 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
       return;
     }
 
+    // Check if user is admin
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: (await supabase.auth.getUser()).data.user?.id,
+      _role: "admin",
+    });
+
+    if (!isAdmin) {
+      toast.error("Only admins can update release status");
+      return;
+    }
+
     const { error } = await supabase
       .from("releases")
       .update({ status })
       .eq("id", releaseId);
 
     if (error) {
-      toast.error("Failed to update release status");
+      toast.error("Failed to update release status: " + error.message);
       console.error("Update error:", error);
       return;
     }
