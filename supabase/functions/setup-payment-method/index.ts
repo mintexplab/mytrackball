@@ -62,19 +62,23 @@ serve(async (req) => {
       logStep("Created new customer", { customerId });
     }
 
-    // Create SetupIntent for saving payment method
-    const setupIntent = await stripe.setupIntents.create({
+    // Create PaymentIntent for $2.29 CAD verification fee
+    const verificationFee = 229; // $2.29 CAD in cents
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: verificationFee,
+      currency: 'cad',
       customer: customerId,
-      payment_method_types: ['card'],
-      usage: 'off_session', // Allow charging the card later without customer present
+      setup_future_usage: 'off_session', // Save the card for future use
+      description: 'Card Verification Fee',
       metadata: {
         user_id: user.id,
+        type: 'verification_fee',
       },
     });
-    logStep("Created SetupIntent", { setupIntentId: setupIntent.id });
+    logStep("Created PaymentIntent for verification", { paymentIntentId: paymentIntent.id, amount: verificationFee });
 
     return new Response(JSON.stringify({
-      clientSecret: setupIntent.client_secret,
+      clientSecret: paymentIntent.client_secret,
       publishableKey,
       customerId,
     }), {
