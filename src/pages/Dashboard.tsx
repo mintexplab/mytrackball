@@ -189,24 +189,24 @@ const Dashboard = () => {
         _role: 'admin'
       });
 
+      // Set session and user immediately
+      setSession(session);
+      setUser(session.user);
+
       if (!isAdminData && (!profileData?.onboarding_completed)) {
-        // User needs onboarding - show it IMMEDIATELY without loading dashboard
+        // User needs onboarding - show it IMMEDIATELY without loading dashboard or loader
         if (!profileData?.account_type || profileData.account_type === 'pending') {
           setShowInitialSetup(true);
         } else {
           setShowOnboarding(true);
           setShowOnboardingOverlay(true);
         }
-        setUser(session.user);
-        setSession(session);
         setLoading(false);
-        return; // Don't load dashboard yet
+        // Skip the loader entirely for onboarding users
+        return;
       }
 
       // User doesn't need onboarding - proceed with normal loading
-      setSession(session);
-      setUser(session.user);
-      
       // Check termination and maintenance
       checkTerminationStatus(session.user.id);
       checkMaintenanceMode(session.user.id);
