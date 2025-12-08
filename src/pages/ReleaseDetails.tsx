@@ -98,6 +98,7 @@ const ReleaseDetails = () => {
       published: { className: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
       "taken down": { className: "bg-gray-500/20 text-gray-300 border-gray-500/30" },
       delivering: { className: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
+      delivered: { className: "bg-teal-500/20 text-teal-300 border-teal-500/30", label: "Delivered" },
       striked: { className: "bg-orange-500/20 text-orange-300 border-orange-500/30" },
       "on hold": { className: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
     };
