@@ -87,12 +87,14 @@ serve(async (req) => {
     });
     logStep("Fetched payment methods", { count: paymentMethods.data.length });
 
-    // Fetch recent payment intents (one-time payments)
+    // Fetch recent successful payment intents (one-time payments) - only succeeded ones
     const paymentIntents = await stripe.paymentIntents.list({
       customer: customerId,
-      limit: 10,
+      limit: 20,
     });
-    logStep("Fetched payment intents", { count: paymentIntents.data.length });
+    // Filter to only include succeeded payments
+    const succeededPayments = paymentIntents.data.filter((pi: any) => pi.status === 'succeeded');
+    logStep("Fetched payment intents", { total: paymentIntents.data.length, succeeded: succeededPayments.length });
 
     // Fetch upcoming invoice if subscription exists
     let upcomingInvoice = null;
@@ -146,7 +148,7 @@ serve(async (req) => {
         period_start: upcomingInvoice.period_start,
         period_end: upcomingInvoice.period_end,
       } : null,
-      recentPayments: paymentIntents.data.map((pi: any) => ({
+      recentPayments: succeededPayments.map((pi: any) => ({
         id: pi.id,
         amount: pi.amount,
         status: pi.status,
