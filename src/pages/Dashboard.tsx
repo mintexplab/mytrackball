@@ -56,8 +56,7 @@ import { PaymentMethodsManagement } from "@/components/PaymentMethodsManagement"
 import { PaymentHistory } from "@/components/PaymentHistory";
 import { TrackAllowanceTab } from "@/components/TrackAllowanceTab";
 import { TrackAllowanceBlock } from "@/components/TrackAllowanceBlock";
-import { TermsAgreementFlow } from "@/components/TermsAgreementFlow";
-import { CURRENT_TERMS_VERSION } from "@/components/TermsOfServiceContent";
+import { DocumentSigningFlow, CURRENT_TERMS_VERSION } from "@/components/DocumentSigningFlow";
 
 const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -496,7 +495,7 @@ const Dashboard = () => {
   // Show terms agreement flow if needed (highest priority for new users)
   if (showTermsAgreement && user) {
     return (
-      <TermsAgreementFlow
+      <DocumentSigningFlow
         userId={user.id}
         onComplete={() => {
           setShowTermsAgreement(false);

@@ -25,9 +25,13 @@ interface Track {
   featured_artists: string;
 }
 
-// Pricing constants (CAD)
-const TRACK_FEE = 5;
-const UPC_FEE = 8;
+// Pricing tiers (CAD)
+type PricingTier = "eco" | "standard";
+
+const PRICING = {
+  eco: { trackFee: 1, upcFee: 4, name: "Trackball Eco" },
+  standard: { trackFee: 5, upcFee: 8, name: "Trackball Standard" },
+};
 
 const releaseSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
@@ -66,6 +70,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   const [loading, setLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [releaseType, setReleaseType] = useState<"single" | "album">("single");
+  const [pricingTier, setPricingTier] = useState<PricingTier>("standard");
   const { uploadFile, uploading: s3Uploading } = useS3Upload();
   const [artworkFile, setArtworkFile] = useState<File | null>(null);
   const [pendingReleaseId, setPendingReleaseId] = useState<string | null>(null);
@@ -94,10 +99,11 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     catalog_number: "",
   });
 
-  // Calculate pricing
+  // Calculate pricing based on selected tier
   const trackCount = tracks.length;
-  const trackTotal = TRACK_FEE * trackCount;
-  const totalCost = trackTotal + UPC_FEE;
+  const currentPricing = PRICING[pricingTier];
+  const trackTotal = currentPricing.trackFee * trackCount;
+  const totalCost = trackTotal + currentPricing.upcFee;
 
   // Check if user can use allowance for this release
   const canUseAllowance = trackAllowance?.hasSubscription && trackAllowance.tracksRemaining >= trackCount;
@@ -345,6 +351,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     }]);
     setArtworkFile(null);
     setReleaseType("single");
+    setPricingTier("standard");
     setShowPricingConfirm(false);
     setPendingReleaseId(null);
     setUseAllowance(null);
@@ -556,16 +563,48 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
             {/* Show pricing breakdown if no allowance or user chose to pay */}
             {(!canUseAllowance || useAllowance === false) && (
               <>
+                {/* Tier Selection */}
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-foreground">Select Distribution Tier</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPricingTier("eco")}
+                      className={`p-4 rounded-lg border-2 transition-all text-left ${
+                        pricingTier === "eco"
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <p className="font-semibold text-foreground">Trackball Eco</p>
+                      <p className="text-xs text-muted-foreground mt-1">$1/track + $4 UPC</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPricingTier("standard")}
+                      className={`p-4 rounded-lg border-2 transition-all text-left ${
+                        pricingTier === "standard"
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <p className="font-semibold text-foreground">Trackball Standard</p>
+                      <p className="text-xs text-muted-foreground mt-1">$5/track + $8 UPC</p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Pricing Breakdown */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2 border-b border-border">
                     <span className="text-muted-foreground">
-                      Track Fee ({trackCount} track{trackCount > 1 ? 's' : ''} × $5 CAD)
+                      Track Fee ({trackCount} track{trackCount > 1 ? 's' : ''} × ${currentPricing.trackFee} CAD)
                     </span>
                     <span className="font-semibold">${trackTotal.toFixed(2)} CAD</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-border">
                     <span className="text-muted-foreground">UPC Fee</span>
-                    <span className="font-semibold">${UPC_FEE.toFixed(2)} CAD</span>
+                    <span className="font-semibold">${currentPricing.upcFee.toFixed(2)} CAD</span>
                   </div>
                   <div className="flex justify-between items-center py-3 text-lg">
                     <span className="font-bold">Total</span>
@@ -666,9 +705,9 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
         <Card className="p-4 border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="font-semibold text-sm">Estimated Cost</h4>
+              <h4 className="font-semibold text-sm">Estimated Cost ({currentPricing.name})</h4>
               <p className="text-xs text-muted-foreground">
-                {trackCount} track{trackCount > 1 ? 's' : ''} × $5 + $8 UPC
+                {trackCount} track{trackCount > 1 ? 's' : ''} × ${currentPricing.trackFee} + ${currentPricing.upcFee} UPC
               </p>
             </div>
             <div className="text-right">
