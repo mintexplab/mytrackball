@@ -52,7 +52,7 @@ export const TermsOfServiceContent = ({ onScrolledToBottom }: TermsOfServiceCont
       >
         <h1 className="text-2xl font-bold text-foreground mb-6">TRACKBALL DISTRIBUTION</h1>
         <h2 className="text-xl font-semibold text-foreground mb-4">TERMS OF SERVICE AGREEMENT</h2>
-        <p className="text-muted-foreground mb-4">Version {CURRENT_TERMS_VERSION} | Effective Date: December 2024</p>
+        <p className="text-muted-foreground mb-4">Version {CURRENT_TERMS_VERSION} | Effective Date: December 8, 2025</p>
 
         <hr className="border-border my-6" />
 

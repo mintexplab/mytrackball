@@ -74,10 +74,11 @@ serve(async (req) => {
     for (const sub of subscriptions.data) {
       if (sub.metadata?.type === "track_allowance") {
         trackAllowanceSubscription = sub;
-        tracksAllowed = parseInt(sub.metadata?.tracks_per_month || "0", 10);
+        // Check both metadata keys for compatibility
+        tracksAllowed = parseInt(sub.metadata?.tracks_allowed || sub.metadata?.tracks_per_month || "0", 10);
         // Calculate monthly amount from subscription items
         const item = sub.items.data[0];
-        if (item?.price?.unit_amount) {
+        if (item?.price?.unit_amount !== undefined) {
           monthlyAmount = item.price.unit_amount / 100;
         }
         break;
@@ -133,6 +134,13 @@ serve(async (req) => {
         onConflict: "user_id,month_year"
       });
 
+    // Safely get current period end
+    let currentPeriodEnd = null;
+    if (trackAllowanceSubscription.current_period_end && 
+        typeof trackAllowanceSubscription.current_period_end === 'number') {
+      currentPeriodEnd = new Date(trackAllowanceSubscription.current_period_end * 1000).toISOString();
+    }
+
     return new Response(JSON.stringify({ 
       hasSubscription: true,
       subscriptionId: trackAllowanceSubscription.id,
@@ -140,7 +148,7 @@ serve(async (req) => {
       tracksUsed,
       tracksRemaining,
       monthlyAmount,
-      currentPeriodEnd: new Date(trackAllowanceSubscription.current_period_end * 1000).toISOString()
+      currentPeriodEnd
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
