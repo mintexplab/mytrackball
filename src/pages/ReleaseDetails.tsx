@@ -87,20 +87,26 @@ const ReleaseDetails = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, string> = {
-      pending: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
-      approved: "bg-green-500/20 text-green-300 border-green-500/30",
-      rejected: "bg-red-500/20 text-red-300 border-red-500/30",
-      published: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-      "taken down": "bg-gray-500/20 text-gray-300 border-gray-500/30",
-      delivering: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-      striked: "bg-orange-500/20 text-orange-300 border-orange-500/30",
-      "on hold": "bg-purple-500/20 text-purple-300 border-purple-500/30",
+    const variants: Record<string, { className: string; label?: string }> = {
+      pending: { className: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30" },
+      pending_payment: { className: "bg-orange-500/20 text-orange-300 border-orange-500/30", label: "Payment pending" },
+      pay_later: { className: "bg-amber-500/20 text-amber-300 border-amber-500/30", label: "Pay later" },
+      paid: { className: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30", label: "Paid" },
+      processing: { className: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30", label: "Processing" },
+      approved: { className: "bg-green-500/20 text-green-300 border-green-500/30" },
+      rejected: { className: "bg-red-500/20 text-red-300 border-red-500/30" },
+      published: { className: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
+      "taken down": { className: "bg-gray-500/20 text-gray-300 border-gray-500/30" },
+      delivering: { className: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
+      striked: { className: "bg-orange-500/20 text-orange-300 border-orange-500/30" },
+      "on hold": { className: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
     };
 
+    const variant = variants[status] || variants.pending;
+
     return (
-      <Badge variant="outline" className={variants[status] || variants.pending}>
-        {status}
+      <Badge variant="outline" className={variant.className}>
+        {variant.label || status}
       </Badge>
     );
   };

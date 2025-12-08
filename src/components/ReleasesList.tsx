@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Clock, Trash2, AlertTriangle } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Trash2, AlertTriangle, CreditCard } from "lucide-react";
 import ExportDDEX from "./ExportDDEX";
 import ReleaseInfoDialog from "./ReleaseInfoDialog";
 import ReleaseRejectionDialog from "./ReleaseRejectionDialog";
@@ -131,8 +131,12 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { icon: any; className: string }> = {
+    const variants: Record<string, { icon: any; className: string; label?: string }> = {
       pending: { icon: Clock, className: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30" },
+      pending_payment: { icon: CreditCard, className: "bg-orange-500/20 text-orange-300 border-orange-500/30", label: "Payment pending" },
+      pay_later: { icon: Clock, className: "bg-amber-500/20 text-amber-300 border-amber-500/30", label: "Pay later" },
+      paid: { icon: CheckCircle2, className: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30", label: "Paid" },
+      processing: { icon: Clock, className: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30", label: "Processing" },
       approved: { icon: CheckCircle2, className: "bg-green-500/20 text-green-300 border-green-500/30" },
       rejected: { icon: XCircle, className: "bg-red-500/20 text-red-300 border-red-500/30" },
       published: { icon: CheckCircle2, className: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
@@ -144,11 +148,12 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
 
     const variant = variants[status] || variants.pending;
     const Icon = variant.icon;
+    const displayLabel = variant.label || status;
 
     return (
       <Badge variant="outline" className={variant.className}>
         <Icon className="w-3 h-3 mr-1" />
-        {status}
+        {displayLabel}
       </Badge>
     );
   };
