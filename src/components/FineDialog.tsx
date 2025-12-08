@@ -30,12 +30,15 @@ export const FineDialog = ({ userId, onResolved }: FineDialogProps) => {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [showPaymentSetup, setShowPaymentSetup] = useState(false);
+  const [resolved, setResolved] = useState(false);
   const { paymentMethod, loading: paymentLoading, refetch: refetchPayment } = useSavedPaymentMethod();
   const { currency } = usePreferredCurrency();
 
   useEffect(() => {
-    fetchPendingFines();
-  }, [userId]);
+    if (!resolved) {
+      fetchPendingFines();
+    }
+  }, [userId, resolved]);
 
   const fetchPendingFines = async () => {
     const { data, error } = await supabase
@@ -100,7 +103,8 @@ export const FineDialog = ({ userId, onResolved }: FineDialogProps) => {
 
       if (updateError) throw updateError;
 
-      // Clear local state immediately to prevent dialog from showing again
+      // Mark as resolved to prevent re-fetching
+      setResolved(true);
       setPendingFines([]);
       
       toast.success(isMockFine ? "Mock fine acknowledged" : "Fine paid successfully");
@@ -156,7 +160,8 @@ export const FineDialog = ({ userId, onResolved }: FineDialogProps) => {
     return null;
   }
 
-  if (pendingFines.length === 0) {
+  // Don't show if resolved or no pending fines
+  if (resolved || pendingFines.length === 0) {
     return null;
   }
 
