@@ -32,6 +32,7 @@ import LabelDesignationWelcomeDialog from "./LabelDesignationWelcomeDialog";
 import { OnboardingTutorial } from "./OnboardingTutorial";
 import { AdminTicketManagement } from "./AdminTicketManagement";
 import { Bug, GraduationCap, CreditCard } from "lucide-react";
+import { TestPaymentSection } from "./TestPaymentSection";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LabelPartnerServiceConfig } from "./LabelPartnerServiceConfig";
@@ -560,6 +561,17 @@ const AdminPortal = ({
                       Assign & Notify
                     </Button>
                   </div>
+                </div>
+
+                <div className="border-t border-border pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CreditCard className="w-5 h-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Test Stripe Payment</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Create a test checkout session with a custom amount to verify Stripe integration
+                  </p>
+                  <TestPaymentSection />
                 </div>
               </CardContent>
             </Card>
