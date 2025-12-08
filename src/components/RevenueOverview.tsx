@@ -4,6 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { DollarSign, TrendingUp, Music, FileX, CreditCard, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { format } from "date-fns";
+
+interface ChartDataPoint {
+  date: string;
+  revenue: number;
+  releases: number;
+  takedowns: number;
+  subscriptions: number;
+}
 
 interface RevenueData {
   totalRevenue: number;
@@ -18,6 +28,7 @@ interface RevenueData {
     date: string;
     type: string;
   }[];
+  chartData: ChartDataPoint[];
 }
 
 export const RevenueOverview = () => {
@@ -29,12 +40,20 @@ export const RevenueOverview = () => {
     takedownRevenue: 0,
     subscriptionRevenue: 0,
     recentPayments: [],
+    chartData: [],
   });
 
   const fetchRevenue = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("stripe-revenue-overview");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase.functions.invoke("stripe-revenue-overview", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
       
       if (error) throw error;
       
@@ -83,6 +102,27 @@ export const RevenueOverview = () => {
     }
   };
 
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+          <p className="text-sm font-medium mb-2">{format(new Date(label), "MMM d, yyyy")}</p>
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center gap-2 text-sm">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: entry.color }} 
+              />
+              <span className="text-muted-foreground">{entry.name}:</span>
+              <span className="font-medium">{formatCurrency(entry.value)}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -118,6 +158,76 @@ export const RevenueOverview = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Revenue Chart */}
+      {revenue.chartData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Revenue Trends</CardTitle>
+            <CardDescription>Daily revenue breakdown over the last 30 days</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={revenue.chartData}>
+                  <defs>
+                    <linearGradient id="colorReleases" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorTakedowns" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f97316" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorSubscriptions" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={(value) => format(new Date(value), "MMM d")}
+                    className="text-muted-foreground"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <YAxis 
+                    tickFormatter={(value) => `$${(value / 100).toFixed(0)}`}
+                    className="text-muted-foreground"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Area 
+                    type="monotone" 
+                    dataKey="releases" 
+                    name="Releases"
+                    stroke="hsl(var(--primary))" 
+                    fillOpacity={1} 
+                    fill="url(#colorReleases)" 
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="takedowns" 
+                    name="Takedowns"
+                    stroke="#f97316" 
+                    fillOpacity={1} 
+                    fill="url(#colorTakedowns)" 
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="subscriptions" 
+                    name="Subscriptions"
+                    stroke="#22c55e" 
+                    fillOpacity={1} 
+                    fill="url(#colorSubscriptions)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Revenue Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

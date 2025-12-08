@@ -69,6 +69,17 @@ serve(async (req) => {
     let takedownRevenue = 0;
     let subscriptionRevenue = 0;
     const recentPayments: any[] = [];
+    
+    // Daily revenue tracking for charts
+    const dailyRevenue: Record<string, { date: string; revenue: number; releases: number; takedowns: number; subscriptions: number }> = {};
+    
+    // Initialize last 30 days
+    for (let i = 0; i < 30; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      dailyRevenue[dateStr] = { date: dateStr, revenue: 0, releases: 0, takedowns: 0, subscriptions: 0 };
+    }
 
     for (const charge of charges.data) {
       if (charge.status !== "succeeded" || charge.refunded) continue;
@@ -76,6 +87,7 @@ serve(async (req) => {
       const amount = charge.amount;
       const metadata = charge.metadata || {};
       const description = charge.description || "";
+      const chargeDate = new Date(charge.created * 1000).toISOString().split('T')[0];
 
       let type = "other";
 
@@ -83,19 +95,35 @@ serve(async (req) => {
       if (metadata.type === "track_allowance" || description.toLowerCase().includes("track allowance")) {
         subscriptionRevenue += amount;
         type = "subscription";
+        if (dailyRevenue[chargeDate]) {
+          dailyRevenue[chargeDate].subscriptions += amount;
+          dailyRevenue[chargeDate].revenue += amount;
+        }
       } else if (metadata.type === "takedown" || description.toLowerCase().includes("takedown")) {
         takedownRevenue += amount;
         type = "takedown";
+        if (dailyRevenue[chargeDate]) {
+          dailyRevenue[chargeDate].takedowns += amount;
+          dailyRevenue[chargeDate].revenue += amount;
+        }
       } else if (metadata.type === "release" || description.toLowerCase().includes("release")) {
         // Estimate UPC vs track fees - $8 UPC per release
         const upcFee = 800; // $8 in cents
         upcRevenue += upcFee;
         releaseRevenue += (amount - upcFee);
         type = "release";
+        if (dailyRevenue[chargeDate]) {
+          dailyRevenue[chargeDate].releases += amount;
+          dailyRevenue[chargeDate].revenue += amount;
+        }
       } else {
         // Default to release revenue for untagged charges
         releaseRevenue += amount;
         type = "release";
+        if (dailyRevenue[chargeDate]) {
+          dailyRevenue[chargeDate].releases += amount;
+          dailyRevenue[chargeDate].revenue += amount;
+        }
       }
 
       recentPayments.push({
@@ -136,6 +164,10 @@ serve(async (req) => {
     // Sort recent payments by date, limit to 20
     recentPayments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const limitedPayments = recentPayments.slice(0, 20);
+    
+    // Convert daily revenue to sorted array
+    const chartData = Object.values(dailyRevenue)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return new Response(JSON.stringify({
       totalRevenue,
@@ -144,6 +176,7 @@ serve(async (req) => {
       takedownRevenue,
       subscriptionRevenue,
       recentPayments: limitedPayments,
+      chartData,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Sparkles, Plus, Search, Music } from "lucide-react";
+import { Loader2, RefreshCw, Sparkles, Plus, Search, Music, XCircle } from "lucide-react";
 import { format } from "date-fns";
 
 interface TrackAllowanceUser {
@@ -43,6 +44,9 @@ export const TrackAllowanceAdminManagement = () => {
   const [granting, setGranting] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [tracksPerMonth, setTracksPerMonth] = useState(10);
+  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
+  const [userToRevoke, setUserToRevoke] = useState<TrackAllowanceUser | null>(null);
+  const [revoking, setRevoking] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -121,6 +125,43 @@ export const TrackAllowanceAdminManagement = () => {
     }
   };
 
+  const handleRevokeAllowance = async () => {
+    if (!userToRevoke) return;
+
+    setRevoking(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase.functions.invoke("revoke-track-allowance", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: {
+          userId: userToRevoke.user_id,
+          subscriptionId: userToRevoke.subscription_id,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("Track allowance revoked successfully");
+      setRevokeDialogOpen(false);
+      setUserToRevoke(null);
+      fetchData();
+    } catch (error: any) {
+      console.error("Error revoking allowance:", error);
+      toast.error(error.message || "Failed to revoke track allowance");
+    } finally {
+      setRevoking(false);
+    }
+  };
+
+  const openRevokeDialog = (user: TrackAllowanceUser) => {
+    setUserToRevoke(user);
+    setRevokeDialogOpen(true);
+  };
+
   const filteredUsers = users.filter(user => {
     const search = searchTerm.toLowerCase();
     return (
@@ -128,18 +169,6 @@ export const TrackAllowanceAdminManagement = () => {
       user.profile?.full_name?.toLowerCase().includes(search) ||
       user.profile?.display_name?.toLowerCase().includes(search)
     );
-  });
-
-  // Get users without active subscriptions for granting
-  const usersWithoutSubscription = allProfiles.filter(profile => {
-    const now = new Date();
-    const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const hasActiveSubscription = users.some(
-      u => u.user_id === profile.id && 
-           u.month_year === currentMonthYear && 
-           u.subscription_id
-    );
-    return !hasActiveSubscription;
   });
 
   if (loading) {
@@ -305,6 +334,14 @@ export const TrackAllowanceAdminManagement = () => {
                             Active
                           </Badge>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openRevokeDialog(user)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
 
@@ -332,6 +369,37 @@ export const TrackAllowanceAdminManagement = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Revoke Confirmation Dialog */}
+      <AlertDialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke Track Allowance</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to revoke the track allowance for{" "}
+              <strong>{userToRevoke?.profile?.email}</strong>? This will cancel their subscription
+              and remove their current month's allowance.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={revoking}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRevokeAllowance}
+              disabled={revoking}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {revoking ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Revoking...
+                </>
+              ) : (
+                "Revoke Allowance"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
