@@ -441,18 +441,18 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, [user?.id]);
 
-  // Show onboarding tutorial after user first clicks something (after loader finishes)
+  // Show onboarding tutorial after dashboard is fully loaded and interactive
   useEffect(() => {
-    if (showOnboarding && !showInitialSetup && !showLoader && hasUserInteracted) {
+    if (showOnboarding && !showInitialSetup && !showLoader && !loading && hasUserInteracted) {
       setShowOnboardingOverlay(true);
     } else {
       setShowOnboardingOverlay(false);
     }
-  }, [showOnboarding, showInitialSetup, showLoader, hasUserInteracted]);
+  }, [showOnboarding, showInitialSetup, showLoader, loading, hasUserInteracted]);
 
-  // Track first user interaction to trigger onboarding
+  // Track first user interaction to trigger onboarding (only when dashboard is fully ready)
   useEffect(() => {
-    if (showOnboarding && !showInitialSetup && !showLoader && !hasUserInteracted) {
+    if (showOnboarding && !showInitialSetup && !showLoader && !loading && !hasUserInteracted) {
       const handleFirstClick = () => {
         setHasUserInteracted(true);
       };
@@ -463,7 +463,7 @@ const Dashboard = () => {
         document.removeEventListener('click', handleFirstClick);
       };
     }
-  }, [showOnboarding, showInitialSetup, showLoader, hasUserInteracted]);
+  }, [showOnboarding, showInitialSetup, showLoader, loading, hasUserInteracted]);
   const fetchReleaseCount = async (userId: string) => {
     const {
       count

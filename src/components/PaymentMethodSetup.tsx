@@ -66,6 +66,27 @@ const CardSetupForm = ({ onComplete, onSkip }: PaymentMethodSetupProps) => {
       }
 
       if (paymentIntent?.status === "succeeded") {
+        // Send verification receipt email
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, display_name")
+            .eq("id", user?.id)
+            .single();
+
+          await supabase.functions.invoke("send-verification-receipt", {
+            body: {
+              userEmail: user?.email,
+              userName: profile?.display_name || profile?.full_name || user?.email?.split('@')[0],
+              paymentDate: new Date().toISOString(),
+            },
+          });
+        } catch (emailError) {
+          console.error("Failed to send verification receipt:", emailError);
+          // Don't block the flow if email fails
+        }
+
         toast.success("Card verified and saved successfully!");
         onComplete();
       }
