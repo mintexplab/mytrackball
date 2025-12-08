@@ -63,6 +63,13 @@ const Footer = () => {
             >
               email
             </a>
+            {" · "}
+            <a 
+              href="/terms" 
+              className="text-primary hover:underline transition-colors"
+            >
+              Terms of Service
+            </a>
           </p>
         </div>
       </div>

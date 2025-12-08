@@ -14,6 +14,7 @@ import AcceptLabelInvitation from "./pages/AcceptLabelInvitation";
 import AcceptArtistInvitation from "./pages/AcceptArtistInvitation";
 import ReleaseDetails from "./pages/ReleaseDetails";
 import SetupTwoFactor from "./pages/SetupTwoFactor";
+import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 import Footer from "./components/Footer";
 
@@ -40,6 +41,7 @@ const App = () => {
                 <Route path="/release/:id" element={<ReleaseDetails />} />
                 <Route path="/settings" element={<AccountSettings />} />
                 <Route path="/subscription" element={<SubscriptionManagement />} />
+                <Route path="/terms" element={<TermsOfService />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
