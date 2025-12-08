@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music, Settings, ChevronDown, AlertTriangle, FileText, ShieldAlert, MessageSquare, Sparkles } from "lucide-react";
+import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music, Settings, ChevronDown, AlertTriangle, FileText, ShieldAlert, MessageSquare, Sparkles, TrendingUp } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
 import UserManagement from "./UserManagement";
@@ -35,6 +35,7 @@ import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FineManagement } from "./FineManagement";
 import { TrackAllowanceAdminManagement } from "./TrackAllowanceAdminManagement";
+import { RevenueOverview } from "./RevenueOverview";
 
 interface AdminPortalProps {
   onSignOut: () => void;
@@ -240,6 +241,11 @@ const AdminPortal = ({
                 <DropdownMenuContent align="end" className="w-56 bg-card border-border">
                   <DropdownMenuLabel>Financial Management</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setActiveTab("revenue")} className="cursor-pointer">
+                    <TrendingUp className="w-4 h-4 mr-2" />
+                    Revenue Overview
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setActiveTab("royalties")} className="cursor-pointer">
                     <DollarSign className="w-4 h-4 mr-2" />
                     Royalties
@@ -396,6 +402,14 @@ const AdminPortal = ({
 
           <TabsContent value="royalties">
             <RoyaltiesManagement />
+          </TabsContent>
+
+          <TabsContent value="revenue">
+            <Card className="backdrop-blur-sm bg-card/80 border-primary/20">
+              <CardContent className="pt-6">
+                <RevenueOverview />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="payouts">

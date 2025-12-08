@@ -175,6 +175,119 @@ serve(async (req) => {
 
     logStep("Successfully granted track allowance");
 
+    // Send email notification to user
+    try {
+      const { data: fullProfile } = await supabaseClient
+        .from("profiles")
+        .select("email, full_name, display_name, artist_name")
+        .eq("id", userId)
+        .single();
+
+      if (fullProfile) {
+        const userName = fullProfile.full_name || fullProfile.display_name || fullProfile.artist_name || "User";
+        
+        const resendApiKey = Deno.env.get("RESEND_API_KEY");
+        if (resendApiKey) {
+          const emailResponse = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${resendApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: "My Trackball <notifications@trackball.cc>",
+              to: [fullProfile.email],
+              subject: "🎉 Track Allowance Subscription Granted - My Trackball",
+              html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset="utf-8">
+                  <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0a0a0a; color: #ffffff; padding: 20px; }
+                    .container { max-width: 600px; margin: 0 auto; background-color: #1a1a1a; border-radius: 12px; padding: 32px; }
+                    .header { text-align: center; margin-bottom: 24px; }
+                    .logo { font-size: 24px; font-weight: bold; color: #ef4444; }
+                    .title { font-size: 22px; font-weight: bold; margin-bottom: 16px; color: #22c55e; }
+                    .content { color: #a3a3a3; line-height: 1.6; }
+                    .highlight-box { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 24px; border-radius: 12px; margin: 24px 0; text-align: center; }
+                    .highlight-number { font-size: 48px; font-weight: bold; color: #ffffff; }
+                    .highlight-label { color: #fecaca; font-size: 14px; margin-top: 4px; }
+                    .benefits { background-color: #262626; padding: 20px; border-radius: 8px; margin: 20px 0; }
+                    .benefit-item { display: flex; align-items: center; margin-bottom: 12px; color: #d1d5db; }
+                    .benefit-icon { color: #22c55e; margin-right: 12px; }
+                    .footer { text-align: center; margin-top: 24px; color: #666; font-size: 12px; }
+                    .button { display: inline-block; background-color: #ef4444; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; margin-top: 20px; font-weight: 600; }
+                  </style>
+                </head>
+                <body>
+                  <div class="container">
+                    <div class="header">
+                      <div class="logo">My Trackball</div>
+                    </div>
+                    
+                    <h1 class="title">🎉 Track Allowance Subscription Activated!</h1>
+                    
+                    <div class="content">
+                      <p>Hi ${userName},</p>
+                      
+                      <p>Great news! An administrator has granted you a track allowance subscription on My Trackball.</p>
+                    </div>
+                    
+                    <div class="highlight-box">
+                      <div class="highlight-number">${tracksPerMonth}</div>
+                      <div class="highlight-label">Tracks Per Month</div>
+                    </div>
+                    
+                    <div class="benefits">
+                      <h3 style="color: #ffffff; margin-bottom: 16px;">What this means for you:</h3>
+                      <div class="benefit-item">
+                        <span class="benefit-icon">✓</span>
+                        Submit up to ${tracksPerMonth} tracks per month without upfront payment
+                      </div>
+                      <div class="benefit-item">
+                        <span class="benefit-icon">✓</span>
+                        Your allowance resets on the 1st of each month
+                      </div>
+                      <div class="benefit-item">
+                        <span class="benefit-icon">✓</span>
+                        Track your usage in the Track Allowance section
+                      </div>
+                      <div class="benefit-item">
+                        <span class="benefit-icon">✓</span>
+                        This subscription has been granted at no cost to you
+                      </div>
+                    </div>
+                    
+                    <div style="text-align: center;">
+                      <a href="https://my.trackball.cc/dashboard" class="button">
+                        Start Releasing Music
+                      </a>
+                    </div>
+                    
+                    <div class="footer">
+                      <p>Questions? Contact us at contact@trackball.cc</p>
+                      <p>© ${new Date().getFullYear()} Trackball Distribution. All rights reserved.</p>
+                    </div>
+                  </div>
+                </body>
+                </html>
+              `,
+            }),
+          });
+
+          if (emailResponse.ok) {
+            logStep("Email notification sent successfully");
+          } else {
+            const emailError = await emailResponse.text();
+            logStep("Email send failed", { error: emailError });
+          }
+        }
+      }
+    } catch (emailError: any) {
+      logStep("Email notification error (non-fatal)", { message: emailError.message });
+    }
+
     return new Response(JSON.stringify({
       success: true,
       subscriptionId: subscription.id,
