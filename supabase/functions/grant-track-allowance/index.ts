@@ -125,24 +125,24 @@ serve(async (req) => {
       logStep("Created product", { productId: product.id });
     }
 
-    // Create price
+    // Create price - $0 for admin-granted subscriptions
     const price = await stripe.prices.create({
       product: product.id,
-      unit_amount: monthlyAmount * 100, // Convert to cents
+      unit_amount: 0, // Free for admin-granted
       currency: "cad",
       recurring: { interval: "month" },
       metadata: {
         type: "track_allowance",
         tracks_allowed: String(tracksPerMonth),
+        admin_granted: "true",
       },
     });
     logStep("Created price", { priceId: price.id });
 
-    // Create subscription with trial (free for admin-granted)
+    // Create subscription (no trial needed since price is $0)
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: price.id }],
-      trial_period_days: 36500, // ~100 years trial = essentially free
       metadata: {
         type: "track_allowance",
         tracks_allowed: String(tracksPerMonth),
