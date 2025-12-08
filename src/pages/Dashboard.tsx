@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Building2, Home, Palette } from "lucide-react";
+import { Plus, Package, Bell, DollarSign, HelpCircle, Mail, Users, ChevronDown, ChevronUp, FileMusic, Building2, Home, Music } from "lucide-react";
 import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
@@ -46,7 +46,7 @@ import LabelDesignationWelcomeDialog from "@/components/LabelDesignationWelcomeD
 import SubscriptionWelcomeDialog from "@/components/SubscriptionWelcomeDialog";
 import { ModernSupportTicketSystem } from "@/components/ModernSupportTicketSystem";
 
-import { LabelCustomizationTab } from "@/components/LabelCustomizationTab";
+import { ArtistNameManagement } from "@/components/ArtistNameManagement";
 import { LabelInvitationNotification } from "@/components/LabelInvitationNotification";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { FeatureLockBadge } from "@/components/FeatureLockBadge";
@@ -615,7 +615,7 @@ const Dashboard = () => {
               </DropdownMenu>
 
               {/* Team Dropdown - Only show if user has any team management permissions */}
-              {(permissions.canAddUsers || permissions.canCreateLabels || permissions.canCustomizeLabels) && (
+              {(permissions.canAddUsers || permissions.canCreateLabels || permissions.accountType === "artist") && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="gap-1">
@@ -671,21 +671,14 @@ const Dashboard = () => {
                         />
                       </DropdownMenuItem>
                     )}
-                    {permissions.canCustomizeLabels ? (
-                      <DropdownMenuItem onClick={() => setActiveTab("label-customization")} className="cursor-pointer">
-                        <Palette className="w-4 h-4 mr-2" />
-                        Label Customization
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
-                        <Palette className="w-4 h-4 mr-2" />
-                        Label Customization
-                        <FeatureLockBadge 
-                          isLocked={true} 
-                          requiredPlan="Label Signature/Prestige/Partner"
-                          feature="Label Customization"
-                          inline
-                        />
+                    {/* Artist Name Management - for artist accounts */}
+                    {permissions.accountType === "artist" && (
+                      <DropdownMenuItem onClick={() => setActiveTab("artist-names")} className="cursor-pointer">
+                        <Music className="w-4 h-4 mr-2" />
+                        Artist Names
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          Max {permissions.maxArtistNames || 3}
+                        </span>
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>
@@ -855,9 +848,10 @@ const Dashboard = () => {
             </TabsContent>
           )}
 
-          {permissions.canCustomizeLabels && (
-            <TabsContent value="label-customization" className="animate-fade-in">
-              <LabelCustomizationTab />
+          {/* Artist Name Management - for artist accounts only */}
+          {permissions.accountType === "artist" && (
+            <TabsContent value="artist-names" className="animate-fade-in">
+              <ArtistNameManagement maxArtistNames={permissions.maxArtistNames || 3} />
             </TabsContent>
           )}
 
