@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -11,9 +12,10 @@ interface ReleaseRejectionDialogProps {
   releaseId: string;
   currentStatus: string;
   onUpdate: () => void;
+  asMenuItem?: boolean;
 }
 
-const ReleaseRejectionDialog = ({ releaseId, currentStatus, onUpdate }: ReleaseRejectionDialogProps) => {
+const ReleaseRejectionDialog = ({ releaseId, currentStatus, onUpdate, asMenuItem }: ReleaseRejectionDialogProps) => {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,18 +46,34 @@ const ReleaseRejectionDialog = ({ releaseId, currentStatus, onUpdate }: ReleaseR
     setLoading(false);
   };
 
+  const TriggerContent = asMenuItem ? (
+    <DropdownMenuItem
+      onSelect={(e) => {
+        e.preventDefault();
+        setOpen(true);
+      }}
+      disabled={currentStatus === "rejected"}
+      className="text-red-400"
+    >
+      <XCircle className="w-3 h-3 mr-2" />
+      Reject
+    </DropdownMenuItem>
+  ) : (
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={currentStatus === "rejected"}
+      className="border-red-500/30 hover:bg-red-500/20 text-red-300"
+    >
+      <XCircle className="w-4 h-4 mr-2" />
+      Reject
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={currentStatus === "rejected"}
-          className="border-red-500/30 hover:bg-red-500/20 text-red-300"
-        >
-          <XCircle className="w-4 h-4 mr-2" />
-          Reject
-        </Button>
+        {TriggerContent}
       </DialogTrigger>
       <DialogContent className="bg-card border-border">
         <DialogHeader>

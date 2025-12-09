@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Info, Music, Calendar, Tag, User, Building2, FileText, Play, Download, Image, Archive, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { AudioPlayer } from "./AudioPlayer";
@@ -14,9 +15,10 @@ import { saveAs } from "file-saver";
 interface ReleaseInfoDialogProps {
   releaseId: string;
   onFloatingPlayer?: (src: string, title: string, artist: string, artworkUrl?: string) => void;
+  asMenuItem?: boolean;
 }
 
-const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogProps) => {
+const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer, asMenuItem }: ReleaseInfoDialogProps) => {
   const [open, setOpen] = useState(false);
   const [release, setRelease] = useState<any>(null);
   const [tracks, setTracks] = useState<any[]>([]);
@@ -93,13 +95,27 @@ const ReleaseInfoDialog = ({ releaseId, onFloatingPlayer }: ReleaseInfoDialogPro
     }
   };
 
+  const TriggerContent = asMenuItem ? (
+    <DropdownMenuItem
+      onSelect={(e) => {
+        e.preventDefault();
+        setOpen(true);
+      }}
+    >
+      <Info className="w-3 h-3 mr-2" />
+      Information
+    </DropdownMenuItem>
+  ) : (
+    <Button variant="outline" size="sm">
+      <Info className="w-4 h-4 mr-2" />
+      Information
+    </Button>
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Info className="w-4 h-4 mr-2" />
-          Information
-        </Button>
+        {TriggerContent}
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90vh]">
         <DialogHeader>
