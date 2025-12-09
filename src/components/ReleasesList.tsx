@@ -335,7 +335,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
       pending_payment: { icon: CreditCard, className: "bg-orange-500/20 text-orange-300 border-orange-500/30", label: "Payment pending" },
       pay_later: { icon: Clock, className: "bg-amber-500/20 text-amber-300 border-amber-500/30", label: "Pay later" },
       paid: { icon: CheckCircle2, className: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30", label: "Paid" },
-      processing: { icon: Clock, className: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30", label: "Processing" },
+      processing: { icon: Clock, className: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30", label: "Awaiting Dispatch" },
       approved: { icon: CheckCircle2, className: "bg-green-500/20 text-green-300 border-green-500/30" },
       rejected: { icon: XCircle, className: "bg-red-500/20 text-red-300 border-red-500/30" },
       published: { icon: CheckCircle2, className: "bg-blue-500/20 text-blue-300 border-blue-500/30" },
@@ -469,7 +469,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => updateReleaseStatus(release.id, "processing")}>
                           <Clock className="w-3 h-3 mr-2 text-cyan-400" />
-                          Processing
+                          Awaiting Dispatch
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => updateReleaseStatus(release.id, "delivering")}>
                           <Send className="w-3 h-3 mr-2 text-blue-400" />
