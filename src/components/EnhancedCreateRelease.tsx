@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/lib/toast-with-sound";
-import { Plus, Trash2, Music, Upload, Loader2, CreditCard, Sparkles, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Music, Upload, Loader2, CreditCard, Sparkles, AlertCircle, User, DollarSign } from "lucide-react";
 import { z } from "zod";
 import { useS3Upload } from "@/hooks/useS3Upload";
 import { InDashboardPayment } from "./InDashboardPayment";
@@ -70,6 +70,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   const [showSelection, setShowSelection] = useState(false);
   const [open, setOpen] = useState(false);
   const [showPricingConfirm, setShowPricingConfirm] = useState(false);
+  const [showPricingCards, setShowPricingCards] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [releaseType, setReleaseType] = useState<"single" | "album">("single");
@@ -95,6 +96,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     clientSecret: string;
     publishableKey: string;
   } | null>(null);
+  const [showCreateArtistPrompt, setShowCreateArtistPrompt] = useState(false);
   
   const [tracks, setTracks] = useState<Track[]>([{
     id: "1",
@@ -249,6 +251,18 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   const handleReviewSubmission = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Check if artist account has no artist names
+    if (isArtistAccount && artistNames.length === 0) {
+      setShowCreateArtistPrompt(true);
+      return;
+    }
+
+    // Check if artist account has selected an artist name
+    if (isArtistAccount && !formData.artist_name) {
+      toast.error("Please select an artist name");
+      return;
+    }
+    
     try {
       // Validate release data
       releaseSchema.parse(formData);
@@ -264,8 +278,8 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
         });
       }
 
-      // Show pricing confirmation
-      setShowPricingConfirm(true);
+      // Show pricing cards first
+      setShowPricingCards(true);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -273,6 +287,12 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
         toast.error(error.message);
       }
     }
+  };
+
+  const handleSelectPricingTier = (tier: PricingTier) => {
+    setPricingTier(tier);
+    setShowPricingCards(false);
+    setShowPricingConfirm(true);
   };
 
   const handleProceedToPayment = async () => {
@@ -340,9 +360,9 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
 
       setPendingReleaseId(release.id);
 
-      // Create Stripe checkout session
-      const { data: checkoutData, error: checkoutError } = await supabase.functions.invoke(
-        'create-release-checkout',
+      // Create in-dashboard payment
+      const { data: paymentResponse, error: paymentError } = await supabase.functions.invoke(
+        'create-release-payment',
         {
           body: {
             trackCount: tracks.length,
@@ -353,26 +373,46 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
         }
       );
 
-      if (checkoutError) throw checkoutError;
+      if (paymentError) throw paymentError;
 
-      if (checkoutData?.url) {
-        window.open(checkoutData.url, '_blank');
-        toast.success("Redirecting to payment...");
-        setShowPricingConfirm(false);
-        setOpen(false);
-        resetForm();
+      if (paymentResponse?.clientSecret) {
+        setPaymentData({
+          clientSecret: paymentResponse.clientSecret,
+          publishableKey: paymentResponse.publishableKey,
+          paymentIntentId: paymentResponse.paymentIntentId,
+          amount: paymentResponse.amount,
+        });
       } else {
-        throw new Error("No checkout URL received");
+        throw new Error("No payment data received");
       }
     } catch (error: any) {
-      console.error("Checkout error:", error);
-      toast.error(error.message || "Failed to create checkout session");
+      console.error("Payment error:", error);
+      toast.error(error.message || "Failed to create payment");
     } finally {
       setCheckoutLoading(false);
     }
   };
 
+  const handlePaymentSuccess = () => {
+    toast.success("Payment successful! Your release has been submitted.");
+    setShowPricingConfirm(false);
+    setOpen(false);
+    setPaymentData(null);
+    resetForm();
+    window.location.reload();
+  };
+
+  const handlePaymentCancel = () => {
+    setPaymentData(null);
+  };
+
   const handleSelectionClick = (type: "single" | "album") => {
+    // Check if artist account has no artist names
+    if (isArtistAccount && artistNames.length === 0) {
+      setShowCreateArtistPrompt(true);
+      return;
+    }
+    
     setReleaseType(type);
     setShowSelection(false);
     setOpen(true);
@@ -381,7 +421,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
   const resetForm = () => {
     setFormData({
       title: "",
-      artist_name: "",
+      artist_name: artistNames.length > 0 ? artistNames[0] : "",
       release_date: "",
       genre: "",
       label_name: "",
@@ -405,8 +445,10 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
     setReleaseType("single");
     setPricingTier("standard");
     setShowPricingConfirm(false);
+    setShowPricingCards(false);
     setPendingReleaseId(null);
     setUseAllowance(null);
+    setPaymentData(null);
   };
 
   const handleUseTrackAllowance = async () => {
@@ -500,12 +542,37 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
       setShowPricingConfirm(false);
       setOpen(false);
       resetForm();
+      window.location.reload();
     } catch (error: any) {
       console.error("Submission error:", error);
       toast.error(error.message || "Failed to submit release");
     } finally {
       setCheckoutLoading(false);
     }
+  };
+
+  // Add artist slot payment
+  const handleAddArtistSlot = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-artist-slot-payment');
+      if (error) throw error;
+      
+      setAddSlotPaymentData({
+        clientSecret: data.clientSecret,
+        publishableKey: data.publishableKey,
+      });
+      setShowAddSlotPayment(true);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to initialize payment");
+    }
+  };
+
+  const handleArtistSlotPaymentSuccess = async () => {
+    // Increment max artist slots
+    setMaxArtistSlots(prev => prev + 1);
+    setShowAddSlotPayment(false);
+    setAddSlotPaymentData(null);
+    toast.success("Artist slot added! You can now add another artist name in Account Settings.");
   };
 
   useEffect(() => {
@@ -520,6 +587,79 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
 
   return (
     <>
+      {/* Create Artist Prompt Dialog */}
+      <Dialog open={showCreateArtistPrompt} onOpenChange={setShowCreateArtistPrompt}>
+        <DialogContent className="sm:max-w-[450px] bg-card border-primary/20">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <User className="w-5 h-5 text-primary" />
+              Artist Name Required
+            </DialogTitle>
+            <DialogDescription>
+              You need to add an artist name before creating a release.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Alert className="border-amber-500/30 bg-amber-500/10">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <AlertDescription className="text-sm">
+                As an artist account, you must create at least one artist name in Account Settings before submitting releases.
+              </AlertDescription>
+            </Alert>
+          </div>
+          
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateArtistPrompt(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowCreateArtistPrompt(false);
+                window.location.href = "/account-settings";
+              }}
+              className="flex-1"
+            >
+              Go to Account Settings
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Artist Slot Payment Dialog */}
+      <Dialog open={showAddSlotPayment} onOpenChange={setShowAddSlotPayment}>
+        <DialogContent className="sm:max-w-[450px] bg-card border-primary/20">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Add Artist Slot</DialogTitle>
+            <DialogDescription>
+              Pay $0.99 CAD to add an additional artist name slot to your account.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {addSlotPaymentData ? (
+            <InDashboardPayment
+              clientSecret={addSlotPaymentData.clientSecret}
+              publishableKey={addSlotPaymentData.publishableKey}
+              description="Additional Artist Slot"
+              amount={99}
+              onSuccess={handleArtistSlotPaymentSuccess}
+              onCancel={() => {
+                setShowAddSlotPayment(false);
+                setAddSlotPaymentData(null);
+              }}
+            />
+          ) : (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Selection Menu Dialog */}
       <Dialog open={showSelection} onOpenChange={setShowSelection}>
         <DialogTrigger asChild onClick={() => setShowSelection(true)}>
@@ -561,182 +701,283 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* Pricing Confirmation Dialog */}
+      {/* Pricing Cards Selection Dialog */}
+      <Dialog open={showPricingCards} onOpenChange={setShowPricingCards}>
+        <DialogContent className="sm:max-w-[700px] bg-card border-primary/20">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">Choose Your Distribution Plan</DialogTitle>
+            <DialogDescription className="text-center">
+              Select a pricing tier for your release: {formData.title}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6">
+            {/* Trackball Eco */}
+            <Card 
+              className="p-6 border-2 border-border hover:border-green-500/50 transition-all cursor-pointer group"
+              onClick={() => handleSelectPricingTier("eco")}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-green-500" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-foreground">Trackball Eco</h3>
+                  <p className="text-sm text-muted-foreground">Budget-friendly option</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground">Per Track</span>
+                  <span className="font-semibold text-green-500">$1.00 CAD</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground">UPC Fee</span>
+                  <span className="font-semibold text-green-500">$4.00 CAD</span>
+                </div>
+              </div>
+              
+              <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30">
+                <p className="text-sm text-muted-foreground mb-1">Your Release Cost</p>
+                <p className="text-2xl font-bold text-green-500">
+                  ${(PRICING.eco.trackFee * trackCount + PRICING.eco.upcFee).toFixed(2)} CAD
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {trackCount} track{trackCount > 1 ? 's' : ''} × $1 + $4 UPC
+                </p>
+              </div>
+              
+              <Button className="w-full mt-4 bg-green-600 hover:bg-green-700 group-hover:bg-green-700">
+                Select Eco
+              </Button>
+            </Card>
+
+            {/* Trackball Standard */}
+            <Card 
+              className="p-6 border-2 border-primary/30 hover:border-primary transition-all cursor-pointer group relative"
+              onClick={() => handleSelectPricingTier("standard")}
+            >
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
+                RECOMMENDED
+              </div>
+              
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-foreground">Trackball Standard</h3>
+                  <p className="text-sm text-muted-foreground">Full-featured distribution</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground">Per Track</span>
+                  <span className="font-semibold text-primary">$5.00 CAD</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground">UPC Fee</span>
+                  <span className="font-semibold text-primary">$8.00 CAD</span>
+                </div>
+              </div>
+              
+              <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
+                <p className="text-sm text-muted-foreground mb-1">Your Release Cost</p>
+                <p className="text-2xl font-bold text-primary">
+                  ${(PRICING.standard.trackFee * trackCount + PRICING.standard.upcFee).toFixed(2)} CAD
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {trackCount} track{trackCount > 1 ? 's' : ''} × $5 + $8 UPC
+                </p>
+              </div>
+              
+              <Button className="w-full mt-4 group-hover:opacity-90">
+                Select Standard
+              </Button>
+            </Card>
+          </div>
+
+          {/* Track Allowance Notice */}
+          {canUseAllowance && (
+            <Alert className="border-blue-500/30 bg-blue-500/10">
+              <Sparkles className="h-4 w-4 text-blue-500" />
+              <AlertDescription className="text-sm">
+                You have <span className="font-semibold">{trackAllowance?.tracksRemaining} tracks</span> remaining in your Track Allowance. 
+                You can use your allowance after selecting a tier.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <Button
+            variant="outline"
+            onClick={() => setShowPricingCards(false)}
+            className="w-full"
+          >
+            Back to Release Form
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Confirmation Dialog */}
       <Dialog open={showPricingConfirm} onOpenChange={(open) => {
         setShowPricingConfirm(open);
-        if (!open) setUseAllowance(null);
+        if (!open) {
+          setUseAllowance(null);
+          setPaymentData(null);
+        }
       }}>
         <DialogContent className="sm:max-w-[500px] bg-card border-primary/20">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold flex items-center gap-2">
               <CreditCard className="w-6 h-6 text-primary" />
-              Confirm Submission
+              {paymentData ? "Complete Payment" : "Confirm Submission"}
             </DialogTitle>
             <DialogDescription>
-              {canUseAllowance 
-                ? "You have a Track Allowance plan! Choose how to submit this release."
-                : "Review your release fees before proceeding to payment"}
+              {paymentData 
+                ? "Enter your payment details to complete"
+                : canUseAllowance 
+                  ? "You have a Track Allowance plan! Choose how to submit this release."
+                  : "Review your release fees before proceeding to payment"}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            <div className="p-4 rounded-lg bg-muted/30 border border-border">
-              <h4 className="font-semibold mb-2">{formData.title}</h4>
-              <p className="text-sm text-muted-foreground">{formData.artist_name}</p>
-            </div>
-
-            {/* Track Allowance Option */}
-            {canUseAllowance && useAllowance === null && (
-              <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
-                <p className="text-sm font-medium mb-3">
-                  This release will use {trackCount}/{trackAllowance?.tracksRemaining} of your remaining track allowance!
-                </p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Would you like to use your Track Allowance plan for this release, or pay upfront?
-                </p>
-                <div className="flex gap-3">
-                  <Button
-                    onClick={() => setUseAllowance(true)}
-                    className="flex-1 bg-primary hover:bg-primary/90"
-                  >
-                    Use Track Allowance
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setUseAllowance(false)}
-                    className="flex-1"
-                  >
-                    Pay Upfront
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Show pricing breakdown if no allowance or user chose to pay */}
-            {(!canUseAllowance || useAllowance === false) && (
-              <>
-                {/* Tier Selection */}
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-foreground">Select Distribution Tier</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setPricingTier("eco")}
-                      className={`p-4 rounded-lg border-2 transition-all text-left ${
-                        pricingTier === "eco"
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <p className="font-semibold text-foreground">Trackball Eco</p>
-                      <p className="text-xs text-muted-foreground mt-1">$1/track + $4 UPC</p>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPricingTier("standard")}
-                      className={`p-4 rounded-lg border-2 transition-all text-left ${
-                        pricingTier === "standard"
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <p className="font-semibold text-foreground">Trackball Standard</p>
-                      <p className="text-xs text-muted-foreground mt-1">$5/track + $8 UPC</p>
-                    </button>
-                  </div>
+          {paymentData ? (
+            <InDashboardPayment
+              clientSecret={paymentData.clientSecret}
+              publishableKey={paymentData.publishableKey}
+              description={`${currentPricing.name} - ${formData.title}`}
+              amount={paymentData.amount}
+              onSuccess={handlePaymentSuccess}
+              onCancel={handlePaymentCancel}
+            />
+          ) : (
+            <>
+              <div className="space-y-4 py-4">
+                <div className="p-4 rounded-lg bg-muted/30 border border-border">
+                  <h4 className="font-semibold mb-2">{formData.title}</h4>
+                  <p className="text-sm text-muted-foreground">{formData.artist_name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{currentPricing.name}</p>
                 </div>
 
-                {/* Pricing Breakdown */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-muted-foreground">
-                      Track Fee ({trackCount} track{trackCount > 1 ? 's' : ''} × ${currentPricing.trackFee} CAD)
-                    </span>
-                    <span className="font-semibold">${trackTotal.toFixed(2)} CAD</span>
+                {/* Track Allowance Option */}
+                {canUseAllowance && useAllowance === null && (
+                  <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
+                    <p className="text-sm font-medium mb-3">
+                      This release will use {trackCount}/{trackAllowance?.tracksRemaining} of your remaining track allowance!
+                    </p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Would you like to use your Track Allowance plan for this release, or pay upfront?
+                    </p>
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={() => setUseAllowance(true)}
+                        className="flex-1 bg-primary hover:bg-primary/90"
+                      >
+                        Use Track Allowance
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setUseAllowance(false)}
+                        className="flex-1"
+                      >
+                        Pay Upfront
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-muted-foreground">UPC Fee</span>
-                    <span className="font-semibold">${currentPricing.upcFee.toFixed(2)} CAD</span>
-                  </div>
-                  <div className="flex justify-between items-center py-3 text-lg">
-                    <span className="font-bold">Total</span>
-                    <span className="font-bold text-primary">${totalCost.toFixed(2)} CAD</span>
-                  </div>
-                </div>
-
-                <p className="text-xs text-muted-foreground text-center">
-                  You will be redirected to our secure payment portal to complete your transaction.
-                </p>
-              </>
-            )}
-
-            {/* Confirmation when using allowance */}
-            {useAllowance === true && (
-              <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30">
-                <p className="text-sm text-green-400 font-medium mb-2">
-                  ✓ Using Track Allowance
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  This release will be submitted using your track allowance. 
-                  After submission, you'll have {(trackAllowance?.tracksRemaining || 0) - trackCount} tracks remaining this month.
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                if (useAllowance !== null && canUseAllowance) {
-                  setUseAllowance(null);
-                } else {
-                  setShowPricingConfirm(false);
-                }
-              }}
-              className="flex-1"
-              disabled={checkoutLoading}
-            >
-              Back
-            </Button>
-            
-            {/* Show appropriate action button */}
-            {useAllowance === true ? (
-              <Button
-                onClick={handleUseTrackAllowance}
-                disabled={checkoutLoading}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                {checkoutLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  "Submit with Allowance"
                 )}
-              </Button>
-            ) : (!canUseAllowance || useAllowance === false) ? (
-              <Button
-                onClick={handleProceedToPayment}
-                disabled={checkoutLoading}
-                className="flex-1 bg-gradient-primary hover:opacity-90"
-              >
-                {checkoutLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Pay ${totalCost.toFixed(2)} CAD
-                  </>
+
+                {/* Show pricing breakdown if no allowance or user chose to pay */}
+                {(!canUseAllowance || useAllowance === false) && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center py-2 border-b border-border">
+                      <span className="text-muted-foreground">
+                        Track Fee ({trackCount} track{trackCount > 1 ? 's' : ''} × ${currentPricing.trackFee} CAD)
+                      </span>
+                      <span className="font-semibold">${trackTotal.toFixed(2)} CAD</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-border">
+                      <span className="text-muted-foreground">UPC Fee</span>
+                      <span className="font-semibold">${currentPricing.upcFee.toFixed(2)} CAD</span>
+                    </div>
+                    <div className="flex justify-between items-center py-3 text-lg">
+                      <span className="font-bold">Total</span>
+                      <span className="font-bold text-primary">${totalCost.toFixed(2)} CAD</span>
+                    </div>
+                  </div>
                 )}
-              </Button>
-            ) : null}
-          </div>
+
+                {/* Confirmation when using allowance */}
+                {useAllowance === true && (
+                  <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30">
+                    <p className="text-sm text-green-400 font-medium mb-2">
+                      ✓ Using Track Allowance
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      This release will be submitted using your track allowance. 
+                      After submission, you'll have {(trackAllowance?.tracksRemaining || 0) - trackCount} tracks remaining this month.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (useAllowance !== null && canUseAllowance) {
+                      setUseAllowance(null);
+                    } else {
+                      setShowPricingConfirm(false);
+                      setShowPricingCards(true);
+                    }
+                  }}
+                  className="flex-1"
+                  disabled={checkoutLoading}
+                >
+                  Back
+                </Button>
+                
+                {/* Show appropriate action button */}
+                {useAllowance === true ? (
+                  <Button
+                    onClick={handleUseTrackAllowance}
+                    disabled={checkoutLoading}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    {checkoutLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      "Submit with Allowance"
+                    )}
+                  </Button>
+                ) : (!canUseAllowance || useAllowance === false) ? (
+                  <Button
+                    onClick={handleProceedToPayment}
+                    disabled={checkoutLoading}
+                    className="flex-1 bg-gradient-primary hover:opacity-90"
+                  >
+                    {checkoutLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Pay ${totalCost.toFixed(2)} CAD
+                      </>
+                    )}
+                  </Button>
+                ) : null}
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -753,21 +994,17 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
           </DialogDescription>
         </DialogHeader>
 
-        {/* Pricing Preview */}
-        <Card className="p-4 border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-semibold text-sm">Estimated Cost ({currentPricing.name})</h4>
-              <p className="text-xs text-muted-foreground">
-                {trackCount} track{trackCount > 1 ? 's' : ''} × ${currentPricing.trackFee} + ${currentPricing.upcFee} UPC
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-primary">${totalCost.toFixed(2)}</p>
-              <p className="text-xs text-muted-foreground">CAD</p>
-            </div>
-          </div>
-        </Card>
+        {/* Track Allowance Display */}
+        {trackAllowance?.hasSubscription && (
+          <Alert className="border-blue-500/30 bg-blue-500/10">
+            <Sparkles className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="text-sm">
+              <span className="font-semibold">Track Allowance Active:</span> You have{" "}
+              <span className="text-blue-400 font-semibold">{trackAllowance.tracksRemaining} tracks</span> remaining this month.
+              {canUseAllowance && " You can use your allowance for this release!"}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <form onSubmit={handleReviewSubmission} className="space-y-6">
           {/* Basic Info */}
@@ -789,22 +1026,35 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
 
                   <div className="space-y-2">
                     <Label htmlFor="artist_name">Primary Artist *</Label>
-                    {isArtistAccount && artistNames.length > 0 ? (
-                      <Select
-                        value={formData.artist_name}
-                        onValueChange={(value) => setFormData({ ...formData, artist_name: value })}
-                      >
-                        <SelectTrigger className="bg-background/50 border-border">
-                          <SelectValue placeholder="Select artist name" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {artistNames.map((name) => (
-                            <SelectItem key={name} value={name}>
-                              {name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    {isArtistAccount ? (
+                      artistNames.length > 0 ? (
+                        <Select
+                          value={formData.artist_name}
+                          onValueChange={(value) => setFormData({ ...formData, artist_name: value })}
+                        >
+                          <SelectTrigger className="bg-background/50 border-border">
+                            <SelectValue placeholder="Select artist name" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {artistNames.map((name) => (
+                              <SelectItem key={name} value={name}>
+                                {name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="space-y-2">
+                          <Input
+                            disabled
+                            placeholder="No artist names available"
+                            className="bg-background/50 border-border"
+                          />
+                          <p className="text-xs text-amber-400">
+                            Add artist names in Account Settings first
+                          </p>
+                        </div>
+                      )
                     ) : (
                       <Input
                         id="artist_name"
@@ -815,8 +1065,17 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
                         className="bg-background/50 border-border"
                       />
                     )}
-                    {isArtistAccount && artistNames.length === 0 && (
-                      <p className="text-xs text-amber-400">Add artist names in Account Settings first</p>
+                    {isArtistAccount && artistNames.length >= maxArtistSlots && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAddArtistSlot}
+                        className="w-full text-xs"
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Add Artist Slot ($0.99)
+                      </Button>
                     )}
                   </div>
 
@@ -970,7 +1229,7 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
                     className="border-primary/20"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Track (+$5)
+                    Add Track
                   </Button>
                 </div>
               </div>
@@ -1153,10 +1412,10 @@ const EnhancedCreateRelease = ({ children }: EnhancedCreateReleaseProps) => {
             </Button>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || (isArtistAccount && artistNames.length === 0)}
               className="flex-1 bg-gradient-primary hover:opacity-90 transition-opacity"
             >
-              Review & Pay (${totalCost.toFixed(2)} CAD)
+              Review & Choose Plan
             </Button>
           </div>
         </form>

@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { SignaturePad } from "./SignaturePad";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Loader2, FileText, CheckCircle, ChevronRight } from "lucide-react";
+import { Loader2, FileText, CheckCircle } from "lucide-react";
 import trackballLogo from "@/assets/trackball-logo.png";
 
 interface DocumentSigningFlowProps {
@@ -76,25 +75,12 @@ If you have concerns about a payment or believe there has been a billing error, 
 export const DocumentSigningFlow = ({ userId, onComplete }: DocumentSigningFlowProps) => {
   const [selectedDocument, setSelectedDocument] = useState<DocumentType>("terms");
   const [signedDocuments, setSignedDocuments] = useState<Set<DocumentType>>(new Set());
-  const [signatures, setSignatures] = useState<Record<DocumentType, string | null>>({
-    terms: null,
-    content: null,
-    refund: null,
-  });
-  const [currentSignature, setCurrentSignature] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const allDocumentsSigned = DOCUMENTS.every((doc) => signedDocuments.has(doc.id));
 
-  const handleSignDocument = () => {
-    if (!currentSignature) {
-      toast.error("Please provide your signature");
-      return;
-    }
-
-    setSignatures((prev) => ({ ...prev, [selectedDocument]: currentSignature }));
+  const handleAcceptDocument = () => {
     setSignedDocuments((prev) => new Set([...prev, selectedDocument]));
-    setCurrentSignature(null);
 
     // Find next unsigned document
     const nextUnsigned = DOCUMENTS.find((doc) => !signedDocuments.has(doc.id) && doc.id !== selectedDocument);
@@ -102,7 +88,7 @@ export const DocumentSigningFlow = ({ userId, onComplete }: DocumentSigningFlowP
       setSelectedDocument(nextUnsigned.id);
     }
 
-    toast.success(`${DOCUMENTS.find((d) => d.id === selectedDocument)?.title} signed!`);
+    toast.success(`${DOCUMENTS.find((d) => d.id === selectedDocument)?.title} accepted!`);
   };
 
   const handleFinishOnboarding = async () => {
@@ -110,35 +96,12 @@ export const DocumentSigningFlow = ({ userId, onComplete }: DocumentSigningFlowP
 
     setIsSubmitting(true);
     try {
-      // Upload the terms signature (main document)
-      const termsSignature = signatures.terms;
-      if (!termsSignature) throw new Error("Terms signature missing");
-
-      const response = await fetch(termsSignature);
-      const blob = await response.blob();
-
-      const fileName = `${userId}/signature-${Date.now()}.png`;
-      const { error: uploadError } = await supabase.storage
-        .from("signatures")
-        .upload(fileName, blob, {
-          contentType: "image/png",
-          upsert: true,
-        });
-
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        throw new Error("Failed to save signature");
-      }
-
-      const { data: urlData } = supabase.storage.from("signatures").getPublicUrl(fileName);
-
-      // Update profile with terms acceptance
+      // Update profile with terms acceptance (no signature needed)
       const { error: updateError } = await supabase
         .from("profiles")
         .update({
           terms_accepted_at: new Date().toISOString(),
           terms_version: CURRENT_TERMS_VERSION,
-          terms_signature_url: urlData.publicUrl,
         })
         .eq("id", userId);
 
@@ -147,7 +110,7 @@ export const DocumentSigningFlow = ({ userId, onComplete }: DocumentSigningFlowP
         throw new Error("Failed to record agreement");
       }
 
-      toast.success("All documents signed successfully!");
+      toast.success("All documents accepted successfully!");
       onComplete();
     } catch (error) {
       console.error("Error submitting agreement:", error);
@@ -165,7 +128,7 @@ export const DocumentSigningFlow = ({ userId, onComplete }: DocumentSigningFlowP
         return REFUND_POLICY;
       case "terms":
       default:
-        return null; // Will render TOS component
+        return null;
     }
   };
 
@@ -180,20 +143,20 @@ export const DocumentSigningFlow = ({ userId, onComplete }: DocumentSigningFlowP
           <div>
             <h1 className="text-lg md:text-xl font-bold text-foreground">Document Signing</h1>
             <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">
-              Please sign all documents to continue
+              Please accept all documents to continue
             </p>
           </div>
         </div>
         <div className="text-sm text-muted-foreground">
-          {signedDocuments.size}/{DOCUMENTS.length} signed
+          {signedDocuments.size}/{DOCUMENTS.length} accepted
         </div>
       </div>
 
       {/* Main Content - 2 Column Layout */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* Left Column - Document List */}
-        <div className="w-full md:w-64 lg:w-72 border-b md:border-b-0 md:border-r border-border shrink-0 bg-card/50">
-          <div className="p-3 md:p-4">
+        {/* Left Column - Document List & Accept Button */}
+        <div className="w-full md:w-72 lg:w-80 border-b md:border-b-0 md:border-r border-border shrink-0 bg-card/50 flex flex-col">
+          <div className="p-3 md:p-4 flex-1">
             <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
               Required Documents
             </h2>
@@ -206,12 +169,11 @@ export const DocumentSigningFlow = ({ userId, onComplete }: DocumentSigningFlowP
                   <button
                     key={doc.id}
                     onClick={() => setSelectedDocument(doc.id)}
-                    disabled={docSigned}
                     className={`flex items-center gap-3 p-3 rounded-lg transition-all text-left w-full ${
                       isActive
                         ? "bg-primary/10 border border-primary/30"
                         : docSigned
-                        ? "bg-green-500/10 border border-green-500/30 cursor-default"
+                        ? "bg-green-500/10 border border-green-500/30"
                         : "bg-background hover:bg-muted border border-border"
                     }`}
                   >
@@ -228,53 +190,45 @@ export const DocumentSigningFlow = ({ userId, onComplete }: DocumentSigningFlowP
                       <span className="hidden md:inline">{doc.title}</span>
                       <span className="md:hidden">{doc.shortTitle}</span>
                     </span>
-                    {isActive && !docSigned && <ChevronRight className="w-4 h-4 text-primary shrink-0 hidden md:block" />}
                   </button>
                 );
               })}
             </div>
           </div>
-        </div>
 
-        {/* Right Column - Document Content & Signature */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          {/* Document Content */}
-          <div className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full">
-              <div className="p-4 md:p-6 lg:p-8">
-                {selectedDocument === "terms" ? (
-                  <TermsOfServiceDocument />
-                ) : (
-                  <div className="prose prose-invert prose-sm max-w-none">
-                    <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground leading-relaxed bg-transparent p-0 m-0">
-                      {getDocumentContent(selectedDocument)}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-
-          {/* Signature Section */}
-          <div className="border-t border-border p-4 md:p-6 bg-card/50 shrink-0">
+          {/* Accept Button in Left Column */}
+          <div className="p-3 md:p-4 border-t border-border">
             {isSigned ? (
-              <div className="flex items-center justify-center gap-3 py-4">
-                <CheckCircle className="w-6 h-6 text-green-500" />
-                <span className="text-green-500 font-medium">Document Signed</span>
+              <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-green-500/10 border border-green-500/30">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+                <span className="text-green-500 font-medium text-sm">Document Accepted</span>
               </div>
             ) : (
-              <div className="space-y-4">
-                <SignaturePad onSignatureChange={setCurrentSignature} disabled={false} />
-                <Button
-                  onClick={handleSignDocument}
-                  disabled={!currentSignature}
-                  className="w-full h-11"
-                >
-                  Sign {DOCUMENTS.find((d) => d.id === selectedDocument)?.title}
-                </Button>
-              </div>
+              <Button
+                onClick={handleAcceptDocument}
+                className="w-full h-11"
+              >
+                Accept {DOCUMENTS.find((d) => d.id === selectedDocument)?.shortTitle}
+              </Button>
             )}
           </div>
+        </div>
+
+        {/* Right Column - Document Content (Full Height) */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <ScrollArea className="flex-1">
+            <div className="p-4 md:p-6 lg:p-8">
+              {selectedDocument === "terms" ? (
+                <TermsOfServiceDocument />
+              ) : (
+                <div className="prose prose-invert prose-sm max-w-none">
+                  <pre className="whitespace-pre-wrap font-sans text-sm text-muted-foreground leading-relaxed bg-transparent p-0 m-0">
+                    {getDocumentContent(selectedDocument)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </div>
       </div>
 
@@ -294,7 +248,7 @@ export const DocumentSigningFlow = ({ userId, onComplete }: DocumentSigningFlowP
             ) : allDocumentsSigned ? (
               "Continue to Dashboard"
             ) : (
-              `Sign All Documents to Continue (${signedDocuments.size}/${DOCUMENTS.length})`
+              `Accept All Documents to Continue (${signedDocuments.size}/${DOCUMENTS.length})`
             )}
           </Button>
         </div>
@@ -403,42 +357,40 @@ const TermsOfServiceDocument = () => (
     <ul className="list-disc pl-6 text-muted-foreground mb-4">
       <li><strong className="text-foreground">1st Strike:</strong> Fine issued. User must pay or receive 1-week account lock.</li>
       <li><strong className="text-foreground">2nd Strike:</strong> Additional fine issued. Same payment/lock terms apply.</li>
-      <li><strong className="text-foreground">3rd Strike:</strong> Account automatically suspended. Additional $55.00 CAD penalty fee applied.</li>
+      <li><strong className="text-foreground">3rd Strike:</strong> Account suspended. $55 CAD penalty fee applies.</li>
     </ul>
 
     <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">8. INTELLECTUAL PROPERTY</h3>
     <p className="text-muted-foreground mb-4">
-      You retain all ownership rights to content you submit. By submitting content, you grant Trackball
-      a non-exclusive license to distribute your content to digital platforms.
+      You retain all ownership rights to your music. By using our service, you grant Trackball a non-exclusive license
+      to distribute your content to digital service providers on your behalf.
     </p>
 
     <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">9. LIMITATION OF LIABILITY</h3>
     <p className="text-muted-foreground mb-4">
-      TO THE MAXIMUM EXTENT PERMITTED BY LAW, TRACKBALL AND XZ1 RECORDING VENTURES SHALL NOT BE LIABLE
-      FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES.
+      Trackball Distribution is not liable for any indirect, incidental, special, consequential, or punitive damages
+      resulting from your use of the service. Our total liability shall not exceed the fees paid by you in the
+      preceding twelve months.
     </p>
 
     <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">10. GOVERNING LAW</h3>
     <p className="text-muted-foreground mb-4">
-      These Terms shall be governed by and construed in accordance with the laws of Canada.
+      These Terms shall be governed by and construed in accordance with the laws of Canada, without regard to its
+      conflict of law provisions.
     </p>
 
     <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">11. CONTACT INFORMATION</h3>
     <p className="text-muted-foreground mb-4">
-      For questions regarding these Terms, contact us at:
-    </p>
-    <p className="text-muted-foreground mb-2">
-      <strong className="text-foreground">XZ1 Recording Ventures</strong>
-      <br />
+      For questions about these Terms, please contact us at:<br />
       Email: contact@trackball.cc
     </p>
 
     <hr className="border-border my-6" />
 
-    <p className="text-muted-foreground text-center mb-4">
-      <strong className="text-foreground">
-        BY SIGNING BELOW, YOU ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO BE BOUND BY THESE TERMS OF SERVICE.
-      </strong>
+    <p className="text-muted-foreground text-sm">
+      By clicking "Accept", you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
     </p>
   </div>
 );
+
+export default DocumentSigningFlow;
