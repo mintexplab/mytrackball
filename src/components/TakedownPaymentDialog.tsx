@@ -77,10 +77,33 @@ export const TakedownPaymentDialog = ({
   const handlePaymentSuccess = async () => {
     // Update release status to takedown_requested
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email, full_name, display_name")
+        .eq("id", user?.id)
+        .single();
+
       await supabase
         .from("releases")
         .update({ takedown_requested: true, status: "takedown_requested" })
         .eq("id", releaseId);
+
+      // Send admin notification
+      try {
+        await supabase.functions.invoke("send-admin-notification", {
+          body: {
+            type: "takedown_requested",
+            title: "Takedown Request Submitted",
+            message: `A takedown has been requested for "${releaseTitle}" by ${artistName}. Payment of $${TAKEDOWN_FEE} CAD received.`,
+            userEmail: profile?.email || user?.email,
+            userName: profile?.full_name || profile?.display_name || "Unknown",
+            releaseTitle: releaseTitle,
+          }
+        });
+      } catch (notifError) {
+        console.error("Failed to send admin notification:", notifError);
+      }
 
       toast.success("Takedown request submitted successfully!");
       onSuccess?.();
@@ -92,7 +115,30 @@ export const TakedownPaymentDialog = ({
     }
   };
 
-  const handleSavedPaymentSuccess = () => {
+  const handleSavedPaymentSuccess = async () => {
+    // Send admin notification for saved card payment
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email, full_name, display_name")
+        .eq("id", user?.id)
+        .single();
+
+      await supabase.functions.invoke("send-admin-notification", {
+        body: {
+          type: "takedown_requested",
+          title: "Takedown Request Submitted",
+          message: `A takedown has been requested for "${releaseTitle}" by ${artistName}. Payment of $${TAKEDOWN_FEE} CAD received.`,
+          userEmail: profile?.email || user?.email,
+          userName: profile?.full_name || profile?.display_name || "Unknown",
+          releaseTitle: releaseTitle,
+        }
+      });
+    } catch (notifError) {
+      console.error("Failed to send admin notification:", notifError);
+    }
+    
     toast.success("Takedown request submitted successfully!");
     onSuccess?.();
   };

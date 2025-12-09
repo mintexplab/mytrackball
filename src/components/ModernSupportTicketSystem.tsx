@@ -116,6 +116,13 @@ export const ModernSupportTicketSystem = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Get user profile for notification
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email, full_name, display_name")
+        .eq("id", user.id)
+        .single();
+
       const { error } = await supabase
         .from("support_tickets")
         .insert({
@@ -128,6 +135,23 @@ export const ModernSupportTicketSystem = () => {
         });
 
       if (error) throw error;
+
+      // Send admin notification
+      try {
+        await supabase.functions.invoke("send-admin-notification", {
+          body: {
+            type: "new_ticket",
+            title: "New Support Ticket",
+            message: validated.description,
+            userEmail: profile?.email || user.email,
+            userName: profile?.full_name || profile?.display_name || "Unknown User",
+            ticketSubject: validated.subject,
+            additionalInfo: `Priority: ${validated.priority.toUpperCase()} | Category: ${validated.category}`
+          }
+        });
+      } catch (notifError) {
+        console.error("Failed to send admin notification:", notifError);
+      }
 
       toast.success("Support ticket created successfully!");
       setDialogOpen(false);

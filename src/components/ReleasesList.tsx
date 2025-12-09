@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Clock, Trash2, AlertTriangle, CreditCard, Send, Loader2, DollarSign, Music, Ticket, ArrowLeft, ChevronDown, MoreHorizontal } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Trash2, AlertTriangle, CreditCard, Send, Loader2, DollarSign, Music, Ticket, ArrowLeft, ChevronDown, MessageSquare } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ReleaseInfoDialog from "./ReleaseInfoDialog";
 import ReleaseRejectionDialog from "./ReleaseRejectionDialog";
+import RequestInfoDialog from "./RequestInfoDialog";
 import { TakedownPaymentDialog } from "./TakedownPaymentDialog";
 import { InDashboardPayment } from "./InDashboardPayment";
 
@@ -458,6 +459,14 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
                           onUpdate={fetchReleases}
                           asMenuItem
                         />
+                        <RequestInfoDialog
+                          releaseId={release.id}
+                          releaseTitle={release.title}
+                          artistName={release.artist_name}
+                          userEmail={release.profiles?.email || ""}
+                          userName={release.profiles?.full_name || release.profiles?.display_name || ""}
+                          asMenuItem
+                        />
                         
                         <DropdownMenuSeparator />
                         
@@ -507,6 +516,17 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
                         <DropdownMenuItem onClick={() => updateReleaseStatus(release.id, "pay_later")}>
                           <Clock className="w-3 h-3 mr-2 text-amber-400" />
                           Pay Later
+                        </DropdownMenuItem>
+                        
+                        <DropdownMenuSeparator />
+                        
+                        {/* Danger Zone */}
+                        <DropdownMenuItem 
+                          onClick={() => deleteRelease(release.id)}
+                          className="text-red-400"
+                        >
+                          <Trash2 className="w-3 h-3 mr-2" />
+                          Delete Release
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
