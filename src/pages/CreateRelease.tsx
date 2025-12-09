@@ -19,9 +19,13 @@ import { ReleasePaymentForm } from "@/components/ReleasePaymentForm";
 import { useSavedPaymentMethod } from "@/hooks/useSavedPaymentMethod";
 import { SavedPaymentConfirmDialog } from "@/components/SavedPaymentConfirmDialog";
 
-// Pricing constants (CAD)
-const TRACK_FEE = 5;
-const UPC_FEE = 8;
+// Pricing tiers (CAD)
+type PricingTier = "eco" | "standard";
+
+const PRICING = {
+  eco: { trackFee: 1, upcFee: 4, name: "Trackball Eco" },
+  standard: { trackFee: 5, upcFee: 8, name: "Trackball Standard" },
+};
 
 type ReleaseType = "single" | "ep" | "album" | null;
 
@@ -154,6 +158,8 @@ const CreateRelease = () => {
   const [profile, setProfile] = useState<any>(null);
   const [userPlan, setUserPlan] = useState<any>(null);
   const [showPricingConfirm, setShowPricingConfirm] = useState(false);
+  const [showPricingCards, setShowPricingCards] = useState(false);
+  const [pricingTier, setPricingTier] = useState<PricingTier>("standard");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showSavedPaymentDialog, setShowSavedPaymentDialog] = useState(false);
@@ -165,10 +171,11 @@ const CreateRelease = () => {
     publishableKey: string;
   } | null>(null);
   
-  // Calculate pricing
+  // Calculate pricing based on selected tier
   const trackCount = tracks.length;
-  const trackTotal = TRACK_FEE * trackCount;
-  const totalCost = trackTotal + UPC_FEE;
+  const currentPricing = PRICING[pricingTier];
+  const trackTotal = currentPricing.trackFee * trackCount;
+  const totalCost = trackTotal + currentPricing.upcFee;
   
   // Fetch user's active label name and permissions
   useEffect(() => {
@@ -508,7 +515,7 @@ const CreateRelease = () => {
     }
   }, [releaseType]);
 
-  // Show pricing confirmation before proceeding
+  // Show pricing cards before proceeding
   const handleReviewSubmission = () => {
     try {
       releaseSchema.parse(formData);
@@ -524,7 +531,7 @@ const CreateRelease = () => {
         return;
       }
 
-      setShowPricingConfirm(true);
+      setShowPricingCards(true);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -605,12 +612,13 @@ const CreateRelease = () => {
       } else {
         // Create PaymentIntent for embedded payment
         const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
-          'create-payment-intent',
+          'create-release-payment',
           {
             body: {
               trackCount: tracks.length,
               releaseTitle: validatedData.songTitle,
               releaseId: release.id,
+              pricingTier,
             },
           }
         );
@@ -1680,6 +1688,122 @@ const CreateRelease = () => {
         </div>
       </div>
 
+      {/* Pricing Cards Selection Dialog */}
+      <Dialog open={showPricingCards} onOpenChange={setShowPricingCards}>
+        <DialogContent className="sm:max-w-[700px] bg-card border-primary/20">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">Choose Your Distribution Plan</DialogTitle>
+            <DialogDescription className="text-center">
+              Select a pricing tier for your release: {formData.songTitle}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6">
+            {/* Trackball Eco */}
+            <div 
+              className="p-6 rounded-lg border-2 border-border hover:border-green-500/50 transition-all cursor-pointer group bg-card"
+              onClick={() => {
+                setPricingTier("eco");
+                setShowPricingCards(false);
+                setShowPricingConfirm(true);
+              }}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <Music className="w-5 h-5 text-green-500" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-foreground">Trackball Eco</h3>
+                  <p className="text-sm text-muted-foreground">Budget-friendly option</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground">Per Track</span>
+                  <span className="font-semibold text-green-500">$1.00 CAD</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground">UPC Fee</span>
+                  <span className="font-semibold text-green-500">$4.00 CAD</span>
+                </div>
+              </div>
+              
+              <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30">
+                <p className="text-sm text-muted-foreground mb-1">Your Release Cost</p>
+                <p className="text-2xl font-bold text-green-500">
+                  ${(PRICING.eco.trackFee * trackCount + PRICING.eco.upcFee).toFixed(2)} CAD
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {trackCount} track{trackCount > 1 ? 's' : ''} × $1 + $4 UPC
+                </p>
+              </div>
+              
+              <Button className="w-full mt-4 bg-green-600 hover:bg-green-700 group-hover:bg-green-700">
+                Select Eco
+              </Button>
+            </div>
+
+            {/* Trackball Standard */}
+            <div 
+              className="p-6 rounded-lg border-2 border-primary/30 hover:border-primary transition-all cursor-pointer group bg-card relative"
+              onClick={() => {
+                setPricingTier("standard");
+                setShowPricingCards(false);
+                setShowPricingConfirm(true);
+              }}
+            >
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
+                RECOMMENDED
+              </div>
+              
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Music className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-foreground">Trackball Standard</h3>
+                  <p className="text-sm text-muted-foreground">Full-featured distribution</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground">Per Track</span>
+                  <span className="font-semibold text-primary">$5.00 CAD</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-muted-foreground">UPC Fee</span>
+                  <span className="font-semibold text-primary">$8.00 CAD</span>
+                </div>
+              </div>
+              
+              <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
+                <p className="text-sm text-muted-foreground mb-1">Your Release Cost</p>
+                <p className="text-2xl font-bold text-primary">
+                  ${(PRICING.standard.trackFee * trackCount + PRICING.standard.upcFee).toFixed(2)} CAD
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {trackCount} track{trackCount > 1 ? 's' : ''} × $5 + $8 UPC
+                </p>
+              </div>
+              
+              <Button className="w-full mt-4 group-hover:opacity-90">
+                Select Standard
+              </Button>
+            </div>
+          </div>
+
+          <Button
+            variant="outline"
+            onClick={() => setShowPricingCards(false)}
+            className="w-full"
+          >
+            Back to Release Form
+          </Button>
+        </DialogContent>
+      </Dialog>
+
       {/* Pricing Confirmation Dialog */}
       <Dialog open={showPricingConfirm} onOpenChange={setShowPricingConfirm}>
         <DialogContent className="sm:max-w-[450px] bg-card border-primary/20">
@@ -1689,7 +1813,7 @@ const CreateRelease = () => {
               Confirm Submission
             </DialogTitle>
             <DialogDescription>
-              Review your release fees before proceeding to payment
+              Review your {currentPricing.name} fees before proceeding to payment
             </DialogDescription>
           </DialogHeader>
           
@@ -1697,18 +1821,19 @@ const CreateRelease = () => {
             <div className="p-4 rounded-lg bg-muted/30 border border-border">
               <h4 className="font-semibold mb-2">{formData.songTitle || "Untitled Release"}</h4>
               <p className="text-sm text-muted-foreground">{formData.artistName}</p>
+              <p className="text-xs text-primary mt-1">{currentPricing.name}</p>
             </div>
 
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-border">
                 <span className="text-muted-foreground">
-                  Track Fee ({trackCount} track{trackCount > 1 ? 's' : ''} × $5 CAD)
+                  Track Fee ({trackCount} track{trackCount > 1 ? 's' : ''} × ${currentPricing.trackFee} CAD)
                 </span>
                 <span className="font-medium">${trackTotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-border">
                 <span className="text-muted-foreground">UPC Fee</span>
-                <span className="font-medium">${UPC_FEE.toFixed(2)}</span>
+                <span className="font-medium">${currentPricing.upcFee.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center py-2 text-lg font-bold">
                 <span>Total</span>
@@ -1722,10 +1847,13 @@ const CreateRelease = () => {
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => setShowPricingConfirm(false)}
+                onClick={() => {
+                  setShowPricingConfirm(false);
+                  setShowPricingCards(true);
+                }}
                 disabled={checkoutLoading}
               >
-                Cancel
+                Back
               </Button>
               <Button
                 onClick={handleProceedToPayment}
