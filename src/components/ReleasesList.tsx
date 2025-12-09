@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Clock, Trash2, AlertTriangle, CreditCard, Send, Loader2, DollarSign, Music, Ticket } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Trash2, AlertTriangle, CreditCard, Send, Loader2, DollarSign, Music, Ticket, ArrowLeft } from "lucide-react";
 import ReleaseInfoDialog from "./ReleaseInfoDialog";
 import ReleaseRejectionDialog from "./ReleaseRejectionDialog";
 import { TakedownPaymentDialog } from "./TakedownPaymentDialog";
+import { InDashboardPayment } from "./InDashboardPayment";
 
 // Pricing tiers
 const PRICING = {
@@ -42,6 +43,9 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
   const [trackAllowance, setTrackAllowance] = useState<TrackAllowance | null>(null);
   const [loadingAllowance, setLoadingAllowance] = useState(false);
   const [usingAllowance, setUsingAllowance] = useState(false);
+  const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
+  const [stripePublishableKey, setStripePublishableKey] = useState<string | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState(0);
 
   // Fetch track allowance when pricing dialog opens
   useEffect(() => {
@@ -162,10 +166,41 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
     setPricingDialogOpen(true); // Show pricing options first
   };
 
-  const handleSelectPricingTier = (tier: "eco" | "standard") => {
+  const handleSelectPricingTier = async (tier: "eco" | "standard") => {
     setPricingTier(tier);
     setPricingDialogOpen(false);
     setPaymentDialogOpen(true);
+    setProcessingPayment(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase.functions.invoke("create-release-payment", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: {
+          releaseId: releaseForPayment?.id,
+          releaseTitle: releaseForPayment?.title,
+          trackCount,
+          pricingTier: tier,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      setStripeClientSecret(data.clientSecret);
+      setStripePublishableKey(data.publishableKey);
+      setPaymentAmount(data.amount);
+    } catch (error: any) {
+      console.error("Error creating payment:", error);
+      toast.error(error.message || "Failed to create payment session");
+      setPaymentDialogOpen(false);
+    } finally {
+      setProcessingPayment(false);
+    }
   };
 
   const handleUseTrackAllowance = async () => {
@@ -187,37 +222,38 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
     }
   };
 
-  const handlePayAndDistribute = async () => {
+  const handlePaymentSuccess = async () => {
     if (!releaseForPayment) return;
+    
+    // Update release status after successful payment
+    const { error } = await supabase
+      .from("releases")
+      .update({ status: "pending", payment_status: "paid" })
+      .eq("id", releaseForPayment.id);
 
-    setProcessingPayment(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase.functions.invoke("create-release-checkout", {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: {
-          releaseId: releaseForPayment.id,
-          trackCount,
-        },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      }
-    } catch (error: any) {
-      console.error("Error creating checkout:", error);
-      toast.error(error.message || "Failed to create checkout session");
-    } finally {
-      setProcessingPayment(false);
-      setPaymentDialogOpen(false);
+    if (error) {
+      toast.error("Payment received but failed to update release status");
+      return;
     }
+
+    toast.success("Payment successful! Your release has been submitted for review.");
+    setPaymentDialogOpen(false);
+    setStripeClientSecret(null);
+    setStripePublishableKey(null);
+    fetchReleases();
+  };
+
+  const handlePaymentCancel = () => {
+    setPaymentDialogOpen(false);
+    setStripeClientSecret(null);
+    setStripePublishableKey(null);
+  };
+
+  const handleBackToPricing = () => {
+    setPaymentDialogOpen(false);
+    setStripeClientSecret(null);
+    setStripePublishableKey(null);
+    setPricingDialogOpen(true);
   };
 
   const updateReleaseStatus = async (releaseId: string, status: string) => {
@@ -314,10 +350,6 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
     );
   };
 
-  // Calculate payment amounts
-  const trackFee = 5;
-  const upcFee = 8;
-  const totalAmount = (trackCount * trackFee) + upcFee;
 
   if (loading) {
     return (
@@ -568,62 +600,50 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* Pay and Distribute Dialog */}
-      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-        <DialogContent className="bg-card border-border">
+      {/* Pay and Distribute Dialog with Embedded Stripe */}
+      <Dialog open={paymentDialogOpen} onOpenChange={handlePaymentCancel}>
+        <DialogContent className="bg-card border-border sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-emerald-500" />
-              Pay and Distribute
-            </DialogTitle>
-            <DialogDescription>
-              Complete payment to submit "{releaseForPayment?.title}" for distribution
-            </DialogDescription>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleBackToPricing}
+                className="h-8 w-8"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-emerald-500" />
+                  Pay and Distribute
+                </DialogTitle>
+                <DialogDescription>
+                  {PRICING[pricingTier].name} - {releaseForPayment?.title}
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="p-4 rounded-lg bg-muted/30 border border-border space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Track fees ({trackCount} × $5 CAD)</span>
-                <span className="font-medium">${trackCount * trackFee}.00 CAD</span>
+          <div className="py-4">
+            {processingPayment ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">UPC fee</span>
-                <span className="font-medium">${upcFee}.00 CAD</span>
+            ) : stripeClientSecret && stripePublishableKey ? (
+              <InDashboardPayment
+                clientSecret={stripeClientSecret}
+                publishableKey={stripePublishableKey}
+                description={`${releaseForPayment?.title} (${trackCount} track${trackCount > 1 ? 's' : ''})`}
+                amount={paymentAmount}
+                onSuccess={handlePaymentSuccess}
+                onCancel={handlePaymentCancel}
+              />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Failed to load payment form. Please try again.
               </div>
-              <hr className="border-border" />
-              <div className="flex justify-between text-lg">
-                <span className="font-medium">Total</span>
-                <span className="font-bold text-primary">${totalAmount}.00 CAD</span>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                onClick={handlePayAndDistribute}
-                disabled={processingPayment}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-              >
-                {processingPayment ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Pay ${totalAmount}.00 CAD
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setPaymentDialogOpen(false)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-            </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
