@@ -12,7 +12,8 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CREATE-LABEL-ACCESS-PAYMENT] ${step}${detailsStr}`);
 };
 
-const LABEL_ACCESS_FEE_CENTS = 729; // $7.29 CAD
+// Combined fee: $7.29 label access + $2.29 card verification = $9.58 CAD
+const LABEL_COMBINED_FEE_CENTS = 958;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -56,9 +57,9 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://my.trackball.cc";
 
-    // Create payment intent for label access fee
+    // Create payment intent for label access fee + card verification
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: LABEL_ACCESS_FEE_CENTS,
+      amount: LABEL_COMBINED_FEE_CENTS,
       currency: "cad",
       customer: customerId,
       metadata: {
@@ -78,7 +79,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
-      amount: LABEL_ACCESS_FEE_CENTS,
+      amount: LABEL_COMBINED_FEE_CENTS,
       publishableKey,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

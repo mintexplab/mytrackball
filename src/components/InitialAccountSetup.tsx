@@ -15,7 +15,8 @@ interface InitialAccountSetupProps {
   onComplete: () => void;
 }
 
-const LABEL_ACCESS_FEE = 7.29;
+// Combined label access fee + card verification fee
+const LABEL_COMBINED_FEE = 9.58; // $7.29 + $2.29 = $9.58 CAD
 
 export const InitialAccountSetup = ({
   onComplete
@@ -36,9 +37,9 @@ export const InitialAccountSetup = ({
     preferredCurrency: "CAD"
   });
 
-  // Total steps: 5 for artist, 6 for label (includes payment step)
+  // Total steps: 4 for artist (name, type, artistName, currency), 5 for label (name, type, labelName, payment, currency)
   const isLabelAccount = formData.accountType === "label";
-  const totalSteps = isLabelAccount ? 6 : 5;
+  const totalSteps = isLabelAccount ? 5 : 4;
 
   // Initialize label payment when user selects label account and reaches step 4
   useEffect(() => {
@@ -152,25 +153,9 @@ export const InitialAccountSetup = ({
     }
   };
 
-  const handlePaymentComplete = () => {
-    handleComplete();
-  };
-
-  const handlePaymentSkip = () => {
-    handleComplete();
-  };
-
   const handleLabelPaymentSuccess = () => {
-    toast.success("Label access fee paid successfully!");
+    toast.success("Payment successful!");
     setStep(step + 1);
-  };
-
-  // Get current step number for display
-  const getCurrentStepDisplay = () => {
-    if (isLabelAccount) {
-      return step;
-    }
-    return step;
   };
 
   // Get step content based on account type
@@ -218,6 +203,9 @@ export const InitialAccountSetup = ({
                     <Label htmlFor="artist" className="text-base font-medium cursor-pointer">
                       Artist Account
                     </Label>
+                    <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded">
+                      FREE
+                    </span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
                     Release music under up to 3 artist names with 1 label
@@ -239,7 +227,7 @@ export const InitialAccountSetup = ({
                       Label Account
                     </Label>
                     <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
-                      ${LABEL_ACCESS_FEE.toFixed(2)} CAD
+                      ${LABEL_COMBINED_FEE.toFixed(2)} CAD
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -302,7 +290,7 @@ export const InitialAccountSetup = ({
       );
     }
 
-    // Step 4 for Label: Payment
+    // Step 4 for Label: Combined Payment (Access Fee + Card Verification)
     if (isLabelAccount && step === 4) {
       const handleSwitchToArtist = () => {
         setFormData(prev => ({ ...prev, accountType: "artist", labelName: "", artistName: "" }));
@@ -314,9 +302,13 @@ export const InitialAccountSetup = ({
       return (
         <div className="space-y-4 animate-fade-in">
           <Alert className="border-primary/30 bg-primary/5">
-            <AlertCircle className="h-4 w-4 text-primary" />
+            <CreditCard className="h-4 w-4 text-primary" />
             <AlertDescription className="text-sm">
-              A one-time access fee of <span className="font-semibold">${LABEL_ACCESS_FEE.toFixed(2)} CAD</span> is required to register as a label account.
+              A one-time fee of <span className="font-semibold">${LABEL_COMBINED_FEE.toFixed(2)} CAD</span> is required.
+              <br />
+              <span className="text-xs text-muted-foreground">
+                Includes $7.29 label access + $2.29 card verification
+              </span>
             </AlertDescription>
           </Alert>
 
@@ -328,8 +320,8 @@ export const InitialAccountSetup = ({
             <InDashboardPayment
               clientSecret={labelPaymentData.clientSecret}
               publishableKey={labelPaymentData.publishableKey}
-              description="Label Account Access Fee"
-              amount={729}
+              description="Label Account Access + Card Verification"
+              amount={958}
               onSuccess={handleLabelPaymentSuccess}
               onCancel={() => setStep(3)}
             />
@@ -358,7 +350,7 @@ export const InitialAccountSetup = ({
       );
     }
 
-    // Step 4 for Artist / Step 5 for Label: Currency
+    // Step 4 for Artist / Step 5 for Label: Currency Selection
     const currencyStep = isLabelAccount ? 5 : 4;
     if (step === currencyStep) {
       return (
@@ -408,32 +400,12 @@ export const InitialAccountSetup = ({
       );
     }
 
-    // Step 5 for Artist / Step 6 for Label: Payment Method
-    const paymentStep = isLabelAccount ? 6 : 5;
-    if (step === paymentStep) {
-      return (
-        <div className="space-y-4 animate-fade-in">
-          <div className="flex items-center gap-2 mb-2">
-            <CreditCard className="w-5 h-5 text-primary" />
-            <h3 className="font-medium">Payment details</h3>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Save your card now for faster checkouts when distributing releases or requesting takedowns. You can verify your card below!
-          </p>
-          <PaymentMethodSetup onComplete={handlePaymentComplete} onSkip={handlePaymentSkip} />
-        </div>
-      );
-    }
-
     return null;
   };
 
   const showNavigationButtons = () => {
     // Don't show navigation buttons during label payment step (step 4 for labels)
     if (isLabelAccount && step === 4) return false;
-    // Don't show next button on payment method step
-    const paymentStep = isLabelAccount ? 6 : 5;
-    if (step === paymentStep) return false;
     return true;
   };
 
@@ -442,6 +414,9 @@ export const InitialAccountSetup = ({
     if (isLabelAccount && step === 4 && labelPaymentData) return false;
     return step > 1;
   };
+
+  // Check if this is the final step
+  const isFinalStep = step === totalSteps;
 
   return (
     <div className="fixed inset-0 z-[200] bg-background/95 flex items-center justify-center p-4">
@@ -469,40 +444,42 @@ export const InitialAccountSetup = ({
 
           {/* Navigation buttons */}
           {showNavigationButtons() && (
-            <div className="flex items-center justify-between pt-4">
-              <Button
-                variant="ghost"
-                onClick={() => setStep(Math.max(1, step - 1))}
-                disabled={step === 1 || loading}
-              >
-                Back
-              </Button>
-              <div className="text-sm text-muted-foreground">
-                Step {step} of {totalSteps}
-              </div>
-              <Button onClick={handleNext} disabled={loading} className="bg-gradient-primary hover:opacity-90">
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Setting up...
-                  </>
-                ) : (
-                  "Next"
-                )}
-              </Button>
-            </div>
-          )}
-
-          {/* Payment step shows its own buttons */}
-          {((isLabelAccount && step === 6) || (!isLabelAccount && step === 5)) && (
-            <div className="flex items-center justify-between pt-4">
-              <Button variant="ghost" onClick={() => setStep(step - 1)} disabled={loading}>
-                Back
-              </Button>
-              <div className="text-sm text-muted-foreground">
-                Step {step} of {totalSteps}
-              </div>
-              <div className="w-16" />
+            <div className="flex gap-3 pt-4">
+              {showBackButton() && (
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(step - 1)}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  Back
+                </Button>
+              )}
+              
+              {isFinalStep ? (
+                <Button
+                  onClick={handleComplete}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Setting up...
+                    </>
+                  ) : (
+                    "Complete Setup"
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleNext}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  Continue
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
@@ -510,3 +487,5 @@ export const InitialAccountSetup = ({
     </div>
   );
 };
+
+export default InitialAccountSetup;
