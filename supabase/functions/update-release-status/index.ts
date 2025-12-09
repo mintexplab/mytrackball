@@ -64,9 +64,22 @@ serve(async (req) => {
     if (fetchError) throw new Error(`Failed to fetch release: ${fetchError.message}`);
     if (!release) throw new Error("Release not found");
 
-    // Build update object
+    // Build update object - handle "paid" and "pay_later" as payment_status updates
     const updateData: any = {};
-    if (status) updateData.status = status;
+    
+    // Check if the status should actually be a payment_status update
+    if (status === "paid" || status === "pay_later") {
+      updateData.payment_status = status === "paid" ? "paid" : "unpaid";
+      if (status === "paid") {
+        // If marking as paid and status is pending_payment, move to pending
+        if (release.status === "pending_payment") {
+          updateData.status = "pending";
+        }
+      }
+    } else if (status) {
+      updateData.status = status;
+    }
+    
     if (paymentStatus) updateData.payment_status = paymentStatus;
 
     // Update release using service role (bypasses RLS)
