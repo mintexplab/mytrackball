@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Music, Building2, CreditCard, Globe, AlertCircle, ArrowLeft } from "lucide-react";
+import { Loader2, Music, Building2, CreditCard, Globe, AlertCircle, ArrowLeft, MapPin } from "lucide-react";
 import { PaymentMethodSetup } from "./PaymentMethodSetup";
 import { InDashboardPayment } from "./InDashboardPayment";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { detectUserCurrency, wasAutoDetected } from "@/lib/detectCurrency";
 
 interface InitialAccountSetupProps {
   onComplete: () => void;
@@ -29,13 +30,23 @@ export const InitialAccountSetup = ({
     paymentIntentId: string;
   } | null>(null);
   const [labelPaymentLoading, setLabelPaymentLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    fullName: "",
-    accountType: "",
-    artistName: "",
-    labelName: "",
-    preferredCurrency: "CAD"
+  const [currencyAutoDetected, setCurrencyAutoDetected] = useState(false);
+  const [formData, setFormData] = useState(() => {
+    // Detect currency on initial render
+    const detectedCurrency = detectUserCurrency();
+    return {
+      fullName: "",
+      accountType: "",
+      artistName: "",
+      labelName: "",
+      preferredCurrency: detectedCurrency
+    };
   });
+
+  // Check if currency was auto-detected on mount
+  useEffect(() => {
+    setCurrencyAutoDetected(wasAutoDetected());
+  }, []);
 
   // Total steps: 4 for artist (name, type, artistName, currency), 5 for label (name, type, labelName, payment, currency)
   const isLabelAccount = formData.accountType === "label";
@@ -362,6 +373,13 @@ export const InitialAccountSetup = ({
           <p className="text-sm text-muted-foreground">
             Choose your preferred currency for displaying financial information. All payments will still be processed in CAD.
           </p>
+          
+          {currencyAutoDetected && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 px-3 py-2 rounded-md">
+              <MapPin className="w-3 h-3" />
+              <span>Auto-detected based on your device settings</span>
+            </div>
+          )}
           
           <div className="space-y-2">
             <Label>Preferred Display Currency</Label>
