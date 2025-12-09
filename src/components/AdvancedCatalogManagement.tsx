@@ -7,10 +7,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Filter, Download, Music, Calendar, Tag, Trash2, Archive, AlertTriangle, X, DollarSign, Loader2 } from "lucide-react";
+import { Search, Filter, Download, Music, Calendar, Tag, Trash2, Archive, AlertTriangle, X, DollarSign, Loader2, Ticket, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import ReleaseInfoDialog from "./ReleaseInfoDialog";
 import { TakedownPaymentDialog } from "./TakedownPaymentDialog";
+import { InDashboardPayment } from "./InDashboardPayment";
+
+// Pricing tiers
+const PRICING = {
+  eco: { trackFee: 1, upcFee: 4, name: "Trackball Eco" },
+  standard: { trackFee: 5, upcFee: 8, name: "Trackball Standard" },
+};
+
+interface TrackAllowance {
+  hasSubscription: boolean;
+  tracksAllowed: number;
+  tracksUsed: number;
+  tracksRemaining: number;
+}
 
 interface AdvancedCatalogManagementProps {
   userId: string;
@@ -81,9 +95,18 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
   const [takedownDialogOpen, setTakedownDialogOpen] = useState(false);
   const [takedownRelease, setTakedownRelease] = useState<{ id: string; title: string; artistName: string } | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [pricingDialogOpen, setPricingDialogOpen] = useState(false);
   const [releaseForPayment, setReleaseForPayment] = useState<any>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [trackCount, setTrackCount] = useState(1);
+  const [pricingTier, setPricingTier] = useState<"eco" | "standard">("standard");
+  const [trackAllowance, setTrackAllowance] = useState<TrackAllowance | null>(null);
+  const [loadingAllowance, setLoadingAllowance] = useState(false);
+  const [usingAllowance, setUsingAllowance] = useState(false);
+  const [allowanceTierDialogOpen, setAllowanceTierDialogOpen] = useState(false);
+  const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
+  const [stripePublishableKey, setStripePublishableKey] = useState<string | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState(0);
 
   useEffect(() => {
     fetchReleases();
@@ -287,47 +310,120 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
     const count = await fetchTrackCount(release.id);
     setTrackCount(count);
     setReleaseForPayment(release);
-    setPaymentDialogOpen(true);
+    setPricingDialogOpen(true); // Show pricing options first
+    fetchTrackAllowance();
   };
 
-  const handlePayAndDistribute = async () => {
-    if (!releaseForPayment) return;
+  const fetchTrackAllowance = async () => {
+    setLoadingAllowance(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('check-track-allowance');
+      if (!error && data) {
+        setTrackAllowance(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch track allowance:', error);
+    } finally {
+      setLoadingAllowance(false);
+    }
+  };
 
+  const canUseAllowance = trackAllowance?.hasSubscription && 
+    trackAllowance.tracksRemaining >= trackCount;
+
+  const handleSelectPricingTier = async (tier: "eco" | "standard") => {
+    setPricingTier(tier);
+    setPricingDialogOpen(false);
+    setPaymentDialogOpen(true);
     setProcessingPayment(true);
+    
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase.functions.invoke("create-release-checkout", {
+      const { data, error } = await supabase.functions.invoke("create-release-payment", {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
         body: {
-          releaseId: releaseForPayment.id,
-          releaseTitle: releaseForPayment.title,
+          releaseId: releaseForPayment?.id,
+          releaseTitle: releaseForPayment?.title,
           trackCount,
+          pricingTier: tier,
         },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      if (data?.url) {
-        window.open(data.url, "_blank");
-        setPaymentDialogOpen(false);
-      }
+      setStripeClientSecret(data.clientSecret);
+      setStripePublishableKey(data.publishableKey);
+      setPaymentAmount(data.amount);
     } catch (error: any) {
-      console.error("Error creating checkout:", error);
-      toast.error(error.message || "Failed to create checkout session");
+      console.error("Error creating payment:", error);
+      toast.error(error.message || "Failed to create payment session");
+      setPaymentDialogOpen(false);
     } finally {
       setProcessingPayment(false);
     }
   };
 
-  // Calculate payment amounts
-  const trackFee = 5;
-  const upcFee = 8;
-  const totalAmount = (trackCount * trackFee) + upcFee;
+  const handleOpenAllowanceTierDialog = () => {
+    setPricingDialogOpen(false);
+    setAllowanceTierDialogOpen(true);
+  };
+
+  const handleUseTrackAllowance = async (tier: "eco" | "standard") => {
+    if (!releaseForPayment) return;
+    setUsingAllowance(true);
+    try {
+      // Update release to pending and consume allowance
+      await supabase.from("releases").update({ status: "pending", payment_status: "paid" }).eq("id", releaseForPayment.id);
+      await supabase.functions.invoke('consume-track-allowance', {
+        body: { trackCount, releaseId: releaseForPayment.id, releaseTitle: releaseForPayment.title, pricingTier: tier }
+      });
+      toast.success(`Release submitted using track allowance with ${PRICING[tier].name}!`);
+      setAllowanceTierDialogOpen(false);
+      fetchReleases();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to submit release");
+    } finally {
+      setUsingAllowance(false);
+    }
+  };
+
+  const handlePaymentSuccess = async () => {
+    if (!releaseForPayment) return;
+    
+    const { error } = await supabase
+      .from("releases")
+      .update({ status: "pending", payment_status: "paid" })
+      .eq("id", releaseForPayment.id);
+
+    if (error) {
+      toast.error("Payment received but failed to update release status");
+      return;
+    }
+
+    toast.success("Payment successful! Your release has been submitted for review.");
+    setPaymentDialogOpen(false);
+    setStripeClientSecret(null);
+    setStripePublishableKey(null);
+    fetchReleases();
+  };
+
+  const handlePaymentCancel = () => {
+    setPaymentDialogOpen(false);
+    setStripeClientSecret(null);
+    setStripePublishableKey(null);
+  };
+
+  const handleBackToPricing = () => {
+    setPaymentDialogOpen(false);
+    setStripeClientSecret(null);
+    setStripePublishableKey(null);
+    setPricingDialogOpen(true);
+  };
 
   const handleBulkArchive = async () => {
     const releasesToArchive = Array.from(selectedReleases);
@@ -738,71 +834,173 @@ export const AdvancedCatalogManagement = ({ userId, selectedReleaseId, onFloatin
         />
       )}
 
-      {/* Pay and Distribute Dialog */}
-      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-        <DialogContent className="bg-card border-border">
+      {/* Pricing Selection Dialog */}
+      <Dialog open={pricingDialogOpen} onOpenChange={setPricingDialogOpen}>
+        <DialogContent className="bg-card border-border sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-primary" />
-              Pay and Distribute
-            </DialogTitle>
+            <DialogTitle>Select Distribution Plan</DialogTitle>
             <DialogDescription>
-              Complete payment to submit your release for distribution
+              Choose how to pay for "{releaseForPayment?.title}" ({trackCount} track{trackCount > 1 ? 's' : ''})
             </DialogDescription>
           </DialogHeader>
-          
-          {releaseForPayment && (
-            <div className="space-y-4 py-4">
-              <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                <h4 className="font-semibold">{releaseForPayment.title}</h4>
-                <p className="text-sm text-muted-foreground">{releaseForPayment.artist_name}</p>
+          <div className="space-y-4 py-4">
+            {/* Track Allowance Option */}
+            {loadingAllowance ? (
+              <div className="p-4 rounded-lg border border-border flex items-center justify-center">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-muted-foreground">
-                    Track Fee ({trackCount} track{trackCount > 1 ? 's' : ''} × ${trackFee} CAD)
-                  </span>
-                  <span className="font-semibold">${(trackCount * trackFee).toFixed(2)} CAD</span>
+            ) : canUseAllowance && (
+              <div 
+                className="p-4 rounded-lg border-2 border-cyan-500/50 hover:border-cyan-500 cursor-pointer bg-card"
+                onClick={handleOpenAllowanceTierDialog}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Ticket className="w-6 h-6 text-cyan-500" />
+                    <div>
+                      <p className="font-bold">Use Track Allowance</p>
+                      <p className="text-sm text-muted-foreground">{trackAllowance?.tracksRemaining} slots remaining</p>
+                    </div>
+                  </div>
+                  <span className="text-xl font-bold text-cyan-500">FREE</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-muted-foreground">UPC Fee</span>
-                  <span className="font-semibold">${upcFee.toFixed(2)} CAD</span>
+              </div>
+            )}
+            {/* Eco */}
+            <div 
+              className="p-4 rounded-lg border border-border hover:border-green-500/50 cursor-pointer"
+              onClick={() => handleSelectPricingTier("eco")}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-bold">Trackball Eco</p>
+                  <p className="text-sm text-muted-foreground">$1/track + $4 UPC</p>
                 </div>
-                <div className="flex justify-between items-center py-3 text-lg">
-                  <span className="font-bold">Total</span>
-                  <span className="font-bold text-primary">${totalAmount.toFixed(2)} CAD</span>
-                </div>
+                <span className="text-xl font-bold text-green-500">${trackCount * 1 + 4} CAD</span>
               </div>
             </div>
-          )}
+            {/* Standard */}
+            <div 
+              className="p-4 rounded-lg border-2 border-primary/50 hover:border-primary cursor-pointer"
+              onClick={() => handleSelectPricingTier("standard")}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-bold">Trackball Standard</p>
+                  <p className="text-sm text-muted-foreground">$5/track + $8 UPC</p>
+                </div>
+                <span className="text-xl font-bold text-primary">${trackCount * 5 + 8} CAD</span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setPaymentDialogOpen(false)}
-              className="flex-1"
-              disabled={processingPayment}
+      {/* Allowance Tier Selection Dialog */}
+      <Dialog open={allowanceTierDialogOpen} onOpenChange={setAllowanceTierDialogOpen}>
+        <DialogContent className="bg-card border-border sm:max-w-[500px]">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => { setAllowanceTierDialogOpen(false); setPricingDialogOpen(true); }}
+                className="h-8 w-8"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  <Ticket className="w-5 h-5 text-cyan-500" />
+                  Select Distribution Tier
+                </DialogTitle>
+                <DialogDescription>
+                  Choose the tier for your track allowance submission
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div 
+              className="p-4 rounded-lg border border-border hover:border-green-500/50 cursor-pointer"
+              onClick={() => handleUseTrackAllowance("eco")}
             >
-              Cancel
-            </Button>
-            <Button
-              onClick={handlePayAndDistribute}
-              disabled={processingPayment}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-bold">Trackball Eco</p>
+                  <p className="text-sm text-muted-foreground">Standard distribution</p>
+                </div>
+                {usingAllowance ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <span className="text-lg font-bold text-cyan-500">FREE</span>
+                )}
+              </div>
+            </div>
+            <div 
+              className="p-4 rounded-lg border-2 border-primary/50 hover:border-primary cursor-pointer"
+              onClick={() => handleUseTrackAllowance("standard")}
             >
-              {processingPayment ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Pay ${totalAmount.toFixed(2)} CAD
-                </>
-              )}
-            </Button>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-bold">Trackball Standard</p>
+                  <p className="text-sm text-muted-foreground">Priority distribution</p>
+                </div>
+                {usingAllowance ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <span className="text-lg font-bold text-cyan-500">FREE</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pay and Distribute Dialog with Embedded Stripe */}
+      <Dialog open={paymentDialogOpen} onOpenChange={handlePaymentCancel}>
+        <DialogContent className="bg-card border-border sm:max-w-[500px]">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleBackToPricing}
+                className="h-8 w-8"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-emerald-500" />
+                  Pay and Distribute
+                </DialogTitle>
+                <DialogDescription>
+                  {PRICING[pricingTier].name} - {releaseForPayment?.title}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="py-4">
+            {processingPayment ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : stripeClientSecret && stripePublishableKey ? (
+              <InDashboardPayment
+                clientSecret={stripeClientSecret}
+                publishableKey={stripePublishableKey}
+                description={`${releaseForPayment?.title} (${trackCount} track${trackCount > 1 ? 's' : ''})`}
+                amount={paymentAmount}
+                onSuccess={handlePaymentSuccess}
+                onCancel={handlePaymentCancel}
+              />
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Failed to load payment form. Please try again.
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
