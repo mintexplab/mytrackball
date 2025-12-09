@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Clock, Trash2, AlertTriangle, CreditCard, Send, Loader2, DollarSign, Music, Ticket, ArrowLeft } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Trash2, AlertTriangle, CreditCard, Send, Loader2, DollarSign, Music, Ticket, ArrowLeft, ChevronDown, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ReleaseInfoDialog from "./ReleaseInfoDialog";
 import ReleaseRejectionDialog from "./ReleaseRejectionDialog";
 import { TakedownPaymentDialog } from "./TakedownPaymentDialog";
@@ -336,6 +344,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
       delivered: { icon: Send, className: "bg-teal-500/20 text-teal-300 border-teal-500/30", label: "Delivered" },
       striked: { icon: AlertTriangle, className: "bg-orange-500/20 text-orange-300 border-orange-500/30" },
       "on hold": { icon: AlertTriangle, className: "bg-purple-500/20 text-purple-300 border-purple-500/30" },
+      "awaiting final qc": { icon: Clock, className: "bg-sky-500/20 text-sky-300 border-sky-500/30", label: "Awaiting QC" },
     };
 
     const variant = variants[status] || variants.pending;
@@ -346,6 +355,23 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
       <Badge variant="outline" className={variant.className}>
         <Icon className="w-3 h-3 mr-1" />
         {displayLabel}
+      </Badge>
+    );
+  };
+
+  const getPaymentStatusBadge = (paymentStatus: string) => {
+    const variants: Record<string, { className: string; label: string }> = {
+      paid: { className: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30", label: "Paid" },
+      unpaid: { className: "bg-red-500/20 text-red-300 border-red-500/30", label: "Unpaid" },
+      pending: { className: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30", label: "Pending" },
+    };
+
+    const variant = variants[paymentStatus] || variants.unpaid;
+
+    return (
+      <Badge variant="outline" className={variant.className}>
+        <DollarSign className="w-3 h-3 mr-1" />
+        {variant.label}
       </Badge>
     );
   };
@@ -379,6 +405,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
             <TableHead>Genre</TableHead>
             <TableHead>Catalog #</TableHead>
             <TableHead>Status</TableHead>
+            {isAdmin && <TableHead>Payment</TableHead>}
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -398,35 +425,13 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
               <TableCell className="text-muted-foreground">{release.genre || "—"}</TableCell>
               <TableCell className="text-muted-foreground">{release.catalog_number || "—"}</TableCell>
               <TableCell>{getStatusBadge(release.status)}</TableCell>
+              {isAdmin && <TableCell>{getPaymentStatusBadge(release.payment_status)}</TableCell>}
               <TableCell>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 items-center">
                   <ReleaseInfoDialog releaseId={release.id} />
                   {isAdmin ? (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateReleaseStatus(release.id, "paid")}
-                        className="border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-300"
-                      >
-                        Paid
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateReleaseStatus(release.id, "processing")}
-                        className="border-cyan-500/30 hover:bg-cyan-500/20 text-cyan-300"
-                      >
-                        Processing
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateReleaseStatus(release.id, "pay_later")}
-                        className="border-amber-500/30 hover:bg-amber-500/20 text-amber-300"
-                      >
-                        Pay Later
-                      </Button>
+                    <div className="flex gap-2">
+                      {/* Quick Actions */}
                       <Button
                         size="sm"
                         variant="outline"
@@ -434,6 +439,7 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
                         disabled={release.status === "approved"}
                         className="border-green-500/30 hover:bg-green-500/20 text-green-300"
                       >
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
                         Approve
                       </Button>
                       <ReleaseRejectionDialog
@@ -441,55 +447,77 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
                         currentStatus={release.status}
                         onUpdate={fetchReleases}
                       />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateReleaseStatus(release.id, "delivering")}
-                        className="border-blue-500/30 hover:bg-blue-500/20 text-blue-300"
-                      >
-                        Delivering
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateReleaseStatus(release.id, "delivered")}
-                        className="border-teal-500/30 hover:bg-teal-500/20 text-teal-300"
-                      >
-                        Delivered
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateReleaseStatus(release.id, "taken down")}
-                        className="border-gray-500/30 hover:bg-gray-500/20 text-gray-300"
-                      >
-                        Taken Down
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateReleaseStatus(release.id, "striked")}
-                        className="border-orange-500/30 hover:bg-orange-500/20 text-orange-300"
-                      >
-                        Striked
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateReleaseStatus(release.id, "on hold")}
-                        className="border-purple-500/30 hover:bg-purple-500/20 text-purple-300"
-                      >
-                        On Hold
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateReleaseStatus(release.id, "awaiting final qc")}
-                        className="border-sky-500/30 hover:bg-sky-500/20 text-sky-300"
-                      >
-                        Awaiting Final QC
-                      </Button>
-                    </>
+                      
+                      {/* Status Dropdown */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="outline" className="border-border">
+                            Status
+                            <ChevronDown className="w-3 h-3 ml-1" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => updateReleaseStatus(release.id, "pending")}>
+                            <Clock className="w-3 h-3 mr-2 text-yellow-400" />
+                            Pending
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateReleaseStatus(release.id, "processing")}>
+                            <Clock className="w-3 h-3 mr-2 text-cyan-400" />
+                            Processing
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateReleaseStatus(release.id, "delivering")}>
+                            <Send className="w-3 h-3 mr-2 text-blue-400" />
+                            Delivering
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateReleaseStatus(release.id, "delivered")}>
+                            <CheckCircle2 className="w-3 h-3 mr-2 text-teal-400" />
+                            Delivered
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateReleaseStatus(release.id, "awaiting final qc")}>
+                            <Clock className="w-3 h-3 mr-2 text-sky-400" />
+                            Awaiting Final QC
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => updateReleaseStatus(release.id, "on hold")}>
+                            <AlertTriangle className="w-3 h-3 mr-2 text-purple-400" />
+                            On Hold
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateReleaseStatus(release.id, "striked")}>
+                            <AlertTriangle className="w-3 h-3 mr-2 text-orange-400" />
+                            Striked
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateReleaseStatus(release.id, "taken down")}>
+                            <XCircle className="w-3 h-3 mr-2 text-gray-400" />
+                            Taken Down
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
+                      {/* Payment Dropdown */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="outline" className="border-border">
+                            <DollarSign className="w-3 h-3 mr-1" />
+                            Payment
+                            <ChevronDown className="w-3 h-3 ml-1" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuLabel>Payment Status</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => updateReleaseStatus(release.id, "paid")}>
+                            <CheckCircle2 className="w-3 h-3 mr-2 text-emerald-400" />
+                            Mark Paid
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateReleaseStatus(release.id, "pay_later")}>
+                            <Clock className="w-3 h-3 mr-2 text-amber-400" />
+                            Pay Later
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   ) : (
                     <>
                       {/* Pay and Distribute button for pending_payment status */}
