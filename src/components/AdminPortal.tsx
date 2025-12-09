@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music, Settings, ChevronDown, AlertTriangle, FileText, ShieldAlert, MessageSquare, Sparkles, TrendingUp } from "lucide-react";
+import { LogOut, Users, FileMusic, Megaphone, DollarSign, Building2, Wallet, UserPlus, Music, Settings, ChevronDown, AlertTriangle, FileText, ShieldAlert, MessageSquare, Sparkles, TrendingUp, Bell } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import trackballLogo from "@/assets/trackball-logo.png";
 import CompactUserManagement from "./CompactUserManagement";
@@ -20,6 +20,7 @@ import PublishingManagement from "./PublishingManagement";
 import MaintenanceManagement from "./MaintenanceManagement";
 import AccountAppealsManagement from "./AccountAppealsManagement";
 import { ProfileDropdown } from "./ProfileDropdown";
+import { NotificationsDropdown } from "./NotificationsDropdown";
 import { MobileMenu } from "./MobileMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { EmailNotificationDialog } from "./EmailNotificationDialog";
@@ -311,13 +312,16 @@ const AdminPortal = ({
               </DropdownMenu>
             </div>
             
-            <ProfileDropdown 
-              userEmail={adminEmail} 
-              avatarUrl={adminAvatar}
-              artistName={adminArtistName}
-              fullName={adminFullName}
-              onSignOut={handleSignOut} 
-            />
+            <div className="flex items-center gap-2">
+              <NotificationsDropdown userId={adminUserId} />
+              <ProfileDropdown 
+                userEmail={adminEmail} 
+                avatarUrl={adminAvatar}
+                artistName={adminArtistName}
+                fullName={adminFullName}
+                onSignOut={handleSignOut} 
+              />
+            </div>
           </div>
         </div>
       </div>

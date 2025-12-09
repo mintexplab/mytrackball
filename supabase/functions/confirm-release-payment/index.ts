@@ -150,6 +150,38 @@ serve(async (req) => {
 
     logStep("Release updated to pending", { releaseId });
 
+    // Get user profile for notification
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('email, full_name, display_name')
+      .eq('id', user.id)
+      .single();
+
+    // Send admin notification for release payment
+    try {
+      await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-admin-notification`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+          },
+          body: JSON.stringify({
+            type: "release_paid",
+            title: "Release Payment Received",
+            message: `Payment received for "${releaseData?.title || 'Unknown Release'}" by ${releaseData?.artist_name || 'Unknown Artist'}. ${trackCount} track(s) submitted.`,
+            userEmail: profile?.email || user.email,
+            userName: profile?.full_name || profile?.display_name || user.email?.split('@')[0],
+            releaseTitle: releaseData?.title || 'Unknown',
+          }),
+        }
+      );
+      logStep("Admin notification sent");
+    } catch (notifError) {
+      logStep("Failed to send admin notification (non-blocking)", { error: notifError });
+    }
+
     // Send payment receipt email only if there was a payment
     if (paymentIntentId) {
       try {
