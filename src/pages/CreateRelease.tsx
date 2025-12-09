@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/lib/toast-with-sound";
-import { ArrowLeft, Upload, Plus, X, Check, Save, Music, Disc3, Album as AlbumIcon, Trash2, CreditCard, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, Plus, X, Check, Save, Music, Disc3, Album as AlbumIcon, Trash2, CreditCard, Loader2, Ticket } from "lucide-react";
 import { z } from "zod";
 import { useS3Upload } from "@/hooks/useS3Upload";
 import { Confetti } from "@/components/Confetti";
@@ -18,6 +18,16 @@ import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { ReleasePaymentForm } from "@/components/ReleasePaymentForm";
 import { useSavedPaymentMethod } from "@/hooks/useSavedPaymentMethod";
 import { SavedPaymentConfirmDialog } from "@/components/SavedPaymentConfirmDialog";
+
+// Track allowance state interface
+interface TrackAllowance {
+  hasSubscription: boolean;
+  tracksAllowed: number;
+  tracksUsed: number;
+  tracksRemaining: number;
+  monthlyAmount: number;
+  subscriptionId?: string;
+}
 
 // Pricing tiers (CAD)
 type PricingTier = "eco" | "standard";
@@ -208,6 +218,28 @@ const CreateRelease = () => {
     };
 
     fetchUserData();
+  }, []);
+
+  // Fetch track allowance data
+  useEffect(() => {
+    const fetchTrackAllowance = async () => {
+      try {
+        setLoadingAllowance(true);
+        const { data, error } = await supabase.functions.invoke('check-track-allowance');
+        if (error) {
+          console.error('Error fetching track allowance:', error);
+          setTrackAllowance(null);
+        } else {
+          setTrackAllowance(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch track allowance:', error);
+        setTrackAllowance(null);
+      } finally {
+        setLoadingAllowance(false);
+      }
+    };
+    fetchTrackAllowance();
   }, []);
 
   const permissions = usePlanPermissions(userPlan, profile);
@@ -713,6 +745,120 @@ const CreateRelease = () => {
   };
 
   const [showPayLaterConfirm, setShowPayLaterConfirm] = useState(false);
+  
+  // Track allowance state
+  const [trackAllowance, setTrackAllowance] = useState<TrackAllowance | null>(null);
+  const [loadingAllowance, setLoadingAllowance] = useState(true);
+  const [usingAllowance, setUsingAllowance] = useState(false);
+  
+  // Check if user can use track allowance for this release
+  const canUseAllowance = trackAllowance?.hasSubscription && 
+    trackAllowance.tracksRemaining >= tracks.length;
+
+  // Handle using track allowance instead of payment
+  const handleUseTrackAllowance = async () => {
+    setUsingAllowance(true);
+    setCheckoutLoading(true);
+    
+    try {
+      const validatedData = releaseSchema.parse(formData);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // Validate files
+      if (!artworkFile) throw new Error("Artwork is required");
+      const audioTracks = tracks.filter(t => t.audioFile);
+      if (audioTracks.length === 0) throw new Error("At least one track audio file is required");
+
+      // Upload artwork to S3
+      setUploadingFile('artwork');
+      const artworkPath = `${user.id}/release-artwork/${Date.now()}.jpg`;
+      const artworkUrl = await uploadFile({ file: artworkFile!, path: artworkPath });
+      setUploadingFile(null);
+      if (!artworkUrl) throw new Error("Artwork upload failed");
+
+      // Upload all track audio files
+      setUploadingFile('audio');
+      const uploadedTracks = await Promise.all(
+        tracks.map(async (track) => {
+          if (!track.audioFile) return null;
+          const audioPath = `${user.id}/release-audio/${Date.now()}_${track.id}.${track.audioFile.name.split('.').pop()}`;
+          const audioUrl = await uploadFile({ file: track.audioFile, path: audioPath });
+          return { ...track, audioUrl };
+        })
+      );
+      setUploadingFile(null);
+
+      const failedUploads = uploadedTracks.filter(t => !t || !t.audioUrl);
+      if (failedUploads.length > 0) throw new Error("Some audio uploads failed");
+
+      // Create release with pending status (paid via track allowance)
+      const { data: release, error: releaseError } = await supabase.from("releases").insert({
+        user_id: user.id,
+        title: validatedData.songTitle,
+        artist_name: validatedData.artistName,
+        genre: validatedData.genre,
+        release_date: validatedData.digitalReleaseDate,
+        artwork_url: artworkUrl,
+        audio_file_url: uploadedTracks[0]?.audioUrl || null,
+        copyright_line: validatedData.cLineYear ? `${validatedData.cLineYear} ${validatedData.cLine}` : validatedData.cLine,
+        phonographic_line: validatedData.pLineYear ? `${validatedData.pLineYear} ${validatedData.pLine}` : validatedData.pLine,
+        featured_artists: validatedData.featuringArtists ? validatedData.featuringArtists.split(",").map(a => a.trim()) : [],
+        label_name: validatedData.label,
+        notes: `Submitted via Track Allowance. ${validatedData.additionalNotes || ''}`,
+        isrc: uploadedTracks[0]?.isrc || null,
+        status: 'pending'
+      }).select().single();
+
+      if (releaseError) throw releaseError;
+
+      // Create track entries
+      const trackData = uploadedTracks.map((track, index) => ({
+        release_id: release.id,
+        track_number: index + 1,
+        title: track!.title || validatedData.songTitle,
+        isrc: track!.isrc,
+        audio_file_url: track!.audioUrl,
+        composer: track!.contributors.filter(c => c.role === "Composer").map(c => c.name).join(", ") || null,
+        writer: track!.contributors.filter(c => c.role === "Lyricist" || c.role === "Songwriter").map(c => c.name).join(", ") || null,
+        contributor: track!.contributors.map(c => `${c.name} (${c.role})`).join(", ") || null
+      }));
+
+      await supabase.from("tracks").insert(trackData);
+
+      // Consume track allowance slots
+      const { error: consumeError } = await supabase.functions.invoke('consume-track-allowance', {
+        body: {
+          trackCount: tracks.length,
+          releaseId: release.id,
+          releaseTitle: validatedData.songTitle
+        }
+      });
+
+      if (consumeError) {
+        console.error('Failed to consume track allowance:', consumeError);
+        // Don't fail the submission, the release is already created
+      }
+
+      setShowConfetti(true);
+      toast.success("Release submitted using your track allowance!");
+      localStorage.removeItem('release-draft');
+      setShowPricingCards(false);
+      setTimeout(() => {
+        navigate("/dashboard?release_submitted=true");
+      }, 2000);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error(error.message || 'Failed to submit release');
+      }
+    } finally {
+      setUploadingFile(null);
+      setUsingAllowance(false);
+      setCheckoutLoading(false);
+    }
+  };
 
   const handlePayLater = async () => {
     setShowPayLaterConfirm(false);
@@ -1699,6 +1845,45 @@ const CreateRelease = () => {
           </DialogHeader>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6">
+            {/* Track Allowance Option - Only show if user has enough slots */}
+            {canUseAllowance && (
+              <div 
+                className="p-6 rounded-lg border-2 border-cyan-500/50 hover:border-cyan-500 transition-all cursor-pointer group bg-card col-span-full"
+                onClick={handleUseTrackAllowance}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                      <Ticket className="w-6 h-6 text-cyan-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-foreground">Use Track Allowance</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {trackAllowance?.tracksRemaining} of {trackAllowance?.tracksAllowed} tracks remaining this month
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-cyan-500">FREE</p>
+                    <p className="text-xs text-muted-foreground">Uses {tracks.length} slot{tracks.length > 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                <Button 
+                  className="w-full mt-4 bg-cyan-600 hover:bg-cyan-700" 
+                  disabled={usingAllowance}
+                >
+                  {usingAllowance ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Use Track Allowance"
+                  )}
+                </Button>
+              </div>
+            )}
+
             {/* Trackball Eco */}
             <div 
               className="p-6 rounded-lg border-2 border-border hover:border-green-500/50 transition-all cursor-pointer group bg-card"
