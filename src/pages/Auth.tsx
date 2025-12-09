@@ -110,7 +110,7 @@ const Auth = () => {
         navigate("/dashboard");
         return;
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -120,10 +120,42 @@ const Auth = () => {
             emailRedirectTo: `${window.location.origin}/dashboard`
           }
         });
-        console.log("signUp result", { error });
+        console.log("signUp result", { data, error });
         if (error) throw error;
-        toast.success("Account created! Please sign in.");
-        setIsLogin(true);
+        
+        // Auto-login after successful signup
+        if (data.user && data.session) {
+          toast.success("Account created! Logging you in...");
+          
+          setIsZooming(true);
+          setLoading(false);
+          await new Promise(resolve => setTimeout(resolve, 1200));
+          
+          const fadeOverlay = document.createElement('div');
+          fadeOverlay.className = 'fixed inset-0 bg-black z-50 flex flex-col items-center justify-center gap-4';
+          fadeOverlay.style.opacity = '0';
+          fadeOverlay.style.transition = 'opacity 1s ease-in-out';
+          fadeOverlay.innerHTML = `
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <p class="text-muted-foreground animate-pulse">Setting up your account...</p>
+          `;
+          document.body.appendChild(fadeOverlay);
+          
+          setTimeout(() => {
+            fadeOverlay.style.opacity = '1';
+          }, 50);
+          
+          const loadingDuration = 3000 + Math.random() * 2000;
+          await new Promise(resolve => setTimeout(resolve, loadingDuration));
+          
+          fadeOverlay.remove();
+          navigate("/dashboard");
+          return;
+        } else {
+          // Email confirmation required
+          toast.success("Account created! Please check your email to confirm, then sign in.");
+          setIsLogin(true);
+        }
       }
     } catch (error: any) {
       console.error("Auth error", error);

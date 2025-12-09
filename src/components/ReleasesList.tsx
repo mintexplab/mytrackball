@@ -5,10 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Clock, Trash2, AlertTriangle, CreditCard, Send, Loader2, DollarSign } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Trash2, AlertTriangle, CreditCard, Send, Loader2, DollarSign, Music, Ticket } from "lucide-react";
 import ReleaseInfoDialog from "./ReleaseInfoDialog";
 import ReleaseRejectionDialog from "./ReleaseRejectionDialog";
 import { TakedownPaymentDialog } from "./TakedownPaymentDialog";
+
+// Pricing tiers
+const PRICING = {
+  eco: { trackFee: 1, upcFee: 4, name: "Trackball Eco" },
+  standard: { trackFee: 5, upcFee: 8, name: "Trackball Standard" },
+};
+
+interface TrackAllowance {
+  hasSubscription: boolean;
+  tracksAllowed: number;
+  tracksUsed: number;
+  tracksRemaining: number;
+}
 
 interface ReleasesListProps {
   userId?: string;
@@ -21,9 +34,38 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
   const [takedownDialogOpen, setTakedownDialogOpen] = useState(false);
   const [selectedRelease, setSelectedRelease] = useState<{ id: string; title: string; artistName: string } | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [pricingDialogOpen, setPricingDialogOpen] = useState(false);
   const [releaseForPayment, setReleaseForPayment] = useState<any>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [trackCount, setTrackCount] = useState(1);
+  const [pricingTier, setPricingTier] = useState<"eco" | "standard">("standard");
+  const [trackAllowance, setTrackAllowance] = useState<TrackAllowance | null>(null);
+  const [loadingAllowance, setLoadingAllowance] = useState(false);
+  const [usingAllowance, setUsingAllowance] = useState(false);
+
+  // Fetch track allowance when pricing dialog opens
+  useEffect(() => {
+    if (pricingDialogOpen && !isAdmin) {
+      fetchTrackAllowance();
+    }
+  }, [pricingDialogOpen]);
+
+  const fetchTrackAllowance = async () => {
+    setLoadingAllowance(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('check-track-allowance');
+      if (!error && data) {
+        setTrackAllowance(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch track allowance:', error);
+    } finally {
+      setLoadingAllowance(false);
+    }
+  };
+
+  const canUseAllowance = trackAllowance?.hasSubscription && 
+    trackAllowance.tracksRemaining >= trackCount;
 
   useEffect(() => {
     fetchReleases();
@@ -117,7 +159,32 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
     const count = await fetchTrackCount(release.id);
     setTrackCount(count);
     setReleaseForPayment(release);
+    setPricingDialogOpen(true); // Show pricing options first
+  };
+
+  const handleSelectPricingTier = (tier: "eco" | "standard") => {
+    setPricingTier(tier);
+    setPricingDialogOpen(false);
     setPaymentDialogOpen(true);
+  };
+
+  const handleUseTrackAllowance = async () => {
+    if (!releaseForPayment) return;
+    setUsingAllowance(true);
+    try {
+      // Update release to pending and consume allowance
+      await supabase.from("releases").update({ status: "pending", payment_status: "paid" }).eq("id", releaseForPayment.id);
+      await supabase.functions.invoke('consume-track-allowance', {
+        body: { trackCount, releaseId: releaseForPayment.id, releaseTitle: releaseForPayment.title }
+      });
+      toast.success("Release submitted using track allowance!");
+      setPricingDialogOpen(false);
+      fetchReleases();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to submit release");
+    } finally {
+      setUsingAllowance(false);
+    }
   };
 
   const handlePayAndDistribute = async () => {
@@ -154,61 +221,40 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
   };
 
   const updateReleaseStatus = async (releaseId: string, status: string) => {
-    const { data: release, error: fetchError } = await supabase
-      .from("releases")
-      .select(`
-        *,
-        profiles!releases_user_id_fkey(email)
-      `)
-      .eq("id", releaseId)
-      .maybeSingle();
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Not authenticated");
+        return;
+      }
 
-    if (fetchError) {
-      toast.error("Failed to fetch release");
-      console.error("Fetch error:", fetchError);
-      return;
-    }
-
-    if (!release) {
-      toast.error("Release not found");
-      return;
-    }
-
-    const { data: isAdminRole } = await supabase.rpc("has_role", {
-      _user_id: (await supabase.auth.getUser()).data.user?.id,
-      _role: "admin",
-    });
-
-    if (!isAdminRole) {
-      toast.error("Only admins can update release status");
-      return;
-    }
-
-    const { error } = await supabase
-      .from("releases")
-      .update({ status })
-      .eq("id", releaseId);
-
-    if (error) {
-      toast.error("Failed to update release status: " + error.message);
-      console.error("Update error:", error);
-      return;
-    }
-
-    if (release.profiles?.email) {
-      await supabase.functions.invoke("send-release-status-email", {
+      const { data, error } = await supabase.functions.invoke("update-release-status", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: {
-          userEmail: release.profiles.email,
-          releaseTitle: release.title,
-          artistName: release.artist_name,
-          status: status,
-          rejectionReason: release.rejection_reason,
+          releaseId,
+          status,
         },
       });
-    }
 
-    toast.success(`Release status updated to ${status}`);
-    fetchReleases();
+      if (error) {
+        toast.error("Failed to update release status: " + error.message);
+        console.error("Update error:", error);
+        return;
+      }
+
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      toast.success(`Release status updated to ${status}`);
+      fetchReleases();
+    } catch (error: any) {
+      toast.error("Failed to update release status: " + error.message);
+      console.error("Update error:", error);
+    }
   };
 
   const deleteRelease = async (releaseId: string) => {
@@ -463,6 +509,64 @@ const ReleasesList = ({ userId, isAdmin }: ReleasesListProps) => {
           artistName={selectedRelease.artistName}
         />
       )}
+
+      {/* Pricing Selection Dialog */}
+      <Dialog open={pricingDialogOpen} onOpenChange={setPricingDialogOpen}>
+        <DialogContent className="bg-card border-border sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Select Distribution Plan</DialogTitle>
+            <DialogDescription>
+              Choose how to pay for "{releaseForPayment?.title}" ({trackCount} track{trackCount > 1 ? 's' : ''})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Track Allowance Option */}
+            {canUseAllowance && (
+              <div 
+                className="p-4 rounded-lg border-2 border-cyan-500/50 hover:border-cyan-500 cursor-pointer bg-card"
+                onClick={handleUseTrackAllowance}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Ticket className="w-6 h-6 text-cyan-500" />
+                    <div>
+                      <p className="font-bold">Use Track Allowance</p>
+                      <p className="text-sm text-muted-foreground">{trackAllowance?.tracksRemaining} slots remaining</p>
+                    </div>
+                  </div>
+                  <span className="text-xl font-bold text-cyan-500">FREE</span>
+                </div>
+              </div>
+            )}
+            {/* Eco */}
+            <div 
+              className="p-4 rounded-lg border border-border hover:border-green-500/50 cursor-pointer"
+              onClick={() => handleSelectPricingTier("eco")}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-bold">Trackball Eco</p>
+                  <p className="text-sm text-muted-foreground">$1/track + $4 UPC</p>
+                </div>
+                <span className="text-xl font-bold text-green-500">${trackCount * 1 + 4} CAD</span>
+              </div>
+            </div>
+            {/* Standard */}
+            <div 
+              className="p-4 rounded-lg border-2 border-primary/50 hover:border-primary cursor-pointer"
+              onClick={() => handleSelectPricingTier("standard")}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-bold">Trackball Standard</p>
+                  <p className="text-sm text-muted-foreground">$5/track + $8 UPC</p>
+                </div>
+                <span className="text-xl font-bold text-primary">${trackCount * 5 + 8} CAD</span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Pay and Distribute Dialog */}
       <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>

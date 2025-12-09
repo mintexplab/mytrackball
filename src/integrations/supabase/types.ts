@@ -914,6 +914,7 @@ export type Database = {
           isrc: string | null
           label_name: string | null
           notes: string | null
+          payment_status: string | null
           phonographic_line: string | null
           rejection_reason: string | null
           release_date: string | null
@@ -948,6 +949,7 @@ export type Database = {
           isrc?: string | null
           label_name?: string | null
           notes?: string | null
+          payment_status?: string | null
           phonographic_line?: string | null
           rejection_reason?: string | null
           release_date?: string | null
@@ -982,6 +984,7 @@ export type Database = {
           isrc?: string | null
           label_name?: string | null
           notes?: string | null
+          payment_status?: string | null
           phonographic_line?: string | null
           rejection_reason?: string | null
           release_date?: string | null
