@@ -10,7 +10,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/lib/toast-with-sound";
-import { ArrowLeft, Upload, Plus, X, Check, Save, Music, Disc3, Album as AlbumIcon, Trash2, CreditCard, Loader2, Ticket } from "lucide-react";
+import { ArrowLeft, Upload, Plus, X, Check, Save, Music, Disc3, Album as AlbumIcon, Trash2, CreditCard, Loader2, Ticket, Info } from "lucide-react";
+import { addWeeks, startOfDay } from "date-fns";
 import { z } from "zod";
 import { useS3Upload } from "@/hooks/useS3Upload";
 import { Confetti } from "@/components/Confetti";
@@ -1481,12 +1482,13 @@ const CreateRelease = () => {
                   <Input
                     id="digitalReleaseDate"
                     type="date"
+                    min={addWeeks(startOfDay(new Date()), 3).toISOString().split('T')[0]}
                     value={formData.digitalReleaseDate}
                     onChange={(e) => setFormData({ ...formData, digitalReleaseDate: e.target.value })}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="originalReleaseDate">Original Release Date</Label>
+                  <Label htmlFor="originalReleaseDate">Original Release Date (for re-releases only)</Label>
                   <Input
                     id="originalReleaseDate"
                     type="date"
@@ -1494,6 +1496,11 @@ const CreateRelease = () => {
                     onChange={(e) => setFormData({ ...formData, originalReleaseDate: e.target.value })}
                   />
                 </div>
+              </div>
+
+              <div className="flex items-start gap-2 text-xs text-blue-400 bg-blue-500/10 border border-blue-500/20 p-3 rounded">
+                <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>We send out releases for distribution once or twice a week, along with this, our distribution partner also has processing times. You are required to schedule a release more than 3 weeks in advance.</span>
               </div>
 
               <div className="text-xs text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded">
